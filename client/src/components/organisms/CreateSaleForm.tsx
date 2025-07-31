@@ -61,7 +61,7 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                    {/* Drug Search */}
+                    {/* Drug Search - Responsive and always loads from DB */}
                     <div className="space-y-2">
                         <label
                             htmlFor="drug-search"
@@ -69,37 +69,67 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                         >
                             Search for a drug to add
                         </label>
-                        <SearchBar
-                            placeholder="Start typing drug name..."
-                            onSearch={setSearchTerm}
-                            className="w-full"
-                        />
-                        {isLoadingDrugs && <p>Loading drugs...</p>}
-                        {searchTerm && drugData?.drugs && (
-                            <ul className="border rounded-md max-h-40 overflow-y-auto">
-                                {drugData.drugs.map((drug: Drug) => (
-                                    <li
-                                        key={drug.id}
-                                        className="p-2 hover:bg-gray-100 cursor-pointer"
-                                        onClick={() => handleAddDrug(drug)}
-                                    >
-                                        {drug.name} ({drug.brand}) - In Stock:{' '}
-                                        {drug.quantity}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
+                        <div className="relative">
+                            <SearchBar
+                                placeholder="Start typing drug name..."
+                                onSearch={setSearchTerm}
+                                className="w-full"
+                                initialValue={searchTerm}
+                            />
+                            {/* Responsive dropdown for search results */}
+                            {isLoadingDrugs && (
+                                <div className="absolute left-0 right-0 bg-white border border-gray-200 rounded-md shadow-md z-20 p-4 text-center text-gray-500 text-sm">
+                                    Loading drugs...
+                                </div>
+                            )}
+                            {searchTerm &&
+                                drugData?.drugs &&
+                                drugData.drugs.length > 0 && (
+                                    <ul className="absolute left-0 right-0 bg-white border border-gray-200 rounded-md shadow-md z-20 max-h-60 overflow-y-auto mt-1 divide-y divide-gray-100">
+                                        {drugData.drugs.map((drug: Drug) => (
+                                            <li
+                                                key={drug.id}
+                                                className="p-3 hover:bg-blue-50 cursor-pointer flex flex-col md:flex-row md:items-center justify-between transition-colors"
+                                                onClick={() =>
+                                                    handleAddDrug(drug)
+                                                }
+                                            >
+                                                <span className="font-medium text-gray-900">
+                                                    {drug.name}
+                                                </span>
+                                                <span className="text-xs text-gray-500 ml-2">
+                                                    ({drug.brand})
+                                                </span>
+                                                <span className="text-xs text-gray-500 ml-2">
+                                                    In Stock: {drug.quantity}
+                                                </span>
+                                                <span className="text-xs text-gray-500 ml-2">
+                                                    ${drug.price.toFixed(2)}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            {searchTerm &&
+                                drugData?.drugs &&
+                                drugData.drugs.length === 0 &&
+                                !isLoadingDrugs && (
+                                    <div className="absolute left-0 right-0 bg-white border border-gray-200 rounded-md shadow-md z-20 p-4 text-center text-gray-500 text-sm">
+                                        No drugs found for "{searchTerm}"
+                                    </div>
+                                )}
+                        </div>
                     </div>
 
-                    {/* Sale Items */}
+                    {/* Sale Items - Responsive */}
                     <div className="space-y-4">
                         {fields.map((field, index) => (
                             <div
                                 key={field.id}
-                                className="flex items-center space-x-4 p-2 border rounded-md"
+                                className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-2 md:space-y-0 p-2 border rounded-md"
                             >
-                                <div className="flex-1">
-                                    <p className="font-semibold">
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-semibold truncate">
                                         {field.drugName}
                                     </p>
                                     <p className="text-sm text-gray-500">
@@ -114,7 +144,7 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                                     }) => (
                                         <Input
                                             type="number"
-                                            className="w-24"
+                                            className="w-full md:w-24"
                                             min="1"
                                             max={field.maxQuantity}
                                             onChange={(e) =>
@@ -129,7 +159,7 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                                         />
                                     )}
                                 />
-                                <p className="w-28 text-right">
+                                <p className="w-full md:w-28 text-right">
                                     Subtotal: $
                                     {(
                                         (watchedItems?.[index]?.priceAtSale ??

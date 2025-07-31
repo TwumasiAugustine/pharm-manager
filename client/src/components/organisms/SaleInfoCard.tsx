@@ -12,7 +12,7 @@ import {
     FaCheckCircle,
     FaUserAlt,
     FaShoppingBag,
-    FaStore
+    FaStore,
 } from 'react-icons/fa';
 import { format } from 'date-fns';
 import type { Sale } from '../../types/sale.types';
@@ -30,10 +30,8 @@ const SaleInfoCard: React.FC<SaleInfoCardProps> = ({ sale }) => {
                 </CardTitle>
                 <CardDescription>
                     Sale completed successfully on{' '}
-                    {sale.date
-                        ? format(new Date(sale.date), 'PPP')
-                        : 'Unknown date'}{' '}
-                    at {format(new Date(sale.createdAt), 'p')}
+                    {format(new Date(sale.createdAt), 'PPP')} at{' '}
+                    {format(new Date(sale.createdAt), 'p')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
@@ -58,13 +56,8 @@ const SaleInfoCard: React.FC<SaleInfoCardProps> = ({ sale }) => {
                         <div>
                             <div className="font-medium">Date & Time</div>
                             <div className="text-sm text-muted-foreground">
-                                {sale.date
-                                    ? format(new Date(sale.date), 'PPP')
-                                    : 'Unknown date'}{' '}
-                                at{' '}
-                                {sale.date
-                                    ? format(new Date(sale.date), 'p')
-                                    : 'Unknown time'}
+                                {format(new Date(sale.createdAt), 'PPP')} at{' '}
+                                {format(new Date(sale.createdAt), 'p')}
                             </div>
                         </div>
                     </div>

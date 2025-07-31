@@ -21,3 +21,4 @@ Maintain consistent code style and structure across the project. Follow these gu
 18. **Use package.json**: Always check for available packages in the `package.json` file and leverage and use all installed packages in the `package.json` file to manage project dependencies, scripts, and metadata effectively.
 19. **Folder Structure**: Maintain a modular folder structure for both frontend and backend, ensuring clear separation of concerns (e.g., controllers, services, routes, utils, types, middlewares).
 20. **Bug Fixes**: Always check `client` and `server` to find the root cause of bugs and fix them in the appropriate place such as `hooks`, `api` etc. Do not suggest code that has been deleted or is no longer relevant.
+21. **Break Larger Components and Functions**: If a component or function is becoming too large or complex, break it down into smaller, reusable components or functions. This will improve readability, maintainability, and testability.

@@ -1,54 +1,56 @@
-// Interface for a sale item in a response
+// Sale item as returned from the backend
 export interface SaleItem {
-    drug:
-        | {
-              id?: string;
-              _id?: string;
-              name?: string;
-              brand?: string;
-          }
-        | string; // Could be just the drug ID as a string
+    drugId: string;
+    name: string;
+    brand: string;
     quantity: number;
     priceAtSale: number;
+    id?: string;
+    _id?: string;
 }
 
-// Interface for a full sale response
+// Sale as returned from the backend
 export interface Sale {
     id?: string;
-    _id?: string; // MongoDB ObjectId format
+    _id?: string;
     items: SaleItem[];
     totalAmount: number;
-    soldBy:
-        | {
-              id?: string;
-              _id?: string;
-              name?: string;
-          }
-        | string; // Could be just the user ID as a string
-    // customer removed
-    paymentMethod?: string;
+    soldBy: {
+        id?: string;
+        _id?: string;
+        name: string;
+    };
+    paymentMethod: 'cash' | 'card' | 'mobile';
     transactionId?: string;
     notes?: string;
-    // customerNotes removed
-    date?: string;
     createdAt: string;
-    updatedAt?: string;
+    date?: string; // for grouping
 }
 
-// Interface for creating a new sale
+// For creating a new sale
 export interface CreateSaleRequest {
-    items: {
-        drugId: string;
-        quantity: number;
-    }[];
+    items: { drugId: string; quantity: number }[];
     totalAmount: number;
-    paymentMethod?: string;
+    paymentMethod: 'cash' | 'card' | 'mobile';
     transactionId?: string;
     notes?: string;
 }
 
-// Interface for sale search parameters
+// For react-hook-form (frontend only)
+export interface SaleFormItem {
+    drug: string; // drugId
+    quantity: number;
+}
+export interface SaleFormInput {
+    items: SaleFormItem[];
+    paymentMethod: 'cash' | 'card' | 'mobile';
+    transactionId?: string;
+    notes?: string;
+}
+
+// For searching sales
 export interface SaleSearchParams {
+    groupByDate?: boolean;
     page?: number;
     limit?: number;
     startDate?: string;
@@ -56,15 +58,24 @@ export interface SaleSearchParams {
     userId?: string;
     sortBy?: 'date' | 'total';
     sortOrder?: 'asc' | 'desc';
-    groupByDate?: boolean;
 }
 
-// Interface for grouped sales by date
+// For grouped sales (by date)
 export interface GroupedSales {
-    id?: string | number; // Add this to satisfy Table component requirements
+    id: string; // date string
     date: string;
     sales: Sale[];
     totalAmount: number;
     totalItems: number;
     saleCount: number;
+}
+
+export interface SalesListResponse {
+    data: Sale[] | GroupedSales[];
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
 }

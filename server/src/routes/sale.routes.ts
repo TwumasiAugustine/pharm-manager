@@ -34,4 +34,7 @@ router.get(
     saleController.getSaleById,
 );
 
+// TODO: Add PDF receipt endpoint
+// router.get('/:id/receipt', ...)
+
 export default router;

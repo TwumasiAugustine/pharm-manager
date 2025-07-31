@@ -43,20 +43,11 @@ const ItemsTable: React.FC<ItemsTableProps> = ({
                     columns={[
                         {
                             header: 'Drug Name',
-                            accessor: (item) =>
-                                typeof item.drug === 'object' && item.drug?.name
-                                    ? item.drug.name
-                                    : typeof item.drug === 'string'
-                                    ? item.drug
-                                    : 'N/A',
+                            accessor: (item) => item.name || 'N/A',
                         },
                         {
                             header: 'Brand',
-                            accessor: (item) =>
-                                typeof item.drug === 'object' &&
-                                item.drug?.brand
-                                    ? item.drug.brand
-                                    : '-',
+                            accessor: (item) => item.brand || '-',
                         },
                         {
                             header: 'Quantity',

@@ -2,7 +2,6 @@ import { Schema, model, Document, Types } from 'mongoose';
 import { IDrug } from './drug.model';
 import { IUser } from '../types/auth.types';
 
-
 // Interface for a single item in a sale
 export interface ISaleItem {
     drug: Types.ObjectId | IDrug;
@@ -87,3 +86,4 @@ saleSchema.index({ customer: 1 });
 saleSchema.index({ createdAt: -1 });
 
 export const Sale = model<ISale>('Sale', saleSchema);
+saleSchema.index({ createdAt: -1 });

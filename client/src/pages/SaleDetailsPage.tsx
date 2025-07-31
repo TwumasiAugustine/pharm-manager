@@ -18,7 +18,7 @@ import PrintReceipt from '../components/organisms/PrintReceipt';
 const SaleDetailsPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { data: sale, isLoading, error } = useSale(id!);
+    const { data:sale, isLoading, error } = useSale(id!);
 
     // Handle loading state with skeleton UI
     if (isLoading) {

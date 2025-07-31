@@ -14,7 +14,12 @@ import {
 } from '../components/molecules/Alert';
 import { getErrorMessage } from '../utils/error';
 import { Pagination } from '../components/molecules/Pagination';
-import type { GroupedSales, Sale, SaleSearchParams } from '../types/sale.types';
+import type {
+    GroupedSales,
+    Sale,
+    SaleSearchParams,
+    SaleItem,
+} from '../types/sale.types';
 import { Input } from '../components/atoms/Input';
 
 const SalesListPage: React.FC = () => {
@@ -37,18 +42,16 @@ const SalesListPage: React.FC = () => {
 
     // Debug log to check data structure
     React.useEffect(() => {
-        if (data) {
-            console.log('SalesListPage received data:', data);
-
-            if (Array.isArray(data.data)) {
-                console.log(`Data contains ${data.data.length} sales items`);
-            } else {
-                console.error('data.data is not an array:', data.data);
-            }
-        } else {
-            console.log('No data received in useEffect');
+        if (data === undefined) {
+            console.error('No data received from sales API.');
+            return;
         }
-
+        if (!data || !('data' in data) || !Array.isArray(data.data)) {
+            console.error('SalesListPage: Invalid or missing data:', data);
+            return;
+        }
+        console.log('SalesListPage received data:', data);
+        console.log(`Data contains ${data.data.length} sales items`);
         if (error) {
             console.error('Error fetching sales:', error);
         }
@@ -136,7 +139,7 @@ const SalesListPage: React.FC = () => {
     const saleColumns: TableColumn<Sale>[] = [
         {
             header: 'Sale ID',
-            accessor: (sale) => sale.id || sale._id, // Handle both id formats
+            accessor: (sale) => sale._id,
             className: 'font-mono text-xs',
         },
         {
@@ -150,7 +153,11 @@ const SalesListPage: React.FC = () => {
                         e && typeof e === 'object' && 'message' in e
                             ? (e as { message: string }).message
                             : String(e);
-                    console.error('Error formatting date:', sale.createdAt, message);
+                    console.error(
+                        'Error formatting date:',
+                        sale.createdAt,
+                        message,
+                    );
                     return 'Invalid date';
                 }
             },
@@ -169,15 +176,8 @@ const SalesListPage: React.FC = () => {
             accessor: (sale) => {
                 if (!sale.items || !Array.isArray(sale.items))
                     return 'No items';
-
                 return sale.items
-                    .map((item) => {
-                        // Handle different drug data structures
-                        if (item.drug && typeof item.drug === 'object') {
-                            return item.drug.name || 'Unknown Item';
-                        }
-                        return 'Unknown Item';
-                    })
+                    .map((item: SaleItem) => item.name || 'Unknown Item')
                     .join(', ');
             },
         },
@@ -195,7 +195,7 @@ const SalesListPage: React.FC = () => {
     const saleActions: TableAction<Sale>[] = [
         {
             label: 'View',
-            onClick: (sale) => navigate(`/sales/${sale.id || sale._id}`),
+            onClick: (sale) => navigate(`/sales/${sale._id}`),
             icon: <FaEye className="h-4 w-4" />,
         },
     ];

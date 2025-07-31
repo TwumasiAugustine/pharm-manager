@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { Customer } from './customer.types';
+
 
 // Interface for creating a new sale
 export interface CreateSaleRequest {

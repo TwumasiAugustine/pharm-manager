@@ -15,8 +15,8 @@ import UnauthorizedPage from './pages/UnauthorizedPage';
 import PharmacySetupPage from './pages/PharmacySetupPage';
 
 import SalesListPage from './pages/SalesListPage';
-import CreateSalePage from './pages/CreateSalePage';
-import SaleDetailsPage from './pages/SaleDetailsPage';
+import SalesNewPage from './pages/SalesNewPage';
+import SalesReceiptPage from './pages/SalesReceiptPage';
 
 // Components
 import { ProtectedRoute } from './components/molecules/ProtectedRoute';
@@ -61,11 +61,11 @@ const router = createBrowserRouter([
             },
             {
                 path: '/sales/new',
-                element: <CreateSalePage />,
+                element: <SalesNewPage />,
             },
             {
                 path: '/sales/:id',
-                element: <SaleDetailsPage />,
+                element: <SalesReceiptPage />,
             },
         ],
     },

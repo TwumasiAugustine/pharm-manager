@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import React from 'react';
-import { drugApi } from '../api/drug.api';
+import drugApi from '../api/drug.api';
 import type {
     CreateDrugRequest,
     Drug,
@@ -36,17 +36,51 @@ export const useDrugs = (
 
     const queryKey = ['drugs', queryParams];
 
-    const query = useQuery<PaginatedDrugsResponse, Error>({
+    const query = useQuery<any, Error>({
         queryKey,
         queryFn: () => drugApi.getDrugs(queryParams),
         staleTime: 5 * 60 * 1000, // 5 minutes
     });
 
+    // Defensive mapping for paginated drugs response
+    const mappedData: PaginatedDrugsResponse = React.useMemo(() => {
+        const raw = query.data;
+        if (!raw || typeof raw !== 'object') {
+            return {
+                drugs: [],
+                totalCount: 0,
+                page,
+                limit,
+                totalPages: 0,
+            };
+        }
+        return {
+            drugs: Array.isArray(raw.drugs)
+                ? raw.drugs.map((drug: any) => ({
+                      id: drug.id || drug._id || '',
+                      _id: drug._id || '',
+                      name: drug.name || '',
+                      brand: drug.brand || '',
+                      category: drug.category || '',
+                      price: drug.price ?? 0,
+                      stock: drug.stock ?? 0,
+                      expiryDate: drug.expiryDate || '',
+                      requiresPrescription: !!drug.requiresPrescription,
+                      createdAt: drug.createdAt || '',
+                      updatedAt: drug.updatedAt || '',
+                  }))
+                : [],
+            totalCount: raw.totalCount ?? 0,
+            page: raw.page ?? page,
+            limit: raw.limit ?? limit,
+            totalPages: raw.totalPages ?? 0,
+        };
+    }, [query.data, page, limit]);
+
     // Calculate total pages based on the response
     const totalPages = React.useMemo(() => {
-        if (!query.data) return 0;
-        return Math.ceil(query.data.totalCount / limit);
-    }, [query.data, limit]);
+        return mappedData.totalPages || 0;
+    }, [mappedData]);
 
     // Pagination controls
     const pagination: PaginationControls = {
@@ -59,6 +93,7 @@ export const useDrugs = (
 
     return {
         ...query,
+        data: mappedData,
         pagination,
         setSearchQuery,
     } as QueryResultWithPagination<PaginatedDrugsResponse, Error>;
@@ -70,8 +105,28 @@ export const useDrugs = (
 export const useDrug = (id: string) => {
     return useQuery<Drug, Error>({
         queryKey: ['drug', id],
-        queryFn: () => drugApi.getDrug(id),
-        enabled: !!id, // Only fetch if ID is provided
+        queryFn: async () => {
+            const raw = await drugApi.getDrug(id);
+            if (!raw || typeof raw !== 'object') {
+                throw new Error('Drug data is undefined or invalid');
+            }
+            return {
+                id: raw.id || raw._id || '',
+                _id: raw._id || '',
+                name: raw.name || '',
+                brand: raw.brand || '',
+                category: raw.category || '',
+                price: raw.price ?? 0,
+                stock: raw.stock ?? 0,
+                expiryDate: raw.expiryDate || '',
+                requiresPrescription: !!raw.requiresPrescription,
+                createdAt: raw.createdAt || '',
+                updatedAt: raw.updatedAt || '',
+                quantity: raw.quantity ?? 0,
+                batchNumber: raw.batchNumber || '',
+            };
+        },
+        enabled: !!id,
     });
 };
 
@@ -83,10 +138,26 @@ export const useCreateDrug = () => {
     const notify = useSafeNotify();
 
     return useMutation({
-        mutationFn: (drugData: CreateDrugRequest) =>
-            drugApi.createDrug(drugData),
+        mutationFn: async (drugData: CreateDrugRequest) => {
+            const raw = await drugApi.createDrug(drugData);
+            if (!raw || typeof raw !== 'object') {
+                throw new Error('Drug data is undefined or invalid');
+            }
+            return {
+                id: raw.id || raw._id || '',
+                _id: raw._id || '',
+                name: raw.name || '',
+                brand: raw.brand || '',
+                category: raw.category || '',
+                price: raw.price ?? 0,
+                stock: raw.stock ?? 0,
+                expiryDate: raw.expiryDate || '',
+                requiresPrescription: !!raw.requiresPrescription,
+                createdAt: raw.createdAt || '',
+                updatedAt: raw.updatedAt || '',
+            };
+        },
         onSuccess: () => {
-            // Invalidate drugs list query to refetch
             queryClient.invalidateQueries({ queryKey: ['drugs'] });
             notify.success('Drug created successfully');
         },
@@ -104,12 +175,27 @@ export const useUpdateDrug = (id: string) => {
     const notify = useSafeNotify();
 
     return useMutation({
-        mutationFn: (updateData: UpdateDrugRequest) =>
-            drugApi.updateDrug(id, updateData),
+        mutationFn: async (updateData: UpdateDrugRequest) => {
+            const raw = await drugApi.updateDrug(id, updateData);
+            if (!raw || typeof raw !== 'object') {
+                throw new Error('Drug data is undefined or invalid');
+            }
+            return {
+                id: raw.id || raw._id || '',
+                _id: raw._id || '',
+                name: raw.name || '',
+                brand: raw.brand || '',
+                category: raw.category || '',
+                price: raw.price ?? 0,
+                stock: raw.stock ?? 0,
+                expiryDate: raw.expiryDate || '',
+                requiresPrescription: !!raw.requiresPrescription,
+                createdAt: raw.createdAt || '',
+                updatedAt: raw.updatedAt || '',
+            };
+        },
         onSuccess: (updatedDrug) => {
-            // Update drug in cache
             queryClient.setQueryData(['drug', id], updatedDrug);
-            // Invalidate drugs list query to refetch
             queryClient.invalidateQueries({ queryKey: ['drugs'] });
             notify.success('Drug updated successfully');
         },
@@ -127,11 +213,12 @@ export const useDeleteDrug = () => {
     const notify = useSafeNotify();
 
     return useMutation({
-        mutationFn: (id: string) => drugApi.deleteDrug(id),
+        mutationFn: async (id: string) => {
+            // No mapping needed for delete
+            return await drugApi.deleteDrug(id);
+        },
         onSuccess: (_data, id) => {
-            // Invalidate drugs list query to refetch
             queryClient.invalidateQueries({ queryKey: ['drugs'] });
-            // Remove from cache
             queryClient.removeQueries({ queryKey: ['drug', id] });
             notify.success('Drug deleted successfully');
         },
@@ -147,7 +234,20 @@ export const useDeleteDrug = () => {
 export const useDrugCategories = () => {
     return useQuery<string[], Error>({
         queryKey: ['drugCategories'],
-        queryFn: () => drugApi.getCategories(),
+        queryFn: async () => {
+            const raw = await drugApi.getCategories();
+            // Accepts { categories: string[] } or string[] directly
+            if (
+                raw &&
+                typeof raw === 'object' &&
+                'categories' in raw &&
+                Array.isArray(raw.categories)
+            ) {
+                return raw.categories;
+            }
+            if (Array.isArray(raw)) return raw;
+            return [];
+        },
         staleTime: 60 * 60 * 1000, // 1 hour
     });
 };
@@ -155,9 +255,38 @@ export const useDrugCategories = () => {
 /**
  * Hook for fetching drugs expiring soon
  */
-export const useExpiringDrugs = (days: number = 30) => {
+export const useExpiringDrugs = (days: number) => {
     return useQuery<Drug[], Error>({
         queryKey: ['expiringDrugs', days],
-        queryFn: () => drugApi.getExpiringDrugs(days),
+        queryFn: async () => {
+            const raw = await drugApi.getExpiringDrugs(days);
+            // Accepts { drugs: Drug[] } or Drug[] directly
+            let drugsArr: any[] = [];
+            if (
+                raw &&
+                typeof raw === 'object' &&
+                'drugs' in raw &&
+                Array.isArray(raw.drugs)
+            ) {
+                drugsArr = raw.drugs;
+            } else if (Array.isArray(raw)) {
+                drugsArr = raw;
+            }
+            return drugsArr.map((drug: any) => ({
+                id: drug.id || drug._id || '',
+                _id: drug._id || '',
+                name: drug.name || '',
+                brand: drug.brand || '',
+                category: drug.category || '',
+                price: drug.price ?? 0,
+                stock: drug.stock ?? 0,
+                expiryDate: drug.expiryDate || '',
+                requiresPrescription: !!drug.requiresPrescription,
+                createdAt: drug.createdAt || '',
+                updatedAt: drug.updatedAt || '',
+                quantity: drug.quantity ?? 0,
+                batchNumber: drug.batchNumber || '',
+            }));
+        },
     });
 };
