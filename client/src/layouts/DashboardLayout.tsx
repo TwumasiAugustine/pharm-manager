@@ -41,6 +41,14 @@ const navItems = [
         adminOnly: false,
     },
     {
+        to: '/customers',
+        icon: <FaUser className="mr-3" />,
+        label: 'Customers',
+        match: (pathname: string) =>
+            pathname === '/customers' || /^\/customers\/[^/]+$/.test(pathname),
+        adminOnly: false,
+    },
+    {
         to: '/pharmacy-setup',
         icon: <FaCog className="mr-3" />,
         label: 'Pharmacy Settings',
@@ -72,7 +80,9 @@ function Sidebar({
             />
             <aside
                 className={`fixed z-40 inset-y-0 left-0 w-64 bg-white shadow-md transform transition-transform duration-200 ease-in-out
-                ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static md:inset-0`}
+                ${
+                    open ? 'translate-x-0' : '-translate-x-full'
+                } md:translate-x-0 md:static md:inset-0`}
             >
                 <div className="p-6 flex items-center justify-between md:block">
                     <h1 className="text-2xl font-bold text-primary-600">
@@ -133,8 +143,14 @@ function Topbar({
         location.pathname !== '/sales'
     )
         title = 'Sale Details';
+    else if (location.pathname === '/customers') title = 'Customer Management';
     else if (
-        !/^\/(dashboard|drugs|sales|sales\/new|sales\/[^/]+)$/.test(
+        /^\/customers\/[^/]+$/.test(location.pathname) &&
+        location.pathname !== '/customers'
+    )
+        title = 'Customer Details';
+    else if (
+        !/^\/(dashboard|drugs|sales|sales\/new|sales\/[^/]+|customers|customers\/[^/]+)$/.test(
             location.pathname,
         )
     )

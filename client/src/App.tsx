@@ -18,6 +18,9 @@ import SalesListPage from './pages/SalesListPage';
 import SalesNewPage from './pages/SalesNewPage';
 import SalesReceiptPage from './pages/SalesReceiptPage';
 
+import CustomerManagementPage from './pages/CustomerManagementPage';
+import CustomerDetailsPage from './pages/CustomerDetailsPage';
+
 // Components
 import { ProtectedRoute } from './components/molecules/ProtectedRoute';
 import { UserRole } from './types/auth.types';
@@ -66,6 +69,14 @@ const router = createBrowserRouter([
             {
                 path: '/sales/:id',
                 element: <SalesReceiptPage />,
+            },
+            {
+                path: '/customers',
+                element: <CustomerManagementPage />,
+            },
+            {
+                path: '/customers/:id',
+                element: <CustomerDetailsPage />,
             },
         ],
     },

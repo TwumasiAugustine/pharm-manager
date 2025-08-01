@@ -23,3 +23,4 @@ Maintain consistent code style and structure across the project. Follow these gu
 20. **Bug Fixes**: Always check `client` and `server` to find the root cause of bugs and fix them in the appropriate place such as `hooks`, `api` etc. Do not suggest code that has been deleted or is no longer relevant.
 21. **Break Larger Components and Functions**: If a component or function is becoming too large or complex, break it down into smaller, reusable components or functions. This will improve readability, maintainability, and testability.
 22. **Read Codebase**: Always read the codebase to understand existing patterns and practices before making changes. This will help maintain consistency and avoid introducing new issues.
+23. **Feature integrations** Read code base to integrate new features seamlessly with existing functionality. Ensure that new features are compatible with the current architecture and do not disrupt existing workflows.

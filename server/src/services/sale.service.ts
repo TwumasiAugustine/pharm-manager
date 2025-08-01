@@ -1,9 +1,17 @@
 import { Sale } from '../models/sale.model';
 import Drug from '../models/drug.model';
+import Customer from '../models/customer.model';
 import { Types } from 'mongoose';
 import { BadRequestError, NotFoundError } from '../utils/errors';
+import { CustomerService } from './customer.service';
 
 export class SaleService {
+    private customerService: CustomerService;
+
+    constructor() {
+        this.customerService = new CustomerService();
+    }
+
     /**
      * Create a new sale, update drug stock, and return the created sale
      */
@@ -14,6 +22,7 @@ export class SaleService {
         transactionId?: string;
         notes?: string;
         userId: string;
+        customerId?: string;
     }) {
         const session = await Sale.startSession();
         session.startTransaction();
@@ -45,6 +54,9 @@ export class SaleService {
                         items: saleItems,
                         totalAmount: calculatedTotal,
                         soldBy: new Types.ObjectId(data.userId),
+                        customer: data.customerId
+                            ? new Types.ObjectId(data.customerId)
+                            : undefined,
                         paymentMethod: data.paymentMethod,
                         transactionId: data.transactionId,
                         notes: data.notes,
@@ -53,6 +65,15 @@ export class SaleService {
                 { session },
             );
             await session.commitTransaction();
+
+            // Update customer purchases if customerId provided
+            if (data.customerId) {
+                await this.customerService.addSaleToCustomer(
+                    data.customerId,
+                    sale[0]._id.toString(),
+                );
+            }
+
             return sale[0];
         } catch (err) {
             await session.abortTransaction();
@@ -96,6 +117,7 @@ export class SaleService {
         const sales = await Sale.find(query)
             .populate('items.drug')
             .populate('soldBy', 'name')
+            .populate('customer', 'name phone')
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit);
@@ -163,13 +185,15 @@ export class SaleService {
     async getSaleById(id: string) {
         const sale = await Sale.findById(id)
             .populate('items.drug')
-            .populate('soldBy', 'name');
+            .populate('soldBy', 'name')
+            .populate('customer', 'name phone');
         if (!sale) throw new NotFoundError('Sale not found');
         // Map _id to id for sale and nested objects
         const saleObj = sale.toObject() as {
             _id: Types.ObjectId;
             items: any[];
             soldBy: any;
+            customer?: any;
             [key: string]: any;
         };
         const mappedSale = {
@@ -194,6 +218,15 @@ export class SaleService {
                               saleObj.soldBy._id,
                       }
                     : saleObj.soldBy,
+            customer:
+                saleObj.customer && typeof saleObj.customer === 'object'
+                    ? {
+                          ...saleObj.customer,
+                          id:
+                              saleObj.customer._id?.toString?.() ||
+                              saleObj.customer._id,
+                      }
+                    : undefined,
         };
         return mappedSale;
     }

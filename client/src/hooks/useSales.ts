@@ -13,7 +13,7 @@ export const useSales = (params: SaleSearchParams) => {
         queryKey: ['sales', params],
         queryFn: async () => {
             const raw = await saleApi.getSales(params);
-            console.log(raw)
+            console.log(raw);
             // Defensive mapping for all sales
             return {
                 ...raw,
@@ -46,6 +46,18 @@ export const useSales = (params: SaleSearchParams) => {
                                         name: sale.soldBy.name || '',
                                     }
                                   : { id: '', name: '' },
+                          customer:
+                              sale.customer && typeof sale.customer === 'object'
+                                  ? {
+                                        id:
+                                            sale.customer.id ||
+                                            sale.customer._id ||
+                                            '',
+                                        _id: sale.customer._id || '',
+                                        name: sale.customer.name || '',
+                                        phone: sale.customer.phone || '',
+                                    }
+                                  : undefined,
                           paymentMethod: sale.paymentMethod || 'cash',
                           transactionId: sale.transactionId,
                           notes: sale.notes,
@@ -96,6 +108,15 @@ export const useSale = (id: string) => {
                               name: data.soldBy.name || '',
                           }
                         : { id: '', name: '' },
+                customer:
+                    data.customer && typeof data.customer === 'object'
+                        ? {
+                              id: data.customer.id || data.customer._id || '',
+                              _id: data.customer._id || '',
+                              name: data.customer.name || '',
+                              phone: data.customer.phone || '',
+                          }
+                        : undefined,
                 paymentMethod: data.paymentMethod || 'cash',
                 transactionId: data.transactionId ?? '',
                 notes: data.notes ?? '',

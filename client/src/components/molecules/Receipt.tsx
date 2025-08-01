@@ -64,7 +64,14 @@ const Receipt: React.FC<ReceiptProps> = ({ sale, drugs, pharmacyInfo }) => {
                     <h3 className="font-semibold text-gray-700 mb-2 pb-1 border-b">
                         Billed To
                     </h3>
-                    <p>Walk-in Customer</p>
+                    {sale.customer ? (
+                        <div>
+                            <p className="font-medium">{sale.customer.name}</p>
+                            <p>Phone: {sale.customer.phone}</p>
+                        </div>
+                    ) : (
+                        <p>Walk-in Customer</p>
+                    )}
                 </div>
                 <div className="text-right">
                     <h3 className="font-semibold text-gray-700 mb-2 pb-1 border-b">

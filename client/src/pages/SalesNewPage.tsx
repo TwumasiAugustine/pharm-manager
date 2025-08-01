@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import type { SaleFormInput } from '../types/sale.types';
@@ -15,12 +15,16 @@ import { useDrugs } from '../hooks/useDrugs';
 import { getErrorMessage } from '../utils/error';
 import { SearchBar } from '../components/molecules/SearchBar';
 import { useDebounce } from '../hooks/useDebounce';
+import { CustomerSelect } from '../components/molecules/CustomerSelect';
 
 const SalesNewPage: React.FC = () => {
     const navigate = useNavigate();
 
     // Search state for drugs
-    const [searchTerm, setSearchTerm] = React.useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCustomerId, setSelectedCustomerId] = useState<
+        string | undefined
+    >();
     const debouncedSearch = useDebounce(searchTerm, 400);
     const {
         data: drugData,
@@ -33,7 +37,7 @@ const SalesNewPage: React.FC = () => {
         register,
         control,
         handleSubmit,
-        // setValue,
+        setValue,
         formState: { errors },
     } = useForm<SaleFormInput>({
         defaultValues: {
@@ -74,6 +78,7 @@ const SalesNewPage: React.FC = () => {
             })),
             totalAmount,
             paymentMethod: values.paymentMethod,
+            customerId: selectedCustomerId,
             transactionId: values.transactionId,
             notes: values.notes,
         };
@@ -105,6 +110,15 @@ const SalesNewPage: React.FC = () => {
                 )}
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="space-y-6">
+                        {/* Customer selection */}
+                        <CustomerSelect
+                            onChange={(customerId) => {
+                                setSelectedCustomerId(customerId);
+                                setValue('customerId', customerId);
+                            }}
+                            value={selectedCustomerId}
+                        />
+
                         {/* Drug SearchBar and selection for first item only */}
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700">

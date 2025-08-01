@@ -1,6 +1,5 @@
 import { Types } from 'mongoose';
 
-
 // Interface for creating a new sale
 export interface CreateSaleRequest {
     items: {
@@ -9,6 +8,7 @@ export interface CreateSaleRequest {
     }[];
     totalAmount: number;
     paymentMethod: 'cash' | 'card' | 'mobile';
+    customerId?: string;
     transactionId?: string;
     notes?: string;
 }
@@ -30,6 +30,11 @@ export interface SaleResponse {
     soldBy: {
         id: string;
         name: string;
+    };
+    customer?: {
+        id: string;
+        name: string;
+        phone: string;
     };
     paymentMethod: 'cash' | 'card' | 'mobile';
     transactionId?: string;

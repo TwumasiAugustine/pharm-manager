@@ -20,6 +20,12 @@ export interface Sale {
         _id?: string;
         name: string;
     };
+    customer?: {
+        id?: string;
+        _id?: string;
+        name: string;
+        phone: string;
+    };
     paymentMethod: 'cash' | 'card' | 'mobile';
     transactionId?: string;
     notes?: string;
@@ -32,6 +38,7 @@ export interface CreateSaleRequest {
     items: { drugId: string; quantity: number }[];
     totalAmount: number;
     paymentMethod: 'cash' | 'card' | 'mobile';
+    customerId?: string;
     transactionId?: string;
     notes?: string;
 }
@@ -44,6 +51,7 @@ export interface SaleFormItem {
 export interface SaleFormInput {
     items: SaleFormItem[];
     paymentMethod: 'cash' | 'card' | 'mobile';
+    customerId?: string;
     transactionId?: string;
     notes?: string;
 }

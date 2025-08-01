@@ -1,6 +1,7 @@
 import { Schema, model, Document, Types } from 'mongoose';
 import { IDrug } from './drug.model';
 import { IUser } from '../types/auth.types';
+import { ICustomer } from './customer.model';
 
 // Interface for a single item in a sale
 export interface ISaleItem {
@@ -14,7 +15,7 @@ export interface ISale extends Document {
     items: ISaleItem[];
     totalAmount: number;
     soldBy: Types.ObjectId | IUser;
-    // customer?: Types.ObjectId | ICustomer; // Removed customer reference
+    customer?: Types.ObjectId | ICustomer; // Added customer reference
     paymentMethod: 'cash' | 'card' | 'mobile';
     transactionId?: string; // For card or mobile payments
     notes?: string; // Optional notes about the sale
@@ -59,10 +60,10 @@ const saleSchema = new Schema<ISale>(
             ref: 'User',
             required: true,
         },
-        // customer: {
-        //     type: Schema.Types.ObjectId,
-        //     ref: 'Customer',
-        // },
+        customer: {
+            type: Schema.Types.ObjectId,
+            ref: 'Customer',
+        },
         paymentMethod: {
             type: String,
             enum: ['cash', 'card', 'mobile'],
