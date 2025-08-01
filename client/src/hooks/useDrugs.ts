@@ -63,7 +63,7 @@ export const useDrugs = (
                       brand: drug.brand || '',
                       category: drug.category || '',
                       price: drug.price ?? 0,
-                      stock: drug.stock ?? 0,
+                      quantity: drug.quantity ?? 0,
                       expiryDate: drug.expiryDate || '',
                       requiresPrescription: !!drug.requiresPrescription,
                       createdAt: drug.createdAt || '',

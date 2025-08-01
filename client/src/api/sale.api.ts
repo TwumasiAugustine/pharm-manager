@@ -14,6 +14,7 @@ const saleApi = {
 
     async getSaleById(id: string): Promise<Sale> {
         const res = await api.get(`/sales/${id}`);
+        console.log('Sale fetched:', res.data.data);
         return res.data.data;
     },
 

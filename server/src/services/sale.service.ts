@@ -77,21 +77,39 @@ export class SaleService {
         endDate?: string;
     }) {
         const query: any = {};
+
+        // Ensure today's sales are included
+        const today = new Date();
+        const startOfToday = new Date(
+            today.getFullYear(),
+            today.getMonth(),
+            today.getDate(),
+        );
+        query.createdAt = { $gte: startOfToday };
+
         if (startDate || endDate) {
-            query.createdAt = {};
+            query.createdAt = query.createdAt || {};
             if (startDate) query.createdAt.$gte = new Date(startDate);
             if (endDate) query.createdAt.$lte = new Date(endDate);
         }
+
         const sales = await Sale.find(query)
             .populate('items.drug')
             .populate('soldBy', 'name')
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit);
+
         const total = await Sale.countDocuments(query);
+
         // Map _id to id for each sale and nested objects
         const mappedSales = sales.map((sale) => {
-            const saleObj = sale.toObject() as { _id: Types.ObjectId; items: any[]; soldBy: any; [key: string]: any };
+            const saleObj = sale.toObject() as {
+                _id: Types.ObjectId;
+                items: any[];
+                soldBy: any;
+                [key: string]: any;
+            };
             return {
                 ...saleObj,
                 id: saleObj._id.toString(),
@@ -101,7 +119,9 @@ export class SaleService {
                         item.drug && typeof item.drug === 'object'
                             ? {
                                   ...item.drug,
-                                  id: item.drug._id?.toString?.() || item.drug.id,
+                                  id:
+                                      item.drug._id?.toString?.() ||
+                                      item.drug.id,
                               }
                             : item.drug,
                 })),
@@ -109,13 +129,25 @@ export class SaleService {
                     saleObj.soldBy && typeof saleObj.soldBy === 'object'
                         ? {
                               ...saleObj.soldBy,
-                              id: saleObj.soldBy._id?.toString?.() || saleObj.soldBy._id,
+                              id:
+                                  saleObj.soldBy._id?.toString?.() ||
+                                  saleObj.soldBy._id,
                           }
                         : saleObj.soldBy,
             };
         });
+
+        // Group sales by date
+        const groupedSales = mappedSales.reduce((acc, sale) => {
+            const date = new Date(sale.createdAt).toDateString();
+            if (!acc[date]) acc[date] = [];
+            acc[date].push(sale);
+            return acc;
+        }, {});
+
         return {
             data: mappedSales,
+            groupedData: groupedSales,
             pagination: {
                 total,
                 page,
@@ -157,7 +189,9 @@ export class SaleService {
                 saleObj.soldBy && typeof saleObj.soldBy === 'object'
                     ? {
                           ...saleObj.soldBy,
-                          id: saleObj.soldBy._id?.toString?.() || saleObj.soldBy._id,
+                          id:
+                              saleObj.soldBy._id?.toString?.() ||
+                              saleObj.soldBy._id,
                       }
                     : saleObj.soldBy,
         };

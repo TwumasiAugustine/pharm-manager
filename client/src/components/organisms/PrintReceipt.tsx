@@ -4,12 +4,16 @@ import PHARMACY_CONFIG from '../../config/pharmacy';
 import type { Sale, SaleItem } from '../../types/sale.types';
 import { Button } from '../atoms/Button';
 import { FaPrint } from 'react-icons/fa';
+import { useDrugs } from '../../hooks/useDrugs';
 
 interface PrintReceiptProps {
     sale: Sale;
 }
 
 const PrintReceipt: React.FC<PrintReceiptProps> = ({ sale }) => {
+    const { data: drugsResponse } = useDrugs();
+    const drugs = drugsResponse?.drugs || [];
+
     const handlePrint = () => {
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
@@ -23,7 +27,34 @@ const PrintReceipt: React.FC<PrintReceiptProps> = ({ sale }) => {
       <html>
       <head>
           <title>Sale Receipt - ${saleDate}</title>
-                      <!-- Items will be rendered in the Purchased Items table below -->
+          <style>
+              body { font-family: 'Courier New', monospace; margin: 20px; color: #333; }
+              .receipt-container { max-width: 800px; margin: auto; border: 1px solid #ccc; padding: 20px; }
+              .receipt-header { text-align: center; margin-bottom: 20px; }
+              .pharmacy-name { font-size: 24px; font-weight: bold; }
+              .pharmacy-details { font-size: 12px; }
+              .receipt-title { font-size: 20px; font-weight: bold; margin: 20px 0; border-top: 1px dashed #333; border-bottom: 1px dashed #333; padding: 10px 0; }
+              .transaction-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
+              .info-group { width: 48%; }
+              .section-title { font-weight: bold; border-bottom: 1px solid #333; margin-bottom: 10px; padding-bottom: 5px; }
+              .info-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+              .info-label { font-weight: bold; }
+              table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+              th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
+              th { font-weight: bold; }
+              .text-right { text-align: right; }
+              .total-section { margin-top: 20px; }
+              .total-row { font-weight: bold; border-top: 2px solid #333; }
+              .receipt-footer { text-align: center; margin-top: 20px; font-size: 12px; }
+          </style>
+      </head>
+      <body>
+          <div class="receipt-container">
+              <div class="receipt-header">
+                  <div class="pharmacy-name">${PHARMACY_CONFIG.name}</div>
+                  <div class="pharmacy-details">${PHARMACY_CONFIG.address} | ${
+            PHARMACY_CONFIG.contact
+        }</div>
                   <div class="pharmacy-details">Reg No: ${
                       PHARMACY_CONFIG.registrationNumber
                   } | Tax ID: ${PHARMACY_CONFIG.taxId}</div>
@@ -95,28 +126,6 @@ const PrintReceipt: React.FC<PrintReceiptProps> = ({ sale }) => {
                       `,
                           )
                           .join('')}
-                      <tr class="total-row">
-                          <td colspan="5" class="text-right">Subtotal:</td>
-                          <td class="text-right">$${sale.totalAmount.toFixed(
-                              2,
-                          )}</td>
-                      </tr>
-                      <tr>
-                          <td colspan="5" class="text-right">Tax (0.0%):</td>
-                          <td class="text-right">$${(0).toFixed(2)}</td>
-                      </tr>
-                      <tr>
-                          <td colspan="5" class="text-right">Discount:</td>
-                          <td class="text-right">$${(0).toFixed(2)}</td>
-                      </tr>
-                      <tr class="total-row">
-                          <td colspan="5" class="text-right">Total:</td>
-                          <td class="text-right">$${sale.totalAmount.toFixed(
-                              2,
-                          )}</td>
-                      </tr>
-                  </tbody>
-              </table>
                       <tr class="total-row">
                           <td colspan="5" class="text-right">Subtotal:</td>
                           <td class="text-right">$${sale.totalAmount.toFixed(

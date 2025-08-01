@@ -194,7 +194,7 @@ function AppContent() {
                 const data = await response.json();
 
                 if (
-                    data.isFirstSetup &&
+                    !data.isFirstSetup &&
                     window.location.pathname !== '/pharmacy-setup'
                 ) {
                     window.location.href = '/pharmacy-setup';

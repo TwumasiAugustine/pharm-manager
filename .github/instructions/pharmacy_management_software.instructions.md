@@ -22,3 +22,4 @@ Maintain consistent code style and structure across the project. Follow these gu
 19. **Folder Structure**: Maintain a modular folder structure for both frontend and backend, ensuring clear separation of concerns (e.g., controllers, services, routes, utils, types, middlewares).
 20. **Bug Fixes**: Always check `client` and `server` to find the root cause of bugs and fix them in the appropriate place such as `hooks`, `api` etc. Do not suggest code that has been deleted or is no longer relevant.
 21. **Break Larger Components and Functions**: If a component or function is becoming too large or complex, break it down into smaller, reusable components or functions. This will improve readability, maintainability, and testability.
+22. **Read Codebase**: Always read the codebase to understand existing patterns and practices before making changes. This will help maintain consistency and avoid introducing new issues.
