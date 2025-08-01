@@ -16,7 +16,7 @@ import { useSafeNotify } from '../utils/useSafeNotify';
  * Hook for fetching a paginated list of customers
  */
 export const useCustomers = (
-    params: { page?: number; limit?: number } = {},
+    params: { page?: number; limit?: number; search?: string } = {},
 ): QueryResultWithPagination<PaginatedCustomersResponse, Error> => {
     const [searchQuery, setSearchQuery] = React.useState<string>('');
     const [page, setPage] = React.useState<number>(params.page || 1);

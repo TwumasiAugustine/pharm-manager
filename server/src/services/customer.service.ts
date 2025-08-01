@@ -78,4 +78,55 @@ export class CustomerService {
         if (!customer) throw new NotFoundError('Customer not found');
         return customer;
     }
+
+    /**
+     * Search for customers by name, phone, or email
+     * @param query - The search query string
+     * @returns Array of matching customers
+     */
+    async searchCustomers(query: string) {
+        const customers = await Customer.find({
+            $or: [
+                { name: { $regex: query, $options: 'i' } },
+                { phone: { $regex: query, $options: 'i' } },
+                { email: { $regex: query, $options: 'i' } },
+            ],
+        }).limit(20);
+
+        return { customers };
+    }
+
+    /**
+     * Update an existing customer
+     * @param id - The ID of the customer to update
+     * @param data - The updated customer data
+     * @returns The updated customer object or null if not found
+     */
+    async updateCustomer(
+        id: string,
+        data: {
+            name?: string;
+            phone?: string;
+            email?: string;
+            address?: string;
+        },
+    ) {
+        const customer = await Customer.findByIdAndUpdate(
+            id,
+            { $set: data },
+            { new: true, runValidators: true },
+        );
+
+        return customer;
+    }
+
+    /**
+     * Delete a customer
+     * @param id - The ID of the customer to delete
+     * @returns true if deleted, false if not found
+     */
+    async deleteCustomer(id: string) {
+        const result = await Customer.deleteOne({ _id: id });
+        return result.deletedCount > 0;
+    }
 }

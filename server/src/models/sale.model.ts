@@ -87,4 +87,3 @@ saleSchema.index({ customer: 1 });
 saleSchema.index({ createdAt: -1 });
 
 export const Sale = model<ISale>('Sale', saleSchema);
-saleSchema.index({ createdAt: -1 });

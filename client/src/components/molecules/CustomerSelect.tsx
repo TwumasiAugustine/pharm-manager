@@ -1,18 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCustomers, useCreateCustomer } from '../../hooks/useCustomers';
 import type { Customer } from '../../types/customer.types';
+import { useDebounce } from '../../hooks/useDebounce';
+import { SearchBar } from './SearchBar';
 
+/**
+ * Props for the CustomerSelect component
+ */
 interface CustomerSelectProps {
+    /** Function to call when customer selection changes */
     onChange: (customerId: string | undefined) => void;
+    /** Currently selected customer ID */
     value?: string;
 }
 
+/**
+ * Customer selection component with search and creation functionality
+ * Allows users to search for existing customers or create new ones
+ */
 export const CustomerSelect: React.FC<CustomerSelectProps> = ({
     onChange,
     value,
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
+    const [recentlyCreatedCustomer, setRecentlyCreatedCustomer] =
+        useState<Customer | null>(null);
     const [newCustomer, setNewCustomer] = useState({
         name: '',
         phone: '',
@@ -20,36 +33,51 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
         address: '',
     });
 
+    // Debounce search term to reduce API calls
+    const debouncedSearchTerm = useDebounce(searchTerm, 400);
+
     // Fetch customers with search
     const { data, isLoading } = useCustomers({
         page: 1,
         limit: 10,
+        search: debouncedSearchTerm,
     });
 
     // Mutation for creating new customer
     const createCustomer = useCreateCustomer();
 
-    // Filter customers based on search term
-    const filteredCustomers = React.useMemo(() => {
-        if (!data?.customers) return [];
-        if (!searchTerm) return data.customers;
+    // Get customers from the API response
+    const customers = data?.customers || [];
 
-        return data.customers.filter(
-            (customer) =>
-                customer.name
-                    .toLowerCase()
-                    .includes(searchTerm.toLowerCase()) ||
-                customer.phone.includes(searchTerm),
-        );
-    }, [data?.customers, searchTerm]);
+    // Clear recently created customer when search term changes
+    useEffect(() => {
+        if (searchTerm) {
+            setRecentlyCreatedCustomer(null);
+        }
+    }, [searchTerm]);
 
+    /**
+     * Handle selecting a customer from the list
+     * Sets the selected customer ID and clears the search term
+     * @param customerId - The ID of the customer to select
+     */
     const handleSelectCustomer = (customerId: string) => {
         onChange(customerId);
+        setSearchTerm(''); // Clear search when customer is selected
     };
 
-    const handleCreateNewCustomer = async (e: React.FormEvent) => {
-        e.preventDefault();
+    // Clear recently created customer when selected customer changes
+    useEffect(() => {
+        if (value && value !== recentlyCreatedCustomer?.id) {
+            setRecentlyCreatedCustomer(null);
+        }
+    }, [value, recentlyCreatedCustomer]);
 
+    /**
+     * Handle creating a new customer
+     * Validates required fields, creates the customer, selects it, and resets form
+     */
+    const handleCreateNewCustomer = async () => {
         if (!newCustomer.name || !newCustomer.phone) {
             alert('Name and phone are required');
             return;
@@ -63,15 +91,32 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
                 address: newCustomer.address,
             });
 
+            // Store the created customer to display it exclusively
+            setRecentlyCreatedCustomer({
+                id: createdCustomer.id,
+                name: newCustomer.name,
+                phone: newCustomer.phone,
+                email: newCustomer.email || '',
+                address: newCustomer.address || '',
+                purchases: [], // Add empty purchases array
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            });
+
             onChange(createdCustomer.id);
             setShowNewCustomerForm(false);
             setNewCustomer({ name: '', phone: '', email: '', address: '' });
+            setSearchTerm(''); // Clear search term
         } catch (error) {
             console.error('Error creating customer:', error);
+            alert('Failed to create customer. Please try again.');
         }
     };
 
-    // Find selected customer
+    /**
+     * Find the currently selected customer from the customers list
+     * Returns null if no customer is selected or customers aren't loaded
+     */
     const selectedCustomer = React.useMemo(() => {
         if (!value || !data?.customers) return null;
         return data.customers.find((c) => c.id === value);
@@ -86,99 +131,105 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
             {showNewCustomerForm ? (
                 <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
                     <h3 className="text-sm font-semibold mb-2">New Customer</h3>
-                    <form onSubmit={handleCreateNewCustomer}>
-                        <div className="space-y-2">
-                            <div>
-                                <label className="block text-xs">Name *</label>
-                                <input
-                                    type="text"
-                                    value={newCustomer.name}
-                                    onChange={(e) =>
-                                        setNewCustomer({
-                                            ...newCustomer,
-                                            name: e.target.value,
-                                        })
-                                    }
-                                    className="w-full px-3 py-1 border rounded"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs">Phone *</label>
-                                <input
-                                    type="text"
-                                    value={newCustomer.phone}
-                                    onChange={(e) =>
-                                        setNewCustomer({
-                                            ...newCustomer,
-                                            phone: e.target.value,
-                                        })
-                                    }
-                                    className="w-full px-3 py-1 border rounded"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs">Email</label>
-                                <input
-                                    type="email"
-                                    value={newCustomer.email}
-                                    onChange={(e) =>
-                                        setNewCustomer({
-                                            ...newCustomer,
-                                            email: e.target.value,
-                                        })
-                                    }
-                                    className="w-full px-3 py-1 border rounded"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs">Address</label>
-                                <input
-                                    type="text"
-                                    value={newCustomer.address}
-                                    onChange={(e) =>
-                                        setNewCustomer({
-                                            ...newCustomer,
-                                            address: e.target.value,
-                                        })
-                                    }
-                                    className="w-full px-3 py-1 border rounded"
-                                />
-                            </div>
-                            <div className="flex justify-end space-x-2 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setShowNewCustomerForm(false)
-                                    }
-                                    className="px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                                    disabled={createCustomer.isPending}
-                                >
-                                    {createCustomer.isPending
-                                        ? 'Saving...'
-                                        : 'Save Customer'}
-                                </button>
-                            </div>
+                    <div className="space-y-2">
+                        <div>
+                            <label className="block text-xs">Name *</label>
+                            <input
+                                type="text"
+                                value={newCustomer.name}
+                                onChange={(e) =>
+                                    setNewCustomer({
+                                        ...newCustomer,
+                                        name: e.target.value,
+                                    })
+                                }
+                                placeholder="Customer name"
+                                title="Customer name"
+                                className="w-full px-3 py-1 border rounded"
+                                required
+                            />
                         </div>
-                    </form>
+                        <div>
+                            <label className="block text-xs">Phone *</label>
+                            <input
+                                type="text"
+                                value={newCustomer.phone}
+                                onChange={(e) =>
+                                    setNewCustomer({
+                                        ...newCustomer,
+                                        phone: e.target.value,
+                                    })
+                                }
+                                placeholder="Customer phone number"
+                                title="Customer phone number"
+                                className="w-full px-3 py-1 border rounded"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs">Email</label>
+                            <input
+                                type="email"
+                                value={newCustomer.email}
+                                onChange={(e) =>
+                                    setNewCustomer({
+                                        ...newCustomer,
+                                        email: e.target.value,
+                                    })
+                                }
+                                placeholder="Customer email address"
+                                title="Customer email address"
+                                className="w-full px-3 py-1 border rounded"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs">Address</label>
+                            <input
+                                type="text"
+                                value={newCustomer.address}
+                                onChange={(e) =>
+                                    setNewCustomer({
+                                        ...newCustomer,
+                                        address: e.target.value,
+                                    })
+                                }
+                                placeholder="Customer address"
+                                title="Customer address"
+                                className="w-full px-3 py-1 border rounded"
+                            />
+                        </div>
+                        <div className="flex justify-end space-x-2 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowNewCustomerForm(false)}
+                                className="px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleCreateNewCustomer}
+                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                                disabled={createCustomer.isPending}
+                            >
+                                {createCustomer.isPending
+                                    ? 'Saving...'
+                                    : 'Save Customer'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             ) : (
                 <div>
                     <div className="flex space-x-2 mb-2">
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Search customers..."
-                            className="flex-1 px-3 py-1 border rounded"
-                        />
+                        <div className="flex-1">
+                            <SearchBar
+                                onSearch={setSearchTerm}
+                                placeholder="Search customers..."
+                                initialValue={searchTerm}
+                                className="w-full"
+                            />
+                        </div>
                         <button
                             onClick={() => setShowNewCustomerForm(true)}
                             className="px-3 py-1 bg-green-600 text-white text-sm rounded"
@@ -207,38 +258,105 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
                     )}
 
                     {!selectedCustomer && (
-                        <div className="max-h-48 overflow-y-auto border rounded-md">
-                            {isLoading ? (
-                                <div className="p-2 text-center text-gray-500">
-                                    Loading customers...
-                                </div>
-                            ) : filteredCustomers.length === 0 ? (
-                                <div className="p-2 text-center text-gray-500">
-                                    No customers found
-                                </div>
-                            ) : (
-                                <ul className="divide-y">
-                                    {filteredCustomers.map((customer) => (
+                        <>
+                            <div className="text-xs text-blue-600 mb-2">
+                                <span role="img" aria-label="info">
+                                    ℹ️
+                                </span>{' '}
+                                Select a customer to add to this sale or create
+                                a new one
+                            </div>
+                            <div className="max-h-48 overflow-y-auto border rounded-md">
+                                {isLoading ? (
+                                    <div className="p-2 text-center text-gray-500">
+                                        {debouncedSearchTerm
+                                            ? `Searching for "${debouncedSearchTerm}"...`
+                                            : 'Loading customers...'}
+                                    </div>
+                                ) : searchTerm && debouncedSearchTerm ? (
+                                    // When actively searching, show search results
+                                    customers.length === 0 ? (
+                                        <div className="p-2 text-center text-gray-500">
+                                            No customers found for "
+                                            {debouncedSearchTerm}"
+                                        </div>
+                                    ) : (
+                                        <ul className="divide-y">
+                                            {customers.map((customer) => (
+                                                <li
+                                                    key={customer.id}
+                                                    onClick={() =>
+                                                        handleSelectCustomer(
+                                                            customer.id,
+                                                        )
+                                                    }
+                                                    className="p-2 hover:bg-gray-100 cursor-pointer"
+                                                >
+                                                    <div className="font-medium">
+                                                        {customer.name}
+                                                    </div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {customer.phone}
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )
+                                ) : recentlyCreatedCustomer && !searchTerm ? (
+                                    // Show only recently created customer if exists and no search term
+                                    <ul className="divide-y">
                                         <li
-                                            key={customer.id}
+                                            key={recentlyCreatedCustomer.id}
                                             onClick={() =>
                                                 handleSelectCustomer(
-                                                    customer.id,
+                                                    recentlyCreatedCustomer.id,
                                                 )
                                             }
-                                            className="p-2 hover:bg-gray-100 cursor-pointer"
+                                            className="p-2 hover:bg-gray-100 cursor-pointer bg-green-50"
                                         >
                                             <div className="font-medium">
-                                                {customer.name}
+                                                {recentlyCreatedCustomer.name}
+                                                <span className="ml-2 text-xs text-green-600">
+                                                    New
+                                                </span>
                                             </div>
                                             <div className="text-sm text-gray-500">
-                                                {customer.phone}
+                                                {recentlyCreatedCustomer.phone}
                                             </div>
                                         </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
+                                    </ul>
+                                ) : customers.length === 0 ? (
+                                    <div className="p-2 text-center text-gray-500">
+                                        {searchTerm
+                                            ? `No customers found for "${searchTerm}"`
+                                            : 'No customers found'}
+                                    </div>
+                                ) : (
+                                    <ul className="divide-y">
+                                        {customers
+                                            .slice(0, 10)
+                                            .map((customer) => (
+                                                <li
+                                                    key={customer.id}
+                                                    onClick={() =>
+                                                        handleSelectCustomer(
+                                                            customer.id,
+                                                        )
+                                                    }
+                                                    className="p-2 hover:bg-gray-100 cursor-pointer"
+                                                >
+                                                    <div className="font-medium">
+                                                        {customer.name}
+                                                    </div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {customer.phone}
+                                                    </div>
+                                                </li>
+                                            ))}
+                                    </ul>
+                                )}
+                            </div>
+                        </>
                     )}
                 </div>
             )}

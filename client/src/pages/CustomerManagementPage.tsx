@@ -112,10 +112,11 @@ const CustomerManagementPage: React.FC = () => {
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                                         Name *
                                     </label>
                                     <input
+                                    id="name"
                                         type="text"
                                         name="name"
                                         value={formData.name}
@@ -125,10 +126,11 @@ const CustomerManagementPage: React.FC = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
                                         Phone *
                                     </label>
                                     <input
+                                    id="phone"
                                         type="text"
                                         name="phone"
                                         value={formData.phone}
@@ -138,10 +140,11 @@ const CustomerManagementPage: React.FC = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                                         Email
                                     </label>
                                     <input
+                                    id="email"
                                         type="email"
                                         name="email"
                                         value={formData.email || ''}
@@ -150,10 +153,11 @@ const CustomerManagementPage: React.FC = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
                                         Address
                                     </label>
                                     <input
+                                    id="address"
                                         type="text"
                                         name="address"
                                         value={formData.address || ''}

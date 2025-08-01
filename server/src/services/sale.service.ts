@@ -14,6 +14,8 @@ export class SaleService {
 
     /**
      * Create a new sale, update drug stock, and return the created sale
+     * @param data - Sale data including items, payment info, and customer details
+     * @returns The newly created sale object
      */
     async createSale(data: {
         items: { drugId: string; quantity: number }[];
@@ -64,15 +66,18 @@ export class SaleService {
                 ],
                 { session },
             );
-            await session.commitTransaction();
 
-            // Update customer purchases if customerId provided
+            // Update customer purchases if customerId provided - within the same transaction
             if (data.customerId) {
-                await this.customerService.addSaleToCustomer(
+                // Update the customer document within the transaction
+                await Customer.findByIdAndUpdate(
                     data.customerId,
-                    sale[0]._id.toString(),
+                    { $addToSet: { purchases: sale[0]._id } },
+                    { session },
                 );
             }
+
+            await session.commitTransaction();
 
             return sale[0];
         } catch (err) {
@@ -84,7 +89,9 @@ export class SaleService {
     }
 
     /**
-     * Get paginated sales list
+     * Get paginated sales list with optional date filtering
+     * @param params - Parameters for filtering and pagination
+     * @returns Paginated and grouped sales data
      */
     async getSales({
         page = 1,
@@ -99,19 +106,20 @@ export class SaleService {
     }) {
         const query: any = {};
 
-        // Ensure today's sales are included
-        const today = new Date();
-        const startOfToday = new Date(
-            today.getFullYear(),
-            today.getMonth(),
-            today.getDate(),
-        );
-        query.createdAt = { $gte: startOfToday };
-
+        // Date filtering
         if (startDate || endDate) {
-            query.createdAt = query.createdAt || {};
+            query.createdAt = {};
             if (startDate) query.createdAt.$gte = new Date(startDate);
             if (endDate) query.createdAt.$lte = new Date(endDate);
+        } else {
+            // Default to showing today's sales if no date range is specified
+            const today = new Date();
+            const startOfToday = new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                today.getDate(),
+            );
+            query.createdAt = { $gte: startOfToday };
         }
 
         const sales = await Sale.find(query)
@@ -128,22 +136,36 @@ export class SaleService {
         const mappedSales = sales.map((sale) => {
             const saleObj = sale.toObject() as {
                 _id: Types.ObjectId;
-                items: any[];
-                soldBy: any;
+                items: {
+                    drug: { _id: Types.ObjectId; [key: string]: any } | string;
+                    quantity: number;
+                    priceAtSale: number;
+                    [key: string]: any;
+                }[];
+                soldBy:
+                    | { _id: Types.ObjectId; name: string; [key: string]: any }
+                    | string;
+                customer?: {
+                    _id: Types.ObjectId;
+                    name: string;
+                    phone: string;
+                    [key: string]: any;
+                };
                 [key: string]: any;
             };
             return {
                 ...saleObj,
                 id: saleObj._id.toString(),
-                items: saleObj.items.map((item: any) => ({
+                items: saleObj.items.map((item) => ({
                     ...item,
                     drug:
                         item.drug && typeof item.drug === 'object'
                             ? {
                                   ...item.drug,
                                   id:
-                                      item.drug._id?.toString?.() ||
-                                      item.drug.id,
+                                      item.drug._id?.toString() ||
+                                      (item.drug as any).id ||
+                                      '',
                               }
                             : item.drug,
                 })),
@@ -151,21 +173,22 @@ export class SaleService {
                     saleObj.soldBy && typeof saleObj.soldBy === 'object'
                         ? {
                               ...saleObj.soldBy,
-                              id:
-                                  saleObj.soldBy._id?.toString?.() ||
-                                  saleObj.soldBy._id,
+                              id: saleObj.soldBy._id?.toString() || '',
                           }
                         : saleObj.soldBy,
             };
         });
 
         // Group sales by date
-        const groupedSales = mappedSales.reduce((acc, sale) => {
-            const date = new Date(sale.createdAt).toDateString();
-            if (!acc[date]) acc[date] = [];
-            acc[date].push(sale);
-            return acc;
-        }, {});
+        const groupedSales = mappedSales.reduce<Record<string, any[]>>(
+            (acc, sale) => {
+                const date = new Date(sale.createdAt).toDateString();
+                if (!acc[date]) acc[date] = [];
+                acc[date].push(sale);
+                return acc;
+            },
+            {},
+        );
 
         return {
             data: mappedSales,
@@ -180,7 +203,10 @@ export class SaleService {
     }
 
     /**
-     * Get sale by ID
+     * Get sale by ID with populated references
+     * @param id - The ID of the sale to retrieve
+     * @returns The sale with populated drug, customer, and soldBy fields
+     * @throws NotFoundError if the sale doesn't exist
      */
     async getSaleById(id: string) {
         const sale = await Sale.findById(id)
@@ -191,21 +217,36 @@ export class SaleService {
         // Map _id to id for sale and nested objects
         const saleObj = sale.toObject() as {
             _id: Types.ObjectId;
-            items: any[];
-            soldBy: any;
-            customer?: any;
+            items: {
+                drug: { _id: Types.ObjectId; [key: string]: any } | string;
+                quantity: number;
+                priceAtSale: number;
+                [key: string]: any;
+            }[];
+            soldBy:
+                | { _id: Types.ObjectId; name: string; [key: string]: any }
+                | string;
+            customer?: {
+                _id: Types.ObjectId;
+                name: string;
+                phone: string;
+                [key: string]: any;
+            };
             [key: string]: any;
         };
         const mappedSale = {
             ...saleObj,
             id: saleObj._id.toString(),
-            items: saleObj.items.map((item: any) => ({
+            items: saleObj.items.map((item) => ({
                 ...item,
                 drug:
                     item.drug && typeof item.drug === 'object'
                         ? {
                               ...item.drug,
-                              id: item.drug._id?.toString?.() || item.drug.id,
+                              id:
+                                  item.drug._id?.toString() ||
+                                  (item.drug as any).id ||
+                                  '',
                           }
                         : item.drug,
             })),
@@ -213,18 +254,14 @@ export class SaleService {
                 saleObj.soldBy && typeof saleObj.soldBy === 'object'
                     ? {
                           ...saleObj.soldBy,
-                          id:
-                              saleObj.soldBy._id?.toString?.() ||
-                              saleObj.soldBy._id,
+                          id: saleObj.soldBy._id?.toString() || '',
                       }
                     : saleObj.soldBy,
             customer:
                 saleObj.customer && typeof saleObj.customer === 'object'
                     ? {
                           ...saleObj.customer,
-                          id:
-                              saleObj.customer._id?.toString?.() ||
-                              saleObj.customer._id,
+                          id: saleObj.customer._id?.toString() || '',
                       }
                     : undefined,
         };
