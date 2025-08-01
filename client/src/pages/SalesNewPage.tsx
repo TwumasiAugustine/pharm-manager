@@ -16,6 +16,7 @@ import { getErrorMessage } from '../utils/error';
 import { SearchBar } from '../components/molecules/SearchBar';
 import { useDebounce } from '../hooks/useDebounce';
 import { CustomerSelect } from '../components/molecules/CustomerSelect';
+import { FaShoppingCart,  FaPills, FaUser } from 'react-icons/fa';
 
 const SalesNewPage: React.FC = () => {
     const navigate = useNavigate();
@@ -91,7 +92,10 @@ const SalesNewPage: React.FC = () => {
     return (
         <DashboardLayout>
             <div className="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
-                <h2 className="text-2xl font-semibold mb-6">New Sale</h2>
+                <h2 className="text-2xl font-semibold mb-6 flex items-center">
+                    <FaShoppingCart className="mr-2 text-green-500" />
+                    New Sale
+                </h2>
                 {mutation.error && (
                     <Alert variant="destructive" className="mb-4">
                         <AlertTitle>Error</AlertTitle>
@@ -111,17 +115,24 @@ const SalesNewPage: React.FC = () => {
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="space-y-6">
                         {/* Customer selection */}
-                        <CustomerSelect
-                            onChange={(customerId) => {
-                                setSelectedCustomerId(customerId);
-                                setValue('customerId', customerId);
-                            }}
-                            value={selectedCustomerId}
-                        />
+                        <div className="mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                                <FaUser className="mr-1 text-blue-500" />
+                                Customer
+                            </label>
+                            <CustomerSelect
+                                onChange={(customerId) => {
+                                    setSelectedCustomerId(customerId);
+                                    setValue('customerId', customerId);
+                                }}
+                                value={selectedCustomerId}
+                            />
+                        </div>
 
                         {/* Drug SearchBar and selection for first item only */}
                         <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">
+                            <label className="block text-sm font-medium text-gray-700 flex items-center">
+                                <FaPills className="mr-1 text-blue-500" />
                                 Search and select drug
                             </label>
                             <SearchBar
@@ -256,7 +267,11 @@ const SalesNewPage: React.FC = () => {
                             <Button
                                 type="submit"
                                 isLoading={mutation.isPending}
+                                className="flex items-center"
                             >
+                                {!mutation.isPending && (
+                                    <FaShoppingCart className="mr-2" />
+                                )}
                                 Save Sale
                             </Button>
                         </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import {useNavigate} from 'react-router-dom'
 import { useCustomers, useCreateCustomer } from '../hooks/useCustomers';
 import { Table } from '../components/molecules/Table';
 import type { TableColumn } from '../components/molecules/Table';
@@ -7,6 +8,7 @@ import { SearchBar } from '../components/molecules/SearchBar';
 import type { Customer, CreateCustomerRequest } from '../types/customer.types';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useDebounce } from '../hooks/useDebounce';
+import { FaUsers, FaUserPlus, FaEye } from 'react-icons/fa';
 
 const CustomerManagementPage: React.FC = () => {
     const [showForm, setShowForm] = useState(false);
@@ -18,6 +20,7 @@ const CustomerManagementPage: React.FC = () => {
     });
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedSearchTerm = useDebounce(searchTerm, 500); // Debounce for 500ms
+    const navigate = useNavigate();
 
     const {
         data: customers,
@@ -67,7 +70,8 @@ const CustomerManagementPage: React.FC = () => {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    if (isLoading) {
+    // Only show full-page loading on initial load, not during search
+    if (isLoading && !debouncedSearchTerm) {
         return (
             <div className="flex justify-center items-center h-40">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
@@ -95,28 +99,42 @@ const CustomerManagementPage: React.FC = () => {
         <DashboardLayout>
             <div className="space-y-6">
                 <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-bold">Customer Management</h1>
+                    <h1 className="text-2xl font-bold flex items-center">
+                        <FaUsers className="mr-2 text-blue-500" />
+                        Customer Management
+                    </h1>
                     <button
                         onClick={() => setShowForm(!showForm)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
                     >
-                        {showForm ? 'Cancel' : 'Add New Customer'}
+                        {showForm ? (
+                            'Cancel'
+                        ) : (
+                            <>
+                                <FaUserPlus className="mr-2" />
+                                Add New Customer
+                            </>
+                        )}
                     </button>
                 </div>
 
                 {showForm && (
                     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <h2 className="text-lg font-semibold mb-4">
+                        <h2 className="text-lg font-semibold mb-4 flex items-center">
+                            <FaUserPlus className="mr-2 text-blue-500" />
                             New Customer
                         </h2>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label
+                                        htmlFor="name"
+                                        className="block text-sm font-medium text-gray-700 mb-1"
+                                    >
                                         Name *
                                     </label>
                                     <input
-                                    id="name"
+                                        id="name"
                                         type="text"
                                         name="name"
                                         value={formData.name}
@@ -126,11 +144,14 @@ const CustomerManagementPage: React.FC = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label
+                                        htmlFor="phone"
+                                        className="block text-sm font-medium text-gray-700 mb-1"
+                                    >
                                         Phone *
                                     </label>
                                     <input
-                                    id="phone"
+                                        id="phone"
                                         type="text"
                                         name="phone"
                                         value={formData.phone}
@@ -140,11 +161,14 @@ const CustomerManagementPage: React.FC = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label
+                                        htmlFor="email"
+                                        className="block text-sm font-medium text-gray-700 mb-1"
+                                    >
                                         Email
                                     </label>
                                     <input
-                                    id="email"
+                                        id="email"
                                         type="email"
                                         name="email"
                                         value={formData.email || ''}
@@ -153,11 +177,14 @@ const CustomerManagementPage: React.FC = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label
+                                        htmlFor="address"
+                                        className="block text-sm font-medium text-gray-700 mb-1"
+                                    >
                                         Address
                                     </label>
                                     <input
-                                    id="address"
+                                        id="address"
                                         type="text"
                                         name="address"
                                         value={formData.address || ''}
@@ -190,7 +217,8 @@ const CustomerManagementPage: React.FC = () => {
                         initialValue={searchTerm}
                     />
                     {debouncedSearchTerm && isLoading && (
-                        <div className="mt-2 text-sm text-gray-500">
+                        <div className="mt-2 flex items-center text-sm text-gray-500">
+                            <div className="animate-spin h-4 w-4 mr-2 border-2 border-gray-500 border-t-transparent rounded-full"></div>
                             Searching for "{debouncedSearchTerm}"...
                         </div>
                     )}
@@ -198,7 +226,17 @@ const CustomerManagementPage: React.FC = () => {
 
                 {/* Customers Table */}
                 <div className="bg-white p-4 rounded-lg shadow-sm">
-                    {customers?.customers && customers.customers.length > 0 ? (
+                    {debouncedSearchTerm && isLoading ? (
+                        <div className="flex justify-center items-center py-8">
+                            <div className="animate-pulse flex flex-col items-center">
+                                <div className="h-8 w-8 mb-4 rounded-full border-2 border-gray-300 border-t-blue-500 animate-spin"></div>
+                                <p className="text-gray-500">
+                                    Loading search results...
+                                </p>
+                            </div>
+                        </div>
+                    ) : customers?.customers &&
+                      customers.customers.length > 0 ? (
                         <>
                             <Table<Customer>
                                 data={customers.customers}
@@ -222,8 +260,9 @@ const CustomerManagementPage: React.FC = () => {
                                 actions={[
                                     {
                                         label: 'View Details',
+                                        icon: <FaEye />,
                                         onClick: (customer) => {
-                                            window.location.href = `/customers/${customer.id}`;
+                                            navigate(`/customers/${customer.id}`);
                                         },
                                     },
                                 ]}
@@ -242,8 +281,9 @@ const CustomerManagementPage: React.FC = () => {
                         </>
                     ) : (
                         <p className="text-center text-gray-500 my-8">
-                            No customers found. Add your first customer to get
-                            started.
+                            {debouncedSearchTerm
+                                ? `No customers found matching "${debouncedSearchTerm}".`
+                                : 'No customers found. Add your first customer to get started.'}
                         </p>
                     )}
                 </div>

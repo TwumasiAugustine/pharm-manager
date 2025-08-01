@@ -100,18 +100,10 @@ export const useCreateCustomer = () => {
         mutationFn: (data) => customerApi.createCustomer(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
-            notify({
-                title: 'Success',
-                message: 'Customer created successfully',
-                type: 'success',
-            });
+            notify.success('Customer created successfully');
         },
         onError: (error) => {
-            notify({
-                title: 'Error',
-                message: `Failed to create customer: ${error.message}`,
-                type: 'error',
-            });
+            notify.error("Failed to create customer" + (error.message ? `: ${error.message}` : ''));
         },
     });
 };

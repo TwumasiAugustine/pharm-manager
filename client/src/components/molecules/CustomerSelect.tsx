@@ -3,6 +3,10 @@ import { useCustomers, useCreateCustomer } from '../../hooks/useCustomers';
 import type { Customer } from '../../types/customer.types';
 import { useDebounce } from '../../hooks/useDebounce';
 import { SearchBar } from './SearchBar';
+import {
+    FaUserPlus,
+    FaUser
+} from 'react-icons/fa';
 
 /**
  * Props for the CustomerSelect component
@@ -124,16 +128,18 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
 
     return (
         <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-                Customer
-            </label>
-
             {showNewCustomerForm ? (
                 <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                    <h3 className="text-sm font-semibold mb-2">New Customer</h3>
+                    <h3 className="text-sm font-semibold mb-2 flex items-center">
+                        <FaUserPlus className="mr-1 text-blue-500" />
+                        New Customer
+                    </h3>
                     <div className="space-y-2">
                         <div>
-                            <label className="block text-xs">Name *</label>
+                            <label className="block text-xs flex items-center">
+                                <FaUser className="mr-1 text-gray-400" />
+                                Name *
+                            </label>
                             <input
                                 type="text"
                                 value={newCustomer.name}

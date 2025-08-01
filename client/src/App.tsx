@@ -4,6 +4,7 @@ import { useCurrentUser } from './hooks/useAuth';
 import { NotificationProvider } from './context/NotificationContext';
 import { NotificationContainer } from './components/molecules/NotificationContainer';
 import { useAuthStore } from './store/auth.store';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -13,6 +14,7 @@ import DrugsPage from './pages/DrugsPage';
 import EditDrugPage from './pages/EditDrugPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import PharmacySetupPage from './pages/PharmacySetupPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 import SalesListPage from './pages/SalesListPage';
 import SalesNewPage from './pages/SalesNewPage';
@@ -30,6 +32,7 @@ const router = createBrowserRouter([
     {
         path: '/',
         element: <LoginPage />,
+        errorElement: <NotFoundPage />,
     },
     {
         path: '/login',
@@ -99,6 +102,10 @@ const router = createBrowserRouter([
         children: [
             // Admin and Pharmacist routes will go here
         ],
+    },
+    {
+        path: '*',
+        element: <NotFoundPage />,
     },
 ]);
 
@@ -225,7 +232,9 @@ function AppContent() {
 
     return (
         <>
-            <RouterProvider router={router} />
+            <ErrorBoundary>
+                <RouterProvider router={router} />
+            </ErrorBoundary>
             <NotificationContainer />
         </>
     );
