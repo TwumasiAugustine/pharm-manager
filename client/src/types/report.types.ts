@@ -38,7 +38,7 @@ export interface ReportDataItem {
 
 export interface ReportResponse {
     data: ReportDataItem[];
-    summary: ReportSummaryData;
+    summary: ReportSummaryData | null;
     totalRecords: number;
     currentPage: number;
     totalPages: number;

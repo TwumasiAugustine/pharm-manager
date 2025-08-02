@@ -52,7 +52,9 @@ export const useReports = (filters: ReportFilters) => {
     };
 
     return {
-        reportData: reportResponse?.data || [],
+        reportData: Array.isArray(reportResponse?.data)
+            ? reportResponse.data
+            : [],
         reportSummary: reportResponse?.summary || null,
         totalRecords: reportResponse?.totalRecords || 0,
         currentPage: reportResponse?.currentPage || 1,

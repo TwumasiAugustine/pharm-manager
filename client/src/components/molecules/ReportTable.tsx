@@ -13,6 +13,9 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     reportType,
     isLoading,
 }) => {
+    // Defensive check to ensure data is always an array
+    const safeData = Array.isArray(data) ? data : [];
+
     if (isLoading) {
         return (
             <div className="space-y-4">
@@ -33,7 +36,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
         );
     }
 
-    if (!data || data.length === 0) {
+    if (!safeData || safeData.length === 0) {
         return (
             <div className="text-center py-12">
                 <FiPackage className="mx-auto h-12 w-12 text-gray-400 mb-4" />
@@ -260,7 +263,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {data.map((item, index) => (
+                        {safeData.map((item, index) => (
                             <tr
                                 key={item.id || index}
                                 className="hover:bg-gray-50 transition-colors"
@@ -275,12 +278,12 @@ export const ReportTable: React.FC<ReportTableProps> = ({
             {/* Footer with summary */}
             <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
                 <div className="flex justify-between items-center text-sm text-gray-600">
-                    <span>Showing {data.length} records</span>
+                    <span>Showing {safeData.length} records</span>
                     <div className="flex items-center space-x-4">
                         <span>
                             Total Value:{' '}
                             {formatCurrency(
-                                data.reduce(
+                                safeData.reduce(
                                     (sum, item) => sum + item.totalPrice,
                                     0,
                                 ),
@@ -290,7 +293,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                             <span>
                                 Total Profit:{' '}
                                 {formatCurrency(
-                                    data.reduce(
+                                    safeData.reduce(
                                         (sum, item) => sum + item.profit,
                                         0,
                                     ),

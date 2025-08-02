@@ -5,20 +5,62 @@ const API_BASE_URL = '/api/reports';
 export const generateReport = async (
     filters: ReportFilters,
 ): Promise<ReportResponse> => {
-    const response = await fetch(`${API_BASE_URL}/generate`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(filters),
-        credentials: 'include',
-    });
+    try {
+        const response = await fetch(`${API_BASE_URL}/generate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(filters),
+            credentials: 'include',
+        });
 
-    if (!response.ok) {
-        throw new Error(`Failed to generate report: ${response.statusText}`);
+        if (!response.ok) {
+            throw new Error(
+                `Failed to generate report: ${response.statusText}`,
+            );
+        }
+
+        const responseData = await response.json();
+
+        // Handle wrapped API response structure
+        const report = responseData?.data || responseData;
+
+        // Defensive response handling
+        return {
+            data: Array.isArray(report?.data) ? report.data : [],
+            summary: report?.summary || {
+                totalRevenue: 0,
+                totalSales: 0,
+                totalItems: 0,
+                profitMargin: 0,
+                topSellingDrug: '',
+                averageOrderValue: 0,
+                period: { start: '', end: '' },
+            },
+            totalRecords: report?.totalRecords || 0,
+            currentPage: report?.currentPage || 1,
+            totalPages: report?.totalPages || 1,
+        };
+    } catch (error) {
+        console.error('Error generating report:', error);
+        // Return a safe fallback response
+        return {
+            data: [],
+            summary: {
+                totalRevenue: 0,
+                totalSales: 0,
+                totalItems: 0,
+                profitMargin: 0,
+                topSellingDrug: '',
+                averageOrderValue: 0,
+                period: { start: '', end: '' },
+            },
+            totalRecords: 0,
+            currentPage: 1,
+            totalPages: 1,
+        };
     }
-
-    return response.json();
 };
 
 export const exportReport = async (

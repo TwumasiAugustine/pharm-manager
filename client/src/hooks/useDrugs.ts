@@ -36,7 +36,7 @@ export const useDrugs = (
 
     const queryKey = ['drugs', queryParams];
 
-    const query = useQuery<any, Error>({
+    const query = useQuery<PaginatedDrugsResponse, Error>({
         queryKey,
         queryFn: () => drugApi.getDrugs(queryParams),
         staleTime: 5 * 60 * 1000, // 5 minutes
@@ -56,19 +56,23 @@ export const useDrugs = (
         }
         return {
             drugs: Array.isArray(raw.drugs)
-                ? raw.drugs.map((drug: any) => ({
-                      id: drug.id || drug._id || '',
-                      _id: drug._id || '',
-                      name: drug.name || '',
-                      brand: drug.brand || '',
-                      category: drug.category || '',
-                      price: drug.price ?? 0,
-                      quantity: drug.quantity ?? 0,
-                      expiryDate: drug.expiryDate || '',
-                      requiresPrescription: !!drug.requiresPrescription,
-                      createdAt: drug.createdAt || '',
-                      updatedAt: drug.updatedAt || '',
-                  }))
+                ? (raw.drugs as unknown[]).map((drug: unknown) => {
+                      const drugObj = drug as Record<string, unknown>;
+                      return {
+                          id: String(drugObj.id || drugObj._id || ''),
+                          _id: String(drugObj._id || ''),
+                          name: String(drugObj.name || ''),
+                          brand: String(drugObj.brand || ''),
+                          category: String(drugObj.category || ''),
+                          price: Number(drugObj.price) || 0,
+                          quantity: Number(drugObj.quantity) || 0,
+                          expiryDate: String(drugObj.expiryDate || ''),
+                          requiresPrescription: !!drugObj.requiresPrescription,
+                          createdAt: String(drugObj.createdAt || ''),
+                          updatedAt: String(drugObj.updatedAt || ''),
+                          batchNumber: String(drugObj.batchNumber || ''),
+                      };
+                  })
                 : [],
             totalCount: raw.totalCount ?? 0,
             page: raw.page ?? page,
@@ -261,7 +265,7 @@ export const useExpiringDrugs = (days: number) => {
         queryFn: async () => {
             const raw = await drugApi.getExpiringDrugs(days);
             // Accepts { drugs: Drug[] } or Drug[] directly
-            let drugsArr: any[] = [];
+            let drugsArr: Record<string, unknown>[] = [];
             if (
                 raw &&
                 typeof raw === 'object' &&
@@ -272,20 +276,20 @@ export const useExpiringDrugs = (days: number) => {
             } else if (Array.isArray(raw)) {
                 drugsArr = raw;
             }
-            return drugsArr.map((drug: any) => ({
-                id: drug.id || drug._id || '',
-                _id: drug._id || '',
-                name: drug.name || '',
-                brand: drug.brand || '',
-                category: drug.category || '',
-                price: drug.price ?? 0,
-                stock: drug.stock ?? 0,
-                expiryDate: drug.expiryDate || '',
+            return drugsArr.map((drug: Record<string, unknown>) => ({
+                id: String(drug.id || drug._id || ''),
+                _id: String(drug._id || ''),
+                name: String(drug.name || ''),
+                brand: String(drug.brand || ''),
+                category: String(drug.category || ''),
+                price: Number(drug.price) || 0,
+                stock: Number(drug.stock) || 0,
+                expiryDate: String(drug.expiryDate || ''),
                 requiresPrescription: !!drug.requiresPrescription,
-                createdAt: drug.createdAt || '',
-                updatedAt: drug.updatedAt || '',
-                quantity: drug.quantity ?? 0,
-                batchNumber: drug.batchNumber || '',
+                createdAt: String(drug.createdAt || ''),
+                updatedAt: String(drug.updatedAt || ''),
+                quantity: Number(drug.quantity) || 0,
+                batchNumber: String(drug.batchNumber || ''),
             }));
         },
     });

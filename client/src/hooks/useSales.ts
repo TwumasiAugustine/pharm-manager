@@ -18,52 +18,133 @@ export const useSales = (params: SaleSearchParams) => {
             return {
                 ...raw,
                 data: Array.isArray(raw.data)
-                    ? raw.data.map((sale: any) => ({
-                          id: sale.id || sale._id || '',
-                          _id: sale._id || '',
-                          items: Array.isArray(sale.items)
-                              ? sale.items.map((item: any) => ({
-                                    drugId:
-                                        (item.drug &&
-                                            (item.drug.id || item.drug._id)) ||
-                                        item.drugId ||
-                                        '',
-                                    name: item.drug?.name || '',
-                                    brand: item.drug?.brand || '',
-                                    quantity: item.quantity ?? 0,
-                                    priceAtSale: item.priceAtSale ?? 0,
-                                }))
-                              : [],
-                          totalAmount: sale.totalAmount ?? 0,
-                          soldBy:
-                              sale.soldBy && typeof sale.soldBy === 'object'
-                                  ? {
-                                        id:
-                                            sale.soldBy.id ||
-                                            sale.soldBy._id ||
-                                            '',
-                                        _id: sale.soldBy._id || '',
-                                        name: sale.soldBy.name || '',
-                                    }
-                                  : { id: '', name: '' },
-                          customer:
-                              sale.customer && typeof sale.customer === 'object'
-                                  ? {
-                                        id:
-                                            sale.customer.id ||
-                                            sale.customer._id ||
-                                            '',
-                                        _id: sale.customer._id || '',
-                                        name: sale.customer.name || '',
-                                        phone: sale.customer.phone || '',
-                                    }
-                                  : undefined,
-                          paymentMethod: sale.paymentMethod || 'cash',
-                          transactionId: sale.transactionId,
-                          notes: sale.notes,
-                          createdAt: sale.createdAt || '',
-                          date: sale.date,
-                      }))
+                    ? raw.data.map((sale: unknown) => {
+                          const saleObj = sale as Record<string, unknown>;
+                          return {
+                              id: String(saleObj.id || saleObj._id || ''),
+                              _id: String(saleObj._id || ''),
+                              items: Array.isArray(saleObj.items)
+                                  ? saleObj.items.map((item: unknown) => {
+                                        const itemObj = item as Record<
+                                            string,
+                                            unknown
+                                        >;
+                                        const drugObj = itemObj.drug as
+                                            | Record<string, unknown>
+                                            | undefined;
+                                        return {
+                                            drugId: String(
+                                                drugObj?.id ||
+                                                    drugObj?._id ||
+                                                    itemObj.drugId ||
+                                                    '',
+                                            ),
+                                            name: String(drugObj?.name || ''),
+                                            brand: String(drugObj?.brand || ''),
+                                            quantity:
+                                                Number(itemObj.quantity) || 0,
+                                            priceAtSale:
+                                                Number(itemObj.priceAtSale) ||
+                                                0,
+                                        };
+                                    })
+                                  : [],
+                              totalAmount: Number(saleObj.totalAmount) || 0,
+                              soldBy:
+                                  saleObj.soldBy &&
+                                  typeof saleObj.soldBy === 'object'
+                                      ? {
+                                            id: String(
+                                                (
+                                                    saleObj.soldBy as Record<
+                                                        string,
+                                                        unknown
+                                                    >
+                                                ).id ||
+                                                    (
+                                                        saleObj.soldBy as Record<
+                                                            string,
+                                                            unknown
+                                                        >
+                                                    )._id ||
+                                                    '',
+                                            ),
+                                            _id: String(
+                                                (
+                                                    saleObj.soldBy as Record<
+                                                        string,
+                                                        unknown
+                                                    >
+                                                )._id || '',
+                                            ),
+                                            name: String(
+                                                (
+                                                    saleObj.soldBy as Record<
+                                                        string,
+                                                        unknown
+                                                    >
+                                                ).name || '',
+                                            ),
+                                        }
+                                      : { id: '', _id: '', name: '' },
+                              customer:
+                                  saleObj.customer &&
+                                  typeof saleObj.customer === 'object'
+                                      ? {
+                                            id: String(
+                                                (
+                                                    saleObj.customer as Record<
+                                                        string,
+                                                        unknown
+                                                    >
+                                                ).id ||
+                                                    (
+                                                        saleObj.customer as Record<
+                                                            string,
+                                                            unknown
+                                                        >
+                                                    )._id ||
+                                                    '',
+                                            ),
+                                            _id: String(
+                                                (
+                                                    saleObj.customer as Record<
+                                                        string,
+                                                        unknown
+                                                    >
+                                                )._id || '',
+                                            ),
+                                            name: String(
+                                                (
+                                                    saleObj.customer as Record<
+                                                        string,
+                                                        unknown
+                                                    >
+                                                ).name || '',
+                                            ),
+                                            phone: String(
+                                                (
+                                                    saleObj.customer as Record<
+                                                        string,
+                                                        unknown
+                                                    >
+                                                ).phone || '',
+                                            ),
+                                        }
+                                      : undefined,
+                              paymentMethod:
+                                  (saleObj.paymentMethod as
+                                      | 'cash'
+                                      | 'card'
+                                      | 'mobile') || 'cash',
+                              transactionId: String(
+                                  saleObj.transactionId || '',
+                              ),
+                              notes: String(saleObj.notes || ''),
+                              createdAt: String(saleObj.createdAt || ''),
+                              date: String(saleObj.date || ''),
+                          };
+                      })
                     : [],
             };
         },
@@ -76,7 +157,7 @@ export const useSale = (id: string) => {
         queryFn: async () => {
             const raw = await saleApi.getSaleById(id);
             // Defensive mapping for a single sale
-            let data: any = raw;
+            let data: unknown = raw;
             // If backend wraps in { data: ... }
             if (raw && typeof raw === 'object' && 'data' in raw && raw.data) {
                 data = raw.data;
@@ -84,44 +165,91 @@ export const useSale = (id: string) => {
             if (!data || typeof data !== 'object') {
                 throw new Error('Sale data is undefined or invalid');
             }
+
+            const dataObj = data as Record<string, unknown>;
             const sale: Sale = {
-                id: data.id || data._id || '',
-                _id: data._id || '',
-                items: Array.isArray(data.items)
-                    ? data.items.map((item: any) => ({
-                          drugId:
-                              (item.drug && (item.drug.id || item.drug._id)) ||
-                              item.drugId ||
-                              '',
-                          name: item.drug?.name || '',
-                          brand: item.drug?.brand || '',
-                          quantity: item.quantity ?? 0,
-                          priceAtSale: item.priceAtSale ?? 0,
-                      }))
+                id: String(dataObj.id || dataObj._id || ''),
+                _id: String(dataObj._id || ''),
+                items: Array.isArray(dataObj.items)
+                    ? dataObj.items.map((item: unknown) => {
+                          const itemObj = item as Record<string, unknown>;
+                          const drugObj = itemObj.drug as
+                              | Record<string, unknown>
+                              | undefined;
+                          return {
+                              drugId: String(
+                                  drugObj?.id ||
+                                      drugObj?._id ||
+                                      itemObj.drugId ||
+                                      '',
+                              ),
+                              name: String(drugObj?.name || ''),
+                              brand: String(drugObj?.brand || ''),
+                              quantity: Number(itemObj.quantity) || 0,
+                              priceAtSale: Number(itemObj.priceAtSale) || 0,
+                          };
+                      })
                     : [],
-                totalAmount: data.totalAmount ?? 0,
+                totalAmount: Number(dataObj.totalAmount) || 0,
                 soldBy:
-                    data.soldBy && typeof data.soldBy === 'object'
+                    dataObj.soldBy && typeof dataObj.soldBy === 'object'
                         ? {
-                              id: data.soldBy.id || data.soldBy._id || '',
-                              _id: data.soldBy._id || '',
-                              name: data.soldBy.name || '',
+                              id: String(
+                                  (dataObj.soldBy as Record<string, unknown>)
+                                      .id ||
+                                      (
+                                          dataObj.soldBy as Record<
+                                              string,
+                                              unknown
+                                          >
+                                      )._id ||
+                                      '',
+                              ),
+                              _id: String(
+                                  (dataObj.soldBy as Record<string, unknown>)
+                                      ._id || '',
+                              ),
+                              name: String(
+                                  (dataObj.soldBy as Record<string, unknown>)
+                                      .name || '',
+                              ),
                           }
-                        : { id: '', name: '' },
+                        : { id: '', _id: '', name: '' },
                 customer:
-                    data.customer && typeof data.customer === 'object'
+                    dataObj.customer && typeof dataObj.customer === 'object'
                         ? {
-                              id: data.customer.id || data.customer._id || '',
-                              _id: data.customer._id || '',
-                              name: data.customer.name || '',
-                              phone: data.customer.phone || '',
+                              id: String(
+                                  (dataObj.customer as Record<string, unknown>)
+                                      .id ||
+                                      (
+                                          dataObj.customer as Record<
+                                              string,
+                                              unknown
+                                          >
+                                      )._id ||
+                                      '',
+                              ),
+                              _id: String(
+                                  (dataObj.customer as Record<string, unknown>)
+                                      ._id || '',
+                              ),
+                              name: String(
+                                  (dataObj.customer as Record<string, unknown>)
+                                      .name || '',
+                              ),
+                              phone: String(
+                                  (dataObj.customer as Record<string, unknown>)
+                                      .phone || '',
+                              ),
                           }
                         : undefined,
-                paymentMethod: data.paymentMethod || 'cash',
-                transactionId: data.transactionId ?? '',
-                notes: data.notes ?? '',
-                createdAt: data.createdAt || '',
-                date: data.date ?? '',
+                paymentMethod:
+                    (dataObj.paymentMethod as 'cash' | 'card' | 'mobile') ||
+                    'cash',
+                transactionId: String(dataObj.transactionId || ''),
+                notes: String(dataObj.notes || ''),
+                createdAt: String(dataObj.createdAt || ''),
+                date: String(dataObj.date || ''),
             };
             if (!sale.id && !sale._id) {
                 throw new Error('Sale data is undefined or invalid');

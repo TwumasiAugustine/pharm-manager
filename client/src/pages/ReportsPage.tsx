@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiDownload, FiRefreshCw, FiFilter, FiCalendar } from 'react-icons/fi';
 import { useReports } from '../hooks/useReports';
 import { ReportSummary } from '../components/molecules/ReportSummary';
@@ -29,6 +29,13 @@ export const ReportsPage: React.FC = () => {
         exportReport,
         refreshData,
     } = useReports(filters);
+
+    // Debug logging
+    useEffect(() => {
+        console.log('ReportsPage - reportData:', reportData);
+        console.log('ReportsPage - reportData type:', typeof reportData);
+        console.log('ReportsPage - is array:', Array.isArray(reportData));
+    }, [reportData]);
 
     const handleFilterChange = (newFilters: ReportFilters) => {
         setFilters(newFilters);

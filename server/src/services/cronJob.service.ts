@@ -10,7 +10,7 @@ class CronJobService {
     }
 
     private initializeCronJobs(): void {
-        // Run every day at 8:00 AM to create expiry notifications
+        // Run every day at 10:00 AM to create expiry notifications
         cron.schedule('0 8 * * *', async () => {
             try {
                 console.log('Running daily expiry notification check...');

@@ -24,7 +24,9 @@ export class ReportController {
             const filters: ReportFilters = req.body;
             const report = await this.reportService.generateReport(filters);
 
-            successResponse(res, 'Report generated successfully', report);
+            res.status(200).json(
+                successResponse(report, 'Report generated successfully', 200),
+            );
         } catch (error) {
             next(error);
         }
@@ -107,10 +109,12 @@ export class ReportController {
                 format: 'table',
             });
 
-            successResponse(
-                res,
-                'Report summary retrieved successfully',
-                summary,
+            res.status(200).json(
+                successResponse(
+                    summary,
+                    'Report summary retrieved successfully',
+                    200,
+                ),
             );
         } catch (error) {
             next(error);
