@@ -8,15 +8,15 @@ import type {
 const drugApi = {
     async createDrug(drugData: CreateDrugRequest) {
         const res = await api.post('/drugs', drugData);
-        return res.data.data.drug;
+        return res.data.data;
     },
     async getDrug(id: string) {
         const res = await api.get(`/drugs/${id}`);
-        return res.data.data.drug;
+        return res.data.data;
     },
     async updateDrug(id: string, updateData: UpdateDrugRequest) {
         const res = await api.put(`/drugs/${id}`, updateData);
-        return res.data.data.drug;
+        return res.data.data;
     },
     async deleteDrug(id: string) {
         const res = await api.delete(`/drugs/${id}`);

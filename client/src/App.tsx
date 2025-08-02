@@ -22,7 +22,8 @@ import SalesReceiptPage from './pages/SalesReceiptPage';
 
 import CustomerManagementPage from './pages/CustomerManagementPage';
 import CustomerDetailsPage from './pages/CustomerDetailsPage';
-import ExpiryPage from './pages/ExpiryPage';
+import { ExpiryPage } from './pages/ExpiryPage';
+import ReportsPage from './pages/ReportsPage';
 
 // Components
 import { ProtectedRoute } from './components/molecules/ProtectedRoute';
@@ -85,6 +86,10 @@ const router = createBrowserRouter([
             {
                 path: '/expiry',
                 element: <ExpiryPage />,
+            },
+            {
+                path: '/reports',
+                element: <ReportsPage />,
             },
         ],
     },

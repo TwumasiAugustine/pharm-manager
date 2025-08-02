@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import {useNavigate} from 'react-router-dom'
 import { useDrugs, useDeleteDrug } from '../../hooks/useDrugs';
 import { Table } from '../molecules/Table';
 import type { TableColumn, TableAction } from '../molecules/Table';
@@ -123,7 +123,7 @@ export const DrugList: React.FC = () => {
     }
 
     // Handle empty data list
-    if (drugs && drugs.drugs.length === 0 && !isSearching) {
+    if (drugs.drugs.length === 0 && !isSearching) {
         return (
             <div className="space-y-6">
                 <SearchBar
@@ -169,7 +169,7 @@ export const DrugList: React.FC = () => {
             {(!isSearching || !searchQuery.trim() || !isSearchFocused) && (
                 <>
                     <Table<Drug>
-                        data={drugs?.drugs || []}
+                        data={drugs.drugs || []}
                         columns={
                             [
                                 {

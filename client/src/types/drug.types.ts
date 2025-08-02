@@ -7,7 +7,6 @@
  */
 export interface Drug {
     id: string;
-    _id: string;
     name: string;
     brand: string;
     category: string;

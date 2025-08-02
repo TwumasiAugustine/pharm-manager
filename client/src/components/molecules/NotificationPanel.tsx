@@ -114,7 +114,6 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                                     }
                                     className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
                                     title="Mark as read"
-                                    aria-label="Mark notification as read"
                                 >
                                     <FiCheck className="h-3 w-3" />
                                 </button>
@@ -151,23 +150,19 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
         markAllAsRead,
     } = useExpiry();
 
-    const filteredNotifications = Array.isArray(notifications)
-        ? notifications.filter((notification) => {
-              // Filter by read status
-              if (filter === 'unread' && notification.isRead) return false;
-              if (filter === 'read' && !notification.isRead) return false;
+    const filteredNotifications = notifications?.filter((notification) => {
+        // Filter by read status
+        if (filter === 'unread' && notification.isRead) return false;
+        if (filter === 'read' && !notification.isRead) return false;
 
-              // Filter by type
-              if (typeFilter !== 'all' && notification.type !== typeFilter)
-                  return false;
+        // Filter by type
+        if (typeFilter !== 'all' && notification.type !== typeFilter)
+            return false;
 
-              return true;
-          })
-        : [];
+        return true;
+    });
 
-    const unreadCount = Array.isArray(notifications)
-        ? notifications.filter((n) => !n.isRead).length
-        : 0;
+    const unreadCount = notifications?.filter((n) => !n.isRead).length || 0;
 
     if (!isOpen) return null;
 
@@ -199,7 +194,6 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                     <button
                         onClick={onClose}
                         className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                        title="Close notifications"
                         aria-label="Close notifications panel"
                     >
                         <FiX className="h-5 w-5" />
@@ -216,22 +210,27 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                     </div>
 
                     <div className="flex flex-wrap gap-2 mb-3">
-                        {(['all', 'unread', 'read'] as const).map(
-                            (filterOption) => (
-                                <button
-                                    key={filterOption}
-                                    onClick={() => setFilter(filterOption)}
-                                    className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                                        filter === filterOption
-                                            ? 'bg-blue-100 text-blue-800'
-                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                    }`}
-                                >
-                                    {filterOption.charAt(0).toUpperCase() +
-                                        filterOption.slice(1)}
-                                </button>
-                            ),
-                        )}
+                        {['all', 'unread', 'read'].map((filterOption) => (
+                            <button
+                                key={filterOption}
+                                onClick={() =>
+                                    setFilter(
+                                        filterOption as
+                                            | 'all'
+                                            | 'unread'
+                                            | 'read',
+                                    )
+                                }
+                                className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                                    filter === filterOption
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                            >
+                                {filterOption.charAt(0).toUpperCase() +
+                                    filterOption.slice(1)}
+                            </button>
+                        ))}
                     </div>
 
                     <div className="flex flex-wrap gap-2">

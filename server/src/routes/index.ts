@@ -4,8 +4,6 @@ import drugRoutes from './drug.routes';
 import saleRoutes from './sale.routes';
 import pharmacyRoutes from './pharmacy.routes';
 import customerRoutes from './customer.routes';
-import dashboardRoutes from './dashboard.routes';
-import expiryRoutes from './expiry.routes';
 
 const router = Router();
 
@@ -24,7 +22,5 @@ router.use('/drugs', drugRoutes);
 router.use('/sales', saleRoutes);
 router.use('/pharmacy', pharmacyRoutes);
 router.use('/customers', customerRoutes);
-router.use('/dashboard', dashboardRoutes);
-router.use('/expiry', expiryRoutes);
 
 export default router;

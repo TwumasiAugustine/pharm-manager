@@ -9,7 +9,7 @@ import {
 import type { ExpiryStats } from '../../types/expiry.types';
 
 interface ExpiryStatsCardsProps {
-    stats?: ExpiryStats;
+    stats: ExpiryStats;
     isLoading?: boolean;
 }
 
@@ -81,24 +81,6 @@ export const ExpiryStatsCards: React.FC<ExpiryStatsCardsProps> = ({
             maximumFractionDigits: 0,
         }).format(amount);
     };
-
-    // Show loading state or return empty state if no stats
-    if (isLoading || !stats) {
-        return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
-                {[1, 2, 3, 4, 5].map((i) => (
-                    <StatCard
-                        key={i}
-                        title="Loading..."
-                        value="--"
-                        icon={<FiClock />}
-                        color="blue"
-                        isLoading={true}
-                    />
-                ))}
-            </div>
-        );
-    }
 
     const statsData = [
         {

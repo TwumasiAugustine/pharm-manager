@@ -39,16 +39,16 @@ const StatCard: React.FC<StatCardProps> = ({
     const [bgColor, textColor, lightBg] = colorClasses[color].split(' ');
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
-                <div className="flex-1 mb-3 sm:mb-0">
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex items-center justify-between">
+                <div className="flex-1">
                     <p className="text-sm font-medium text-gray-600 mb-1">
                         {title}
                     </p>
                     {isLoading ? (
-                        <div className="h-6 sm:h-8 bg-gray-200 animate-pulse rounded w-16 sm:w-20"></div>
+                        <div className="h-8 bg-gray-200 animate-pulse rounded w-20"></div>
                     ) : (
-                        <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                        <p className="text-2xl font-bold text-gray-900">
                             {typeof value === 'number' && value >= 1000000
                                 ? `${(value / 1000000).toFixed(1)}M`
                                 : typeof value === 'number' && value >= 1000
@@ -58,11 +58,9 @@ const StatCard: React.FC<StatCardProps> = ({
                     )}
                 </div>
                 <div
-                    className={`w-10 h-10 sm:w-12 sm:h-12 ${lightBg} rounded-lg flex items-center justify-center flex-shrink-0`}
+                    className={`w-12 h-12 ${lightBg} rounded-lg flex items-center justify-center`}
                 >
-                    <div className={`${textColor} text-lg sm:text-xl`}>
-                        {icon}
-                    </div>
+                    <div className={`${textColor} text-xl`}>{icon}</div>
                 </div>
             </div>
         </div>
@@ -116,7 +114,7 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
     ];
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             {stats.map((stat, index) => (
                 <StatCard
                     key={index}

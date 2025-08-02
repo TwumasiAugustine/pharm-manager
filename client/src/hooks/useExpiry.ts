@@ -1,6 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { expiryApi } from '../api/expiry.api';
-import type { ExpiryFilters, ExpiryNotification } from '../types/expiry.types';
+import type {
+    ExpiryFilters,
+    ExpiryNotification,
+    ExpiryNotificationsResponse,
+} from '../types/expiry.types';
 
 // Query Keys
 export const EXPIRY_QUERY_KEYS = {
@@ -76,7 +80,7 @@ export const useMarkNotificationAsRead = () => {
             // Update the notification in all queries
             queryClient.setQueriesData(
                 { queryKey: EXPIRY_QUERY_KEYS.notifications() },
-                (oldData: { data: ExpiryNotification[] } | undefined) => {
+                (oldData: ExpiryNotificationsResponse | undefined) => {
                     if (!oldData?.data) return oldData;
 
                     return {
@@ -104,7 +108,7 @@ export const useMarkAllNotificationsAsRead = () => {
             // Mark all notifications as read in cache
             queryClient.setQueriesData(
                 { queryKey: EXPIRY_QUERY_KEYS.notifications() },
-                (oldData: { data: ExpiryNotification[] } | undefined) => {
+                (oldData: ExpiryNotificationsResponse | undefined) => {
                     if (!oldData?.data) return oldData;
 
                     return {
@@ -139,7 +143,7 @@ export const useCreateExpiryNotifications = () => {
 export const useExpiry = (
     filters?: ExpiryFilters & { page?: number; limit?: number },
 ) => {
-    const defaultFilters: ExpiryFilters & { page: number; limit: number } = {
+    const defaultFilters: ExpiryFilters & { page?: number; limit?: number } = {
         daysRange: 30,
         alertLevel: undefined,
         category: '',
@@ -163,9 +167,7 @@ export const useExpiry = (
 
     return {
         // Expiring drugs data
-        expiringDrugs: Array.isArray(expiringDrugsQuery.data?.data)
-            ? expiringDrugsQuery.data.data
-            : [],
+        expiringDrugs: expiringDrugsQuery.data?.data || [],
         isLoading: expiringDrugsQuery.isLoading,
 
         // Expiry statistics
@@ -173,9 +175,7 @@ export const useExpiry = (
         isStatsLoading: expiryStatsQuery.isLoading,
 
         // Notifications
-        notifications: Array.isArray(notificationsQuery.data?.data)
-            ? notificationsQuery.data.data
-            : [],
+        notifications: notificationsQuery.data?.data || [],
         isNotificationsLoading: notificationsQuery.isLoading,
 
         // Actions

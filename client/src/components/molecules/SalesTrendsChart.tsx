@@ -22,26 +22,26 @@ export const SalesTrendsChart: React.FC<SalesTrendsChartProps> = ({
 }) => {
     if (isLoading) {
         return (
-            <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900">
                         Sales Trends
                     </h3>
                 </div>
-                <div className="h-64 sm:h-80 bg-gray-100 animate-pulse rounded-lg"></div>
+                <div className="h-80 bg-gray-100 animate-pulse rounded-lg"></div>
             </div>
         );
     }
 
     if (!data || data.length === 0) {
         return (
-            <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900">
                         Sales Trends
                     </h3>
                 </div>
-                <div className="h-64 sm:h-80 flex items-center justify-center text-gray-500 text-sm sm:text-base">
+                <div className="h-80 flex items-center justify-center text-gray-500">
                     No sales data available for the selected period
                 </div>
             </div>
@@ -62,12 +62,12 @@ export const SalesTrendsChart: React.FC<SalesTrendsChartProps> = ({
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-0">
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">
                     Sales Trends
                 </h3>
-                <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
+                <div className="flex items-center gap-4 text-sm">
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                         <span className="text-gray-600">Sales Count</span>
@@ -79,40 +79,37 @@ export const SalesTrendsChart: React.FC<SalesTrendsChartProps> = ({
                 </div>
             </div>
 
-            <div className="h-64 sm:h-80">
+            <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                         data={data}
                         margin={{
                             top: 5,
-                            right: 20,
-                            left: 10,
+                            right: 30,
+                            left: 20,
                             bottom: 5,
                         }}
                     >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis
                             dataKey="period"
-                            tick={{ fontSize: 10 }}
+                            tick={{ fontSize: 12 }}
                             tickLine={{ stroke: '#e5e7eb' }}
-                            interval="preserveStartEnd"
                         />
                         <YAxis
                             yAxisId="sales"
                             orientation="left"
-                            tick={{ fontSize: 10 }}
+                            tick={{ fontSize: 12 }}
                             tickLine={{ stroke: '#e5e7eb' }}
-                            width={40}
                         />
                         <YAxis
                             yAxisId="revenue"
                             orientation="right"
-                            tick={{ fontSize: 10 }}
+                            tick={{ fontSize: 12 }}
                             tickLine={{ stroke: '#e5e7eb' }}
                             tickFormatter={(value) =>
                                 `$${(value / 1000).toFixed(0)}K`
                             }
-                            width={50}
                         />
                         <Tooltip
                             formatter={formatTooltipValue}
@@ -122,18 +119,17 @@ export const SalesTrendsChart: React.FC<SalesTrendsChartProps> = ({
                                 border: '1px solid #e5e7eb',
                                 borderRadius: '8px',
                                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                                fontSize: '12px',
                             }}
                         />
-                        <Legend wrapperStyle={{ fontSize: '12px' }} />
+                        <Legend />
                         <Line
                             yAxisId="sales"
                             type="monotone"
                             dataKey="sales"
                             stroke="#3b82f6"
                             strokeWidth={2}
-                            dot={{ r: 3 }}
-                            activeDot={{ r: 5 }}
+                            dot={{ r: 4 }}
+                            activeDot={{ r: 6 }}
                         />
                         <Line
                             yAxisId="revenue"
@@ -141,8 +137,8 @@ export const SalesTrendsChart: React.FC<SalesTrendsChartProps> = ({
                             dataKey="revenue"
                             stroke="#10b981"
                             strokeWidth={2}
-                            dot={{ r: 3 }}
-                            activeDot={{ r: 5 }}
+                            dot={{ r: 4 }}
+                            activeDot={{ r: 6 }}
                         />
                     </LineChart>
                 </ResponsiveContainer>

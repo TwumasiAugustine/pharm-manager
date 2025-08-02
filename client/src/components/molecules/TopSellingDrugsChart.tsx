@@ -21,37 +21,37 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
 }) => {
     if (isLoading) {
         return (
-            <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900">
                         Top Selling Drugs
                     </h3>
                 </div>
-                <div className="h-64 sm:h-80 bg-gray-100 animate-pulse rounded-lg"></div>
+                <div className="h-80 bg-gray-100 animate-pulse rounded-lg"></div>
             </div>
         );
     }
 
     if (!data || data.length === 0) {
         return (
-            <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900">
                         Top Selling Drugs
                     </h3>
                 </div>
-                <div className="h-64 sm:h-80 flex items-center justify-center text-gray-500 text-sm sm:text-base">
+                <div className="h-80 flex items-center justify-center text-gray-500">
                     No top selling drugs data available
                 </div>
             </div>
         );
     }
 
-    // Prepare data for chart (take top 10, adjust names for mobile)
+    // Prepare data for chart (take top 10)
     const chartData = data.slice(0, 10).map((drug) => ({
         name:
-            drug.name.length > 12
-                ? `${drug.name.substring(0, 12)}...`
+            drug.name.length > 15
+                ? `${drug.name.substring(0, 15)}...`
                 : drug.name,
         fullName: drug.name,
         brand: drug.brand,
@@ -110,12 +110,12 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-0">
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">
                     Top Selling Drugs
                 </h3>
-                <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
+                <div className="flex items-center gap-4 text-sm">
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                         <span className="text-gray-600">Quantity Sold</span>
@@ -123,31 +123,29 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
                 </div>
             </div>
 
-            <div className="h-64 sm:h-80">
+            <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         data={chartData}
                         margin={{
                             top: 20,
-                            right: 15,
-                            left: 10,
-                            bottom: 50,
+                            right: 30,
+                            left: 20,
+                            bottom: 60,
                         }}
                     >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis
                             dataKey="name"
-                            tick={{ fontSize: 9 }}
+                            tick={{ fontSize: 11 }}
                             tickLine={{ stroke: '#e5e7eb' }}
                             angle={-45}
                             textAnchor="end"
-                            height={50}
-                            interval={0}
+                            height={60}
                         />
                         <YAxis
-                            tick={{ fontSize: 10 }}
+                            tick={{ fontSize: 12 }}
                             tickLine={{ stroke: '#e5e7eb' }}
-                            width={35}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Bar
@@ -160,12 +158,12 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
             </div>
 
             {/* Table view for additional details */}
-            <div className="mt-4 sm:mt-6 border-t pt-4">
+            <div className="mt-6 border-t pt-4">
                 <h4 className="text-sm font-medium text-gray-900 mb-3">
                     Detailed Rankings
                 </h4>
                 <div className="overflow-x-auto">
-                    <table className="min-w-full text-xs sm:text-sm">
+                    <table className="min-w-full text-sm">
                         <thead>
                             <tr className="border-b border-gray-200">
                                 <th className="text-left py-2 text-gray-600 font-medium">
@@ -174,7 +172,7 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
                                 <th className="text-left py-2 text-gray-600 font-medium">
                                     Drug Name
                                 </th>
-                                <th className="text-left py-2 text-gray-600 font-medium hidden sm:table-cell">
+                                <th className="text-left py-2 text-gray-600 font-medium">
                                     Brand
                                 </th>
                                 <th className="text-right py-2 text-gray-600 font-medium">
@@ -195,14 +193,9 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
                                         #{index + 1}
                                     </td>
                                     <td className="py-2 text-gray-900">
-                                        <div className="truncate max-w-32 sm:max-w-none">
-                                            {drug.name}
-                                        </div>
-                                        <div className="text-xs text-gray-500 sm:hidden">
-                                            {drug.brand}
-                                        </div>
+                                        {drug.name}
                                     </td>
-                                    <td className="py-2 text-gray-600 hidden sm:table-cell">
+                                    <td className="py-2 text-gray-600">
                                         {drug.brand}
                                     </td>
                                     <td className="py-2 text-right text-gray-900 font-medium">
@@ -212,8 +205,6 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
                                         {new Intl.NumberFormat('en-US', {
                                             style: 'currency',
                                             currency: 'USD',
-                                            minimumFractionDigits: 0,
-                                            maximumFractionDigits: 0,
                                         }).format(drug.totalRevenue)}
                                     </td>
                                 </tr>

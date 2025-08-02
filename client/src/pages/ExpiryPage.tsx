@@ -27,10 +27,7 @@ export const ExpiryPage: React.FC = () => {
     } = useExpiry(filters);
 
     const unreadNotifications =
-        (Array.isArray(notifications)
-            ? notifications.filter((n) => !n.isRead)
-            : []
-        ).length || 0;
+        notifications?.filter((n) => !n.isRead).length || 0;
 
     const handleFilterChange = (newFilters: ExpiryFilters) => {
         setFilters(newFilters);
@@ -177,6 +174,7 @@ export const ExpiryPage: React.FC = () => {
                                 <ExpiryFilter
                                     filters={filters}
                                     onFiltersChange={handleFilterChange}
+                                    className="lg:mb-0 mb-6"
                                 />
                             </div>
                         </div>
@@ -185,7 +183,23 @@ export const ExpiryPage: React.FC = () => {
                         <div className="lg:col-span-3 space-y-6">
                             {/* Stats Cards */}
                             <ExpiryStatsCards
-                                stats={expiryStats}
+                                stats={
+                                    expiryStats || {
+                                        totalExpiredDrugs: 0,
+                                        totalCriticalDrugs: 0,
+                                        totalWarningDrugs: 0,
+                                        totalNoticeDrugs: 0,
+                                        totalValue: 0,
+                                        expiredValue: 0,
+                                        criticalValue: 0,
+                                        upcomingExpiries: {
+                                            next7Days: 0,
+                                            next30Days: 0,
+                                            next60Days: 0,
+                                            next90Days: 0,
+                                        },
+                                    }
+                                }
                                 isLoading={isStatsLoading}
                             />
 

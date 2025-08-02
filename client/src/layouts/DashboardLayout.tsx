@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useLogout } from '../hooks/useAuth';
 import { useAuthStore } from '../store/auth.store';
 import { Link, useLocation } from 'react-router-dom';
+import type { User } from '../types/auth.types';
 import {
     FaSignOutAlt,
     FaUser,
@@ -11,7 +12,8 @@ import {
     FaCog,
     FaBars,
     FaTimes,
-    FaClock,
+    FaExclamationTriangle,
+    FaChartBar,
 } from 'react-icons/fa';
 import { useState } from 'react';
 
@@ -51,9 +53,16 @@ const navItems = [
     },
     {
         to: '/expiry',
-        icon: <FaClock className="mr-3" />,
+        icon: <FaExclamationTriangle className="mr-3" />,
         label: 'Expiry Tracker',
         match: (pathname: string) => pathname === '/expiry',
+        adminOnly: false,
+    },
+    {
+        to: '/reports',
+        icon: <FaChartBar className="mr-3" />,
+        label: 'Reports',
+        match: (pathname: string) => pathname === '/reports',
         adminOnly: false,
     },
     {
@@ -72,7 +81,7 @@ function Sidebar({
     open,
     onClose,
 }: {
-    user: any;
+    user: User | null;
     location: ReturnType<typeof useLocation>;
     open: boolean;
     onClose: () => void;
@@ -135,7 +144,7 @@ function Topbar({
     onLogout,
     onMenuClick,
 }: {
-    user: any;
+    user: User | null;
     onLogout: () => void;
     onMenuClick: () => void;
 }) {
@@ -157,9 +166,8 @@ function Topbar({
         location.pathname !== '/customers'
     )
         title = 'Customer Details';
-    else if (location.pathname === '/expiry') title = 'Expiry Tracker';
     else if (
-        !/^\/(dashboard|drugs|sales|sales\/new|sales\/[^/]+|customers|customers\/[^/]+|expiry)$/.test(
+        !/^\/(dashboard|drugs|sales|sales\/new|sales\/[^/]+|customers|customers\/[^/]+)$/.test(
             location.pathname,
         )
     )

@@ -4,11 +4,13 @@ import type { ExpiryFilters } from '../../types/expiry.types';
 interface ExpiryFilterProps {
     filters: ExpiryFilters;
     onFiltersChange: (filters: ExpiryFilters) => void;
+    className?: string;
 }
 
 export const ExpiryFilter: React.FC<ExpiryFilterProps> = ({
     filters,
     onFiltersChange,
+    className = '',
 }) => {
     const handleDaysRangeChange = (daysRange: number) => {
         onFiltersChange({
@@ -56,7 +58,9 @@ export const ExpiryFilter: React.FC<ExpiryFilterProps> = ({
     ];
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
+        <div
+            className={`bg-white rounded-lg shadow-sm border p-4 sm:p-6 ${className}`}
+        >
             <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
                 <div className="flex flex-col lg:flex-row gap-4">
                     {/* Days Range Filter */}
