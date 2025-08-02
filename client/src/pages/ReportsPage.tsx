@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FiDownload, FiRefreshCw, FiFilter, FiCalendar } from 'react-icons/fi';
 import { useReports } from '../hooks/useReports';
 import { ReportSummary } from '../components/molecules/ReportSummary';
@@ -23,19 +23,13 @@ export const ReportsPage: React.FC = () => {
     const {
         reportData,
         reportSummary,
+        totalRecords,
         isLoading,
         isGenerating,
         generateReport,
         exportReport,
         refreshData,
     } = useReports(filters);
-
-    // Debug logging
-    useEffect(() => {
-        console.log('ReportsPage - reportData:', reportData);
-        console.log('ReportsPage - reportData type:', typeof reportData);
-        console.log('ReportsPage - is array:', Array.isArray(reportData));
-    }, [reportData]);
 
     const handleFilterChange = (newFilters: ReportFilters) => {
         setFilters(newFilters);
@@ -183,8 +177,8 @@ export const ReportsPage: React.FC = () => {
                                                     : 'Financial Report'}
                                             </h2>
                                             <p className="text-sm text-gray-600 mt-1">
-                                                {reportData?.length || 0}{' '}
-                                                records found
+                                                {totalRecords || 0} records
+                                                found
                                             </p>
                                         </div>
 

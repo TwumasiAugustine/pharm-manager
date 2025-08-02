@@ -52,13 +52,13 @@ export const useReports = (filters: ReportFilters) => {
     };
 
     return {
-        reportData: Array.isArray(reportResponse?.data)
-            ? reportResponse.data
+        reportData: Array.isArray(reportResponse?.data?.data)
+            ? reportResponse.data.data
             : [],
-        reportSummary: reportResponse?.summary || null,
-        totalRecords: reportResponse?.totalRecords || 0,
-        currentPage: reportResponse?.currentPage || 1,
-        totalPages: reportResponse?.totalPages || 1,
+        reportSummary: reportResponse?.data?.summary || null,
+        totalRecords: reportResponse?.data?.totalRecords || 0,
+        currentPage: reportResponse?.data?.currentPage || 1,
+        totalPages: reportResponse?.data?.totalPages || 1,
         isLoading,
         isGenerating: generateReportMutation.isPending,
         isExporting: exportReportMutation.isPending,

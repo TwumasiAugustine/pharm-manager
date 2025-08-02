@@ -1,6 +1,6 @@
-import Drug, { IDrug } from '../models/drug.model';
-import { Sale, ISale, ISaleItem } from '../models/sale.model';
-import Customer, { ICustomer } from '../models/customer.model';
+import Drug from '../models/drug.model';
+import { Sale } from '../models/sale.model';
+import Customer from '../models/customer.model';
 import type {
     ReportFilters,
     ReportResponse,
@@ -69,14 +69,14 @@ export class ReportService {
 
         const sales = await Sale.find(query)
             .populate('customer', 'name')
-            .populate('items.drug', 'name category brand costPrice')
+            .populate('items.drug', 'name category brand')
             .sort({ createdAt: -1 });
 
         const reportData: ReportDataItem[] = [];
 
         sales.forEach((sale) => {
-            sale.items.forEach((item) => {
-                const drug = item.drug as any;
+            sale.items.forEach((drugItem) => {
+                const drug = drugItem.drug as any;
                 const customer = sale.customer as any;
 
                 reportData.push({
@@ -84,12 +84,12 @@ export class ReportService {
                     date: sale.createdAt.toISOString(),
                     drugName: drug.name,
                     category: drug.category,
-                    quantity: item.quantity,
-                    unitPrice: item.priceAtSale,
-                    totalPrice: item.quantity * item.priceAtSale,
+                    quantity: drugItem.quantity,
+                    unitPrice: drugItem.priceAtSale,
+                    totalPrice: drugItem.quantity * drugItem.priceAtSale,
                     profit:
-                        (item.priceAtSale - (drug.costPrice || 0)) *
-                        item.quantity,
+                        (drugItem.priceAtSale - drug.price * 0.7) *
+                        drugItem.quantity, // Assuming 30% markup
                     customer: customer?.name || 'Walk-in',
                 });
             });
@@ -104,17 +104,17 @@ export class ReportService {
     private async generateInventoryReport(): Promise<ReportDataItem[]> {
         const drugs = await Drug.find({ isActive: true });
 
-        return drugs.map((drug: IDrug) => ({
-            id: (drug._id as any).toString(),
+        return drugs.map((drug: any) => ({
+            id: drug._id.toString(),
             date: drug.createdAt.toISOString(),
             drugName: drug.name,
             category: drug.category,
             quantity: drug.quantity,
-            unitPrice: drug.price, // Use price instead of sellingPrice
+            unitPrice: drug.price,
             totalPrice: drug.quantity * drug.price,
-            profit: 0, // No profit calculation for inventory
+            profit: 0, // Cannot calculate profit without cost price in schema
             batchNumber: drug.batchNumber,
-            expiryDate: drug.expiryDate?.toISOString(),
+            expiryDate: drug.expiryDate.toISOString(),
         }));
     }
 
@@ -128,11 +128,12 @@ export class ReportService {
         );
 
         const drugs = await Drug.find({
+            isActive: true,
             expiryDate: { $lte: threeMonthsFromNow },
         });
 
-        return drugs.map((drug: IDrug) => ({
-            id: (drug._id as any).toString(),
+        return drugs.map((drug: any) => ({
+            id: drug._id.toString(),
             date: drug.createdAt.toISOString(),
             drugName: drug.name,
             category: drug.category,
@@ -231,7 +232,7 @@ export class ReportService {
             });
 
             await browser.close();
-            return pdfBuffer as Buffer;
+            return Buffer.from(pdfBuffer);
         } catch (error) {
             throw new Error(`Failed to export PDF: ${error}`);
         }
@@ -338,7 +339,7 @@ export class ReportService {
                     <tbody>
                         ${data
                             .map(
-                                (item) => `
+                                (item: ReportDataItem) => `
                             <tr>
                                 <td>${new Date(item.date).toLocaleDateString()}</td>
                                 <td>${item.drugName}</td>

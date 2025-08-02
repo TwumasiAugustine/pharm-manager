@@ -13,9 +13,6 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     reportType,
     isLoading,
 }) => {
-    // Defensive check to ensure data is always an array
-    const safeData = Array.isArray(data) ? data : [];
-
     if (isLoading) {
         return (
             <div className="space-y-4">
@@ -36,7 +33,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
         );
     }
 
-    if (!safeData || safeData.length === 0) {
+    if (!data || data.length === 0) {
         return (
             <div className="text-center py-12">
                 <FiPackage className="mx-auto h-12 w-12 text-gray-400 mb-4" />
@@ -135,7 +132,9 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                         <td className="px-6 py-4">
                             <span className="inline-flex items-center text-sm font-medium text-green-600">
                                 <FiTrendingUp className="h-4 w-4 mr-1" />
-                                {formatCurrency(item.profit)}
+                                {item.profit !== null
+                                    ? formatCurrency(item.profit)
+                                    : 'N/A'}
                             </span>
                         </td>
                     </>
@@ -263,7 +262,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {safeData.map((item, index) => (
+                        {data.map((item, index) => (
                             <tr
                                 key={item.id || index}
                                 className="hover:bg-gray-50 transition-colors"
@@ -278,12 +277,12 @@ export const ReportTable: React.FC<ReportTableProps> = ({
             {/* Footer with summary */}
             <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
                 <div className="flex justify-between items-center text-sm text-gray-600">
-                    <span>Showing {safeData.length} records</span>
+                    <span>Showing {data.length} records</span>
                     <div className="flex items-center space-x-4">
                         <span>
                             Total Value:{' '}
                             {formatCurrency(
-                                safeData.reduce(
+                                data.reduce(
                                     (sum, item) => sum + item.totalPrice,
                                     0,
                                 ),
@@ -293,7 +292,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                             <span>
                                 Total Profit:{' '}
                                 {formatCurrency(
-                                    safeData.reduce(
+                                    data.reduce(
                                         (sum, item) => sum + item.profit,
                                         0,
                                     ),

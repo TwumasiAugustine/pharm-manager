@@ -57,7 +57,9 @@ export const useCustomers = (
                       id: customer.id || customer._id || '',
                       name: customer.name || '',
                       phone: customer.phone || '',
-                      purchases: customer.purchases || [],
+                      purchases: Array.isArray(customer.purchases)
+                          ? customer.purchases
+                          : [],
                       createdAt: customer.createdAt || '',
                       updatedAt: customer.updatedAt || '',
                   }))
@@ -103,7 +105,10 @@ export const useCreateCustomer = () => {
             notify.success('Customer created successfully');
         },
         onError: (error) => {
-            notify.error("Failed to create customer" + (error.message ? `: ${error.message}` : ''));
+            notify.error(
+                'Failed to create customer' +
+                    (error.message ? `: ${error.message}` : ''),
+            );
         },
     });
 };

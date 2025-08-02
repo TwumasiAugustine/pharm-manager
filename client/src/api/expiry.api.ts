@@ -13,28 +13,8 @@ export const expiryApi = {
     getExpiringDrugs: async (
         params: ExpiryFilters & { page?: number; limit?: number },
     ): Promise<ExpiryDrugsResponse> => {
-        try {
-            const response = await api.get('/expiry/drugs', { params });
-            // Ensure we always return the expected structure
-            return response.data && response.data.data
-                ? response.data
-                : {
-                      data: [],
-                      pagination: {
-                          total: 0,
-                          page: 1,
-                          limit: 20,
-                          totalPages: 0,
-                      },
-                  };
-        } catch (error) {
-            console.error('Error fetching expiring drugs:', error);
-            // Return empty structure on error
-            return {
-                data: [],
-                pagination: { total: 0, page: 1, limit: 20, totalPages: 0 },
-            };
-        }
+        const response = await api.get('/expiry/drugs', { params });
+        return response.data;
     },
 
     // Get expiry statistics
@@ -50,28 +30,8 @@ export const expiryApi = {
         page?: number;
         limit?: number;
     }): Promise<ExpiryNotificationsResponse> => {
-        try {
-            const response = await api.get('/expiry/notifications', { params });
-            // Ensure we always return the expected structure
-            return response.data && response.data.data
-                ? response.data
-                : {
-                      data: [],
-                      pagination: {
-                          total: 0,
-                          page: 1,
-                          limit: 20,
-                          totalPages: 0,
-                      },
-                  };
-        } catch (error) {
-            console.error('Error fetching expiry notifications:', error);
-            // Return empty structure on error
-            return {
-                data: [],
-                pagination: { total: 0, page: 1, limit: 20, totalPages: 0 },
-            };
-        }
+        const response = await api.get('/expiry/notifications', { params });
+        return response.data;
     },
 
     // Mark notification as read

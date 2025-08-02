@@ -69,7 +69,10 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
         },
         {
             label: 'Profit Margin',
-            value: `${summary.profitMargin.toFixed(1)}%`,
+            value:
+                summary.profitMargin !== null
+                    ? `${summary.profitMargin.toFixed(1)}%`
+                    : 'N/A',
             icon: FiPercent,
             color: 'text-orange-600',
             bgColor: 'bg-orange-100',

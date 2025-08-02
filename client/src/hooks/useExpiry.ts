@@ -166,7 +166,7 @@ export const useExpiry = (
     };
 
     return {
-        // Expiring drugs data
+        // Expiring drugs data with defensive programming
         expiringDrugs: Array.isArray(expiringDrugsQuery.data?.data)
             ? expiringDrugsQuery.data.data
             : [],
@@ -176,7 +176,7 @@ export const useExpiry = (
         expiryStats: expiryStatsQuery.data,
         isStatsLoading: expiryStatsQuery.isLoading,
 
-        // Notifications
+        // Notifications with defensive programming
         notifications: Array.isArray(notificationsQuery.data?.data)
             ? notificationsQuery.data.data
             : [],

@@ -150,23 +150,22 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
         markAllAsRead,
     } = useExpiry();
 
-    const filteredNotifications = Array.isArray(notifications)
-        ? notifications.filter((notification) => {
-              // Filter by read status
-              if (filter === 'unread' && notification.isRead) return false;
-              if (filter === 'read' && !notification.isRead) return false;
+    // Defensive programming: ensure notifications is an array
+    const safeNotifications = Array.isArray(notifications) ? notifications : [];
 
-              // Filter by type
-              if (typeFilter !== 'all' && notification.type !== typeFilter)
-                  return false;
+    const filteredNotifications = safeNotifications.filter((notification) => {
+        // Filter by read status
+        if (filter === 'unread' && notification.isRead) return false;
+        if (filter === 'read' && !notification.isRead) return false;
 
-              return true;
-          })
-        : [];
+        // Filter by type
+        if (typeFilter !== 'all' && notification.type !== typeFilter)
+            return false;
 
-    const unreadCount = Array.isArray(notifications)
-        ? notifications.filter((n) => !n.isRead).length
-        : 0;
+        return true;
+    });
+
+    const unreadCount = safeNotifications.filter((n) => !n.isRead).length;
 
     if (!isOpen) return null;
 

@@ -13,7 +13,7 @@ export interface ReportSummaryData {
     totalRevenue: number;
     totalSales: number;
     totalItems: number;
-    profitMargin: number;
+    profitMargin: number | null;
     topSellingDrug: string;
     averageOrderValue: number;
     period: {
@@ -30,7 +30,7 @@ export interface ReportDataItem {
     quantity: number;
     unitPrice: number;
     totalPrice: number;
-    profit: number;
+    profit: number | null;
     customer?: string;
     batchNumber?: string;
     expiryDate?: string;
@@ -38,7 +38,7 @@ export interface ReportDataItem {
 
 export interface ReportResponse {
     data: ReportDataItem[];
-    summary: ReportSummaryData | null;
+    summary: ReportSummaryData;
     totalRecords: number;
     currentPage: number;
     totalPages: number;

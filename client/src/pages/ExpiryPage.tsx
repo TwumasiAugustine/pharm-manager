@@ -26,9 +26,11 @@ export const ExpiryPage: React.FC = () => {
         refreshData,
     } = useExpiry(filters);
 
-    const unreadNotifications = Array.isArray(notifications)
-        ? notifications.filter((n) => !n.isRead).length
-        : 0;
+    // Defensive programming: ensure notifications is an array
+    const safeNotifications = Array.isArray(notifications) ? notifications : [];
+    const unreadNotifications = safeNotifications.filter(
+        (n) => !n.isRead,
+    ).length;
 
     const handleFilterChange = (newFilters: ExpiryFilters) => {
         setFilters(newFilters);
