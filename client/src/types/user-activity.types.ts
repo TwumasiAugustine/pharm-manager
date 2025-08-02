@@ -1,8 +1,23 @@
 export interface UserActivityFilters {
     userId?: string;
     sessionId?: string;
-    activityType?: 'LOGIN' | 'LOGOUT' | 'CREATE' | 'UPDATE' | 'DELETE' | 'VIEW' | 'DOWNLOAD' | 'SEARCH';
-    resource?: 'USER' | 'DRUG' | 'SALE' | 'CUSTOMER' | 'REPORT' | 'SYSTEM' | 'DASHBOARD';
+    activityType?:
+        | 'LOGIN'
+        | 'LOGOUT'
+        | 'CREATE'
+        | 'UPDATE'
+        | 'DELETE'
+        | 'VIEW'
+        | 'DOWNLOAD'
+        | 'SEARCH';
+    resource?:
+        | 'USER'
+        | 'DRUG'
+        | 'SALE'
+        | 'CUSTOMER'
+        | 'REPORT'
+        | 'SYSTEM'
+        | 'DASHBOARD';
     startDate?: string;
     endDate?: string;
     isActive?: boolean;

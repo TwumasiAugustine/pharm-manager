@@ -88,7 +88,8 @@ export const AuditLogsPage: React.FC = () => {
                                     Audit Logs
                                 </h1>
                                 <p className="mt-1 text-sm text-gray-600">
-                                    Track and monitor all user activities and system changes
+                                    Track and monitor all user activities and
+                                    system changes
                                 </p>
                             </div>
                         </div>
@@ -111,7 +112,9 @@ export const AuditLogsPage: React.FC = () => {
                         onFiltersChange={handleFiltersChange}
                         onRefresh={handleRefresh}
                         onCleanup={handleCleanup}
-                        isLoading={auditLogsLoading || cleanupMutation.isPending}
+                        isLoading={
+                            auditLogsLoading || cleanupMutation.isPending
+                        }
                     />
 
                     {/* Audit Logs Table */}
@@ -121,15 +124,18 @@ export const AuditLogsPage: React.FC = () => {
                     />
 
                     {/* Pagination */}
-                    {auditLogsData?.pagination && auditLogsData.pagination.totalPages > 1 && (
-                        <div className="mt-6">
-                            <Pagination
-                                currentPage={auditLogsData.pagination.page}
-                                totalPages={auditLogsData.pagination.totalPages}
-                                onPageChange={handlePageChange}
-                            />
-                        </div>
-                    )}
+                    {auditLogsData?.pagination &&
+                        auditLogsData.pagination.totalPages > 1 && (
+                            <div className="mt-6">
+                                <Pagination
+                                    currentPage={auditLogsData.pagination.page}
+                                    totalPages={
+                                        auditLogsData.pagination.totalPages
+                                    }
+                                    onPageChange={handlePageChange}
+                                />
+                            </div>
+                        )}
 
                     {/* Summary */}
                     {auditLogsData && (

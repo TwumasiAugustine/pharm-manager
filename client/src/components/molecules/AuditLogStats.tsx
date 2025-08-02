@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-    FiActivity,
-    FiUsers,
-    FiCalendar,
-    FiTrendingUp,
-} from 'react-icons/fi';
+import { FiActivity, FiUsers, FiCalendar, FiTrendingUp } from 'react-icons/fi';
 import type { AuditLogStatsResponse } from '../../types/audit-log.types';
 
 interface AuditLogStatsProps {

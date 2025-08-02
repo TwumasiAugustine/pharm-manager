@@ -25,6 +25,7 @@ import CustomerDetailsPage from './pages/CustomerDetailsPage';
 import { ExpiryPage } from './pages/ExpiryPage';
 import ReportsPage from './pages/ReportsPage';
 import AuditLogsPage from './pages/AuditLogsPage';
+import UserActivityPage from './pages/UserActivityPage';
 
 // Components
 import { ProtectedRoute } from './components/molecules/ProtectedRoute';
@@ -105,6 +106,10 @@ const router = createBrowserRouter([
             {
                 path: '/audit-logs',
                 element: <AuditLogsPage />,
+            },
+            {
+                path: '/user-activity',
+                element: <UserActivityPage />,
             },
         ],
     },

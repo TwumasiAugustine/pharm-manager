@@ -65,8 +65,12 @@ export const useCleanupAuditLogs = () => {
     return useMutation<{ deletedCount: number }, Error, number>({
         mutationFn: (daysToKeep) => auditLogApi.cleanupOldLogs(daysToKeep),
         onSuccess: (data) => {
-            queryClient.invalidateQueries({ queryKey: AUDIT_LOG_QUERY_KEYS.all });
-            notify.success(`Cleanup completed. ${data.deletedCount} old audit logs deleted.`);
+            queryClient.invalidateQueries({
+                queryKey: AUDIT_LOG_QUERY_KEYS.all,
+            });
+            notify.success(
+                `Cleanup completed. ${data.deletedCount} old audit logs deleted.`,
+            );
         },
         onError: (error) => {
             notify.error(error.message || 'Failed to cleanup audit logs');

@@ -50,8 +50,12 @@ export const auditLogApi = {
     /**
      * Cleanup old audit logs
      */
-    cleanupOldLogs: async (daysToKeep: number = 90): Promise<{ deletedCount: number }> => {
-        const response = await api.delete(`/audit-logs/cleanup?days=${daysToKeep}`);
+    cleanupOldLogs: async (
+        daysToKeep: number = 90,
+    ): Promise<{ deletedCount: number }> => {
+        const response = await api.delete(
+            `/audit-logs/cleanup?days=${daysToKeep}`,
+        );
         return response.data.data;
     },
 };

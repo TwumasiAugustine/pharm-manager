@@ -4,7 +4,10 @@ import { successResponse } from '../utils/response';
 import { getCookieOptions } from '../utils/jwt';
 import { ILoginRequest, ISignupRequest } from '../types/auth.types';
 import { logAuditEvent } from '../middlewares/audit.middleware';
-import { initializeUserSession, endUserSession } from '../middlewares/user-activity.middleware';
+import {
+    initializeUserSession,
+    endUserSession,
+} from '../middlewares/user-activity.middleware';
 
 const authService = new AuthService();
 
@@ -68,7 +71,7 @@ export class AuthController {
             setImmediate(async () => {
                 // Initialize user activity session
                 const sessionId = initializeUserSession(result.user.id, req);
-                
+
                 await logAuditEvent(
                     result.user.id,
                     'LOGIN',
@@ -114,7 +117,7 @@ export class AuthController {
             setImmediate(async () => {
                 // End user activity session
                 await endUserSession(req.user!.id, req);
-                
+
                 await logAuditEvent(
                     req.user!.id,
                     'LOGOUT',

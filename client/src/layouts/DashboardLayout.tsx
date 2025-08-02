@@ -15,6 +15,7 @@ import {
     FaExclamationTriangle,
     FaChartBar,
     FaHistory,
+    FaUserSecret,
 } from 'react-icons/fa';
 import { useState } from 'react';
 
@@ -71,6 +72,13 @@ const navItems = [
         icon: <FaHistory className="mr-3" />,
         label: 'Audit Logs',
         match: (pathname: string) => pathname === '/audit-logs',
+        adminOnly: true,
+    },
+    {
+        to: '/user-activity',
+        icon: <FaUserSecret className="mr-3" />,
+        label: 'Activity Tracker',
+        match: (pathname: string) => pathname === '/user-activity',
         adminOnly: true,
     },
     {

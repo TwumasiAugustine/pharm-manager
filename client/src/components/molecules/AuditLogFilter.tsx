@@ -168,9 +168,7 @@ export const AuditLogFilter: React.FC<AuditLogFilterProps> = ({
                 >
                     <FiCalendar className="h-4 w-4 mr-2" />
                     Date Range Filters
-                    <span className="ml-2">
-                        {showAdvanced ? '−' : '+'}
-                    </span>
+                    <span className="ml-2">{showAdvanced ? '−' : '+'}</span>
                 </button>
 
                 {showAdvanced && (
