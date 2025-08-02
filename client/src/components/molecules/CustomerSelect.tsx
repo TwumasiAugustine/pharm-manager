@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useCustomers, useCreateCustomer } from '../../hooks/useCustomers';
 import type { Customer } from '../../types/customer.types';
 import { useDebounce } from '../../hooks/useDebounce';
+import { useSafeNotify } from '../../utils/useSafeNotify';
 import { SearchBar } from './SearchBar';
-import {
-    FaUserPlus,
-    FaUser
-} from 'react-icons/fa';
+import { FaUserPlus, FaUser } from 'react-icons/fa';
 
 /**
  * Props for the CustomerSelect component
@@ -26,6 +24,7 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
     onChange,
     value,
 }) => {
+    const notify = useSafeNotify();
     const [searchTerm, setSearchTerm] = useState('');
     const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
     const [recentlyCreatedCustomer, setRecentlyCreatedCustomer] =
@@ -83,7 +82,7 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
      */
     const handleCreateNewCustomer = async () => {
         if (!newCustomer.name || !newCustomer.phone) {
-            alert('Name and phone are required');
+            notify.warning('Name and phone are required');
             return;
         }
 
@@ -113,7 +112,7 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
             setSearchTerm(''); // Clear search term
         } catch (error) {
             console.error('Error creating customer:', error);
-            alert('Failed to create customer. Please try again.');
+            notify.error('Failed to create customer. Please try again.');
         }
     };
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FiBell, FiRefreshCw, FiDownload, FiFilter } from 'react-icons/fi';
 import { useExpiry } from '../hooks/useExpiry';
+import { useSafeNotify } from '../utils/useSafeNotify';
 import { ExpiryStatsCards } from '../components/molecules/ExpiryStatsCards';
 import { ExpiryFilter } from '../components/molecules/ExpiryFilter';
 import { ExpiryDrugsList } from '../components/molecules/ExpiryDrugsList';
@@ -11,6 +12,7 @@ import type { ExpiryFilters } from '../types/expiry.types';
 export const ExpiryPage: React.FC = () => {
     const [showNotifications, setShowNotifications] = useState(false);
     const [showFilters, setShowFilters] = useState(true);
+    const notify = useSafeNotify();
     const [filters, setFilters] = useState<ExpiryFilters>({
         daysRange: 30,
         alertLevel: undefined,
@@ -38,7 +40,7 @@ export const ExpiryPage: React.FC = () => {
 
     const handleExportData = () => {
         if (!expiringDrugs || expiringDrugs.length === 0) {
-            alert('No data to export');
+            notify.warning('No data to export');
             return;
         }
 

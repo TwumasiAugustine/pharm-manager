@@ -1,9 +1,31 @@
-import { Sale } from '../models/sale.model';
+import { Sale, ISale } from '../models/sale.model';
 import Drug from '../models/drug.model';
 import Customer from '../models/customer.model';
 import { Types } from 'mongoose';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 import { CustomerService } from './customer.service';
+
+// Helper type for mapped sale objects
+type MappedSaleItem = {
+    drug: any;
+    quantity: number;
+    priceAtSale: number;
+    [key: string]: any;
+};
+
+type MappedSale = {
+    id: string;
+    items: MappedSaleItem[];
+    soldBy: any;
+    customer?: any;
+    totalAmount: number;
+    paymentMethod: string;
+    transactionId?: string;
+    notes?: string;
+    createdAt: Date;
+    updatedAt: Date;
+    [key: string]: any;
+};
 
 export class SaleService {
     private customerService: CustomerService;
@@ -103,7 +125,16 @@ export class SaleService {
         limit?: number;
         startDate?: string;
         endDate?: string;
-    }) {
+    }): Promise<{
+        data: MappedSale[];
+        groupedData: Record<string, MappedSale[]>;
+        pagination: {
+            total: number;
+            page: number;
+            limit: number;
+            totalPages: number;
+        };
+    }> {
         const query: any = {};
 
         // Date filtering
@@ -134,53 +165,41 @@ export class SaleService {
 
         // Map _id to id for each sale and nested objects
         const mappedSales = sales.map((sale) => {
-            const saleObj = sale.toObject() as {
-                _id: Types.ObjectId;
-                items: {
-                    drug: { _id: Types.ObjectId; [key: string]: any } | string;
-                    quantity: number;
-                    priceAtSale: number;
-                    [key: string]: any;
-                }[];
-                soldBy:
-                    | { _id: Types.ObjectId; name: string; [key: string]: any }
-                    | string;
-                customer?: {
-                    _id: Types.ObjectId;
-                    name: string;
-                    phone: string;
-                    [key: string]: any;
-                };
-                [key: string]: any;
-            };
+            const saleObj = sale.toObject();
             return {
                 ...saleObj,
-                id: saleObj._id.toString(),
-                items: saleObj.items.map((item) => ({
+                id: (saleObj._id as Types.ObjectId).toString(),
+                items: saleObj.items.map((item: any) => ({
                     ...item,
                     drug:
                         item.drug && typeof item.drug === 'object'
                             ? {
                                   ...item.drug,
-                                  id:
-                                      item.drug._id?.toString() ||
-                                      (item.drug as any).id ||
-                                      '',
+                                  id: item.drug._id?.toString() || '',
                               }
                             : item.drug,
                 })),
                 soldBy:
                     saleObj.soldBy && typeof saleObj.soldBy === 'object'
                         ? {
-                              ...saleObj.soldBy,
-                              id: saleObj.soldBy._id?.toString() || '',
+                              ...(saleObj.soldBy as any),
+                              id: (saleObj.soldBy as any)._id?.toString() || '',
                           }
                         : saleObj.soldBy,
+                customer:
+                    saleObj.customer && typeof saleObj.customer === 'object'
+                        ? {
+                              ...(saleObj.customer as any),
+                              id:
+                                  (saleObj.customer as any)._id?.toString() ||
+                                  '',
+                          }
+                        : saleObj.customer,
             };
         });
 
         // Group sales by date
-        const groupedSales = mappedSales.reduce<Record<string, any[]>>(
+        const groupedSales = mappedSales.reduce<Record<string, MappedSale[]>>(
             (acc, sale) => {
                 const date = new Date(sale.createdAt).toDateString();
                 if (!acc[date]) acc[date] = [];
@@ -208,62 +227,42 @@ export class SaleService {
      * @returns The sale with populated drug, customer, and soldBy fields
      * @throws NotFoundError if the sale doesn't exist
      */
-    async getSaleById(id: string) {
+    async getSaleById(id: string): Promise<MappedSale> {
         const sale = await Sale.findById(id)
             .populate('items.drug')
             .populate('soldBy', 'name')
             .populate('customer', 'name phone');
         if (!sale) throw new NotFoundError('Sale not found');
+
         // Map _id to id for sale and nested objects
-        const saleObj = sale.toObject() as {
-            _id: Types.ObjectId;
-            items: {
-                drug: { _id: Types.ObjectId; [key: string]: any } | string;
-                quantity: number;
-                priceAtSale: number;
-                [key: string]: any;
-            }[];
-            soldBy:
-                | { _id: Types.ObjectId; name: string; [key: string]: any }
-                | string;
-            customer?: {
-                _id: Types.ObjectId;
-                name: string;
-                phone: string;
-                [key: string]: any;
-            };
-            [key: string]: any;
-        };
+        const saleObj = sale.toObject();
         const mappedSale = {
             ...saleObj,
-            id: saleObj._id.toString(),
-            items: saleObj.items.map((item) => ({
+            id: (saleObj._id as Types.ObjectId).toString(),
+            items: saleObj.items.map((item: any) => ({
                 ...item,
                 drug:
                     item.drug && typeof item.drug === 'object'
                         ? {
                               ...item.drug,
-                              id:
-                                  item.drug._id?.toString() ||
-                                  (item.drug as any).id ||
-                                  '',
+                              id: item.drug._id?.toString() || '',
                           }
                         : item.drug,
             })),
             soldBy:
                 saleObj.soldBy && typeof saleObj.soldBy === 'object'
                     ? {
-                          ...saleObj.soldBy,
-                          id: saleObj.soldBy._id?.toString() || '',
+                          ...(saleObj.soldBy as any),
+                          id: (saleObj.soldBy as any)._id?.toString() || '',
                       }
                     : saleObj.soldBy,
             customer:
                 saleObj.customer && typeof saleObj.customer === 'object'
                     ? {
-                          ...saleObj.customer,
-                          id: saleObj.customer._id?.toString() || '',
+                          ...(saleObj.customer as any),
+                          id: (saleObj.customer as any)._id?.toString() || '',
                       }
-                    : undefined,
+                    : saleObj.customer,
         };
         return mappedSale;
     }

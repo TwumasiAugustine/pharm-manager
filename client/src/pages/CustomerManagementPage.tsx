@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import {useNavigate} from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
 import { useCustomers, useCreateCustomer } from '../hooks/useCustomers';
+import { useSafeNotify } from '../utils/useSafeNotify';
 import { Table } from '../components/molecules/Table';
 import type { TableColumn } from '../components/molecules/Table';
 import { Pagination } from '../components/molecules/Pagination';
@@ -12,6 +13,7 @@ import { FaUsers, FaUserPlus, FaEye } from 'react-icons/fa';
 
 const CustomerManagementPage: React.FC = () => {
     const [showForm, setShowForm] = useState(false);
+    const notify = useSafeNotify();
     const [formData, setFormData] = useState<CreateCustomerRequest>({
         name: '',
         phone: '',
@@ -52,7 +54,7 @@ const CustomerManagementPage: React.FC = () => {
         e.preventDefault();
 
         if (!formData.name || !formData.phone) {
-            alert('Name and phone are required');
+            notify.warning('Name and phone are required');
             return;
         }
 
@@ -262,7 +264,9 @@ const CustomerManagementPage: React.FC = () => {
                                         label: 'View Details',
                                         icon: <FaEye />,
                                         onClick: (customer) => {
-                                            navigate(`/customers/${customer.id}`);
+                                            navigate(
+                                                `/customers/${customer.id}`,
+                                            );
                                         },
                                     },
                                 ]}

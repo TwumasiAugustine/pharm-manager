@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FiDownload, FiRefreshCw, FiFilter, FiCalendar } from 'react-icons/fi';
 import { useReports } from '../hooks/useReports';
+import { useSafeNotify } from '../utils/useSafeNotify';
 import { ReportSummary } from '../components/molecules/ReportSummary';
 import { ReportFilter } from '../components/molecules/ReportFilter';
 import ReportTable from '../components/molecules/ReportTable';
@@ -9,6 +10,7 @@ import type { ReportFilters } from '../types/report.types';
 
 export const ReportsPage: React.FC = () => {
     const [showFilters, setShowFilters] = useState(true);
+    const notify = useSafeNotify();
     const [filters, setFilters] = useState<ReportFilters>({
         dateRange: {
             start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
@@ -40,7 +42,7 @@ export const ReportsPage: React.FC = () => {
             await exportReport(format, filters);
         } catch (error) {
             console.error('Export failed:', error);
-            alert('Failed to export report. Please try again.');
+            notify.error('Failed to export report. Please try again.');
         }
     };
 
@@ -49,7 +51,7 @@ export const ReportsPage: React.FC = () => {
             await generateReport(filters);
         } catch (error) {
             console.error('Report generation failed:', error);
-            alert('Failed to generate report. Please try again.');
+            notify.error('Failed to generate report. Please try again.');
         }
     };
 

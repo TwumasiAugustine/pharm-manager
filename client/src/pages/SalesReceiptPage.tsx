@@ -12,12 +12,14 @@ import { getErrorMessage } from '../utils/error';
 import { useSale } from '../hooks/useSales';
 import { useDrugs } from '../hooks/useDrugs';
 import { usePharmacyInfo } from '../hooks/usePharmacy';
+import { useSafeNotify } from '../utils/useSafeNotify';
 import LoadingSkeleton from '../components/organisms/LoadingSkeleton';
 import ReactDOMServer from 'react-dom/server';
 
 const SalesReceiptPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const notify = useSafeNotify();
 
     const {
         data: sale,
@@ -44,7 +46,7 @@ const SalesReceiptPage: React.FC = () => {
 
         const printWindow = window.open('', '_blank');
         if (!printWindow) {
-            alert('Please allow popups to print the receipt.');
+            notify.warning('Please allow popups to print the receipt.');
             return;
         }
 

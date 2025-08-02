@@ -29,8 +29,6 @@ const EditDrugPage: React.FC = () => {
         });
     };
 
-    console.log(drug);
-
     if (isLoading) {
         return (
             <DashboardLayout>
