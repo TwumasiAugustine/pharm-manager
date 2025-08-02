@@ -167,9 +167,12 @@ const DrugCard: React.FC<DrugCardProps> = ({ drug }) => {
 };
 
 export const ExpiryDrugsList: React.FC<ExpiryDrugsListProps> = ({
-    drugs,
+    drugs: drugsProps,
     isLoading = false,
 }) => {
+    // Ensure drugs is always an array
+    const drugs = Array.isArray(drugsProps) ? drugsProps : [];
+
     if (isLoading) {
         return (
             <div className="space-y-4">
