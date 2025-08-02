@@ -42,6 +42,23 @@ export interface ReportResponse {
     totalRecords: number;
     currentPage: number;
     totalPages: number;
+    pharmacyInfo?: {
+        name: string;
+        address: {
+            street: string;
+            city: string;
+            state: string;
+            postalCode: string;
+            country: string;
+        };
+        contact: {
+            phone: string;
+            email: string;
+            website?: string;
+        };
+        registrationNumber: string;
+        slogan: string;
+    };
 }
 
 export interface ExportReportRequest {
