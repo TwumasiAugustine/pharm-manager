@@ -29,6 +29,8 @@ const EditDrugPage: React.FC = () => {
         });
     };
 
+    console.log(drug);
+
     if (isLoading) {
         return (
             <DashboardLayout>
@@ -54,7 +56,6 @@ const EditDrugPage: React.FC = () => {
                     >
                         Back to Drug List
                     </button>
-
                 </div>
             </DashboardLayout>
         );
@@ -65,6 +66,7 @@ const EditDrugPage: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-2xl font-semibold mb-6">Edit Drug</h2>
                 <DrugForm
+                    key={drug.id} // Force re-render when drug changes
                     onSubmit={handleSubmit}
                     initialData={drug}
                     isSubmitting={updateDrug.isPending}

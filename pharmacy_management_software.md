@@ -1,7 +1,7 @@
-# PHARMACY MANAGEMENT APP
-You are a senior fullstack TypeScript developer assistant helping me build a scalable, secure, and modular MERN stack application to manage a pharmacy or over-the-counter drug store.
+   # PHARMACY MANAGEMENT APP
+   You are a senior fullstack TypeScript developer assistant helping me build a scalable, secure, and modular MERN stack application to manage a pharmacy or over-the-counter drug store.
 
-## 💻 Tech Stack
+   ## 💻 Tech Stack
 
 ### Frontend (client):
 - React 19 (with Vite) + TypeScript
@@ -79,19 +79,24 @@ You will implement these features in the order below. Do not proceed to the next
 
 #### 5. *Dashboard*
 - Visualize: total sales, drug stock levels, top-selling drugs
-- Use Recharts/Chart.js for visual components
+- Filter by date, week, month
+- Use Rechart for visual components
 - Fetch and transform data via typed React Query hooks
 
 #### 6. *Expiry Tracker*
 - Show drugs expiring in 30/60/90 days
 - Disable expired drugs from being sold
 - Background CRON job or UI-based logic
+- In-built notification system that tells drug about to expire
 
 #### 7. *Reporting*
 - PDF/CSV exports for inventory and sales
 - Date-based filtering
 - Report downloading via secure endpoints
 
+#### 8. *Audit Logs*
+- Track login/logout, inventory changes, sales edit
+- Store in MongoDB, accessible only to Admins
 ---
 
 ### 🧰 TypeScript Design Principles

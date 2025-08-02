@@ -134,29 +134,11 @@ export class SaleService {
 
         // Map _id to id for each sale and nested objects
         const mappedSales = sales.map((sale) => {
-            const saleObj = sale.toObject() as {
-                _id: Types.ObjectId;
-                items: {
-                    drug: { _id: Types.ObjectId; [key: string]: any } | string;
-                    quantity: number;
-                    priceAtSale: number;
-                    [key: string]: any;
-                }[];
-                soldBy:
-                    | { _id: Types.ObjectId; name: string; [key: string]: any }
-                    | string;
-                customer?: {
-                    _id: Types.ObjectId;
-                    name: string;
-                    phone: string;
-                    [key: string]: any;
-                };
-                [key: string]: any;
-            };
+            const saleObj = sale.toObject() as any;
             return {
                 ...saleObj,
                 id: saleObj._id.toString(),
-                items: saleObj.items.map((item) => ({
+                items: saleObj.items.map((item: any) => ({
                     ...item,
                     drug:
                         item.drug && typeof item.drug === 'object'
@@ -176,6 +158,13 @@ export class SaleService {
                               id: saleObj.soldBy._id?.toString() || '',
                           }
                         : saleObj.soldBy,
+                customer:
+                    saleObj.customer && typeof saleObj.customer === 'object'
+                        ? {
+                              ...saleObj.customer,
+                              id: saleObj.customer._id?.toString() || '',
+                          }
+                        : undefined,
             };
         });
 
@@ -215,29 +204,11 @@ export class SaleService {
             .populate('customer', 'name phone');
         if (!sale) throw new NotFoundError('Sale not found');
         // Map _id to id for sale and nested objects
-        const saleObj = sale.toObject() as {
-            _id: Types.ObjectId;
-            items: {
-                drug: { _id: Types.ObjectId; [key: string]: any } | string;
-                quantity: number;
-                priceAtSale: number;
-                [key: string]: any;
-            }[];
-            soldBy:
-                | { _id: Types.ObjectId; name: string; [key: string]: any }
-                | string;
-            customer?: {
-                _id: Types.ObjectId;
-                name: string;
-                phone: string;
-                [key: string]: any;
-            };
-            [key: string]: any;
-        };
+        const saleObj = sale.toObject() as any;
         const mappedSale = {
             ...saleObj,
             id: saleObj._id.toString(),
-            items: saleObj.items.map((item) => ({
+            items: saleObj.items.map((item: any) => ({
                 ...item,
                 drug:
                     item.drug && typeof item.drug === 'object'

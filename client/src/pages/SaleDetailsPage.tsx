@@ -6,9 +6,8 @@ import { Button } from '../components/atoms/Button';
 import { FaArrowLeft } from 'react-icons/fa';
 import LoadingSkeleton from '../components/organisms/LoadingSkeleton';
 import ErrorDisplay from '../components/organisms/ErrorDisplay';
-import SaleInfoCard from '../components/organisms/SaleInfoCard';
 import ItemsTable from '../components/organisms/ItemsTable';
-import PrintReceipt from '../components/organisms/PrintReceipt';
+
 
 /**
  * SaleDetailsPage component
@@ -49,11 +48,7 @@ const SaleDetailsPage: React.FC = () => {
                         <FaArrowLeft className="h-4 w-4" />
                         Back to Sales List
                     </Button>
-                    <PrintReceipt sale={sale} />
                 </div>
-
-                {/* Sale information card */}
-                <SaleInfoCard sale={sale} />
 
                 {/* Items table with pricing breakdown */}
                 <ItemsTable

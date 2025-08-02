@@ -11,6 +11,8 @@ interface SearchBarProps {
     placeholder?: string;
     className?: string;
     initialValue?: string;
+    onFocus?: () => void;
+    onBlur?: () => void;
 }
 
 // Validation schema for search input
@@ -28,6 +30,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     placeholder = 'Search...',
     className = '',
     initialValue = '',
+    onFocus,
+    onBlur,
 }) => {
     // Timeout for debouncing
     const [debounceTimeout, setDebounceTimeout] = useState<ReturnType<
@@ -86,6 +90,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                             onSearch(value);
                         }
                     }}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
                 />
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <svg

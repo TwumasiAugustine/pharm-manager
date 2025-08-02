@@ -1,8 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSales } from '../hooks/useSales';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/atoms/Button';
-import { FaEye, FaCalendarAlt, FaFilter } from 'react-icons/fa';
+import {
+    FaEye,
+    FaCalendarAlt,
+    FaFilter,
+    FaEllipsisV,
+    FaLayerGroup,
+    FaPlus,
+} from 'react-icons/fa';
 import { Table } from '../components/molecules/Table';
 import type { TableColumn, TableAction } from '../components/molecules/Table';
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -25,6 +32,8 @@ import { Input } from '../components/atoms/Input';
 const SalesListPage: React.FC = () => {
     // Pagination and filter state
     const [page, setPage] = useState(1);
+    const [showActionsDropdown, setShowActionsDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const [filters, setFilters] = useState<SaleSearchParams>({
         page: 1,
         limit: 10, // Ensure this is a number, not a string
@@ -75,6 +84,23 @@ const SalesListPage: React.FC = () => {
         // Update filters state with current page
         setFilters((prev) => ({ ...prev, page }));
     };
+
+    // Close dropdown when clicked outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target as Node)
+            ) {
+                setShowActionsDropdown(false);
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [dropdownRef]);
 
     // Handle page change
     const handlePageChange = (newPage: number) => {
@@ -327,7 +353,9 @@ const SalesListPage: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-semibold">Sales History</h2>
-                    <div className="flex space-x-2">
+
+                    {/* Desktop view - regular buttons */}
+                    <div className="hidden md:flex space-x-2">
                         <Button
                             variant="secondary"
                             onClick={toggleGrouping}
@@ -348,6 +376,68 @@ const SalesListPage: React.FC = () => {
                         <Link to="/sales/new">
                             <Button>Create New Sale</Button>
                         </Link>
+                    </div>
+
+                    {/* Mobile view - dropdown menu */}
+                    <div className="relative md:hidden" ref={dropdownRef}>
+                        <Button
+                            variant="secondary"
+                            onClick={() =>
+                                setShowActionsDropdown(!showActionsDropdown)
+                            }
+                            className="flex items-center"
+                            aria-label="Actions menu"
+                        >
+                            <span className="mr-2">Actions</span>
+                            <FaEllipsisV className="h-4 w-4" />
+                        </Button>
+
+                        {showActionsDropdown && (
+                            <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                                <div
+                                    className="py-1"
+                                    role="menu"
+                                    aria-orientation="vertical"
+                                    aria-labelledby="options-menu"
+                                >
+                                    <button
+                                        onClick={() => {
+                                            toggleGrouping();
+                                            setShowActionsDropdown(false);
+                                        }}
+                                        className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        role="menuitem"
+                                    >
+                                        <FaLayerGroup className="mr-3 h-4 w-4" />
+                                        {filters.groupByDate
+                                            ? 'Show Individual Sales'
+                                            : 'Group by Date'}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowFilters(!showFilters);
+                                            setShowActionsDropdown(false);
+                                        }}
+                                        className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        role="menuitem"
+                                    >
+                                        <FaFilter className="mr-3 h-4 w-4" />
+                                        Filters
+                                    </button>
+                                    <Link
+                                        to="/sales/new"
+                                        className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        role="menuitem"
+                                        onClick={() =>
+                                            setShowActionsDropdown(false)
+                                        }
+                                    >
+                                        <FaPlus className="mr-3 h-4 w-4" />
+                                        Create New Sale
+                                    </Link>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
