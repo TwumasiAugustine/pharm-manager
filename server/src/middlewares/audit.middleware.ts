@@ -17,8 +17,12 @@ export const auditLogger = (
     return async (req: Request, res: Response, next: NextFunction) => {
         // Store original data for comparison if capturing changes
         let originalData: any = null;
-        
-        if (captureChanges && (action === 'UPDATE' || action === 'DELETE') && getResourceId) {
+
+        if (
+            captureChanges &&
+            (action === 'UPDATE' || action === 'DELETE') &&
+            getResourceId
+        ) {
             try {
                 const resourceId = getResourceId(req, res);
                 // This would need to be enhanced based on the specific resource
@@ -41,18 +45,23 @@ export const auditLogger = (
                             userId: req.user!.id,
                             action,
                             resource,
-                            resourceId: getResourceId ? getResourceId(req, res) : undefined,
+                            resourceId: getResourceId
+                                ? getResourceId(req, res)
+                                : undefined,
                             details: {
                                 description: getDescription(req, res),
                                 userRole: req.user!.role,
-                                ipAddress: req.ip || req.connection.remoteAddress,
+                                ipAddress:
+                                    req.ip || req.connection.remoteAddress,
                                 userAgent: req.get('User-Agent'),
-                                ...(captureChanges && originalData && {
-                                    oldValues: originalData,
-                                }),
-                                ...(captureChanges && req.body && {
-                                    newValues: req.body,
-                                }),
+                                ...(captureChanges &&
+                                    originalData && {
+                                        oldValues: originalData,
+                                    }),
+                                ...(captureChanges &&
+                                    req.body && {
+                                        newValues: req.body,
+                                    }),
                             },
                         };
 

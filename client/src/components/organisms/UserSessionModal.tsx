@@ -1,8 +1,8 @@
 import React from 'react';
 import { useUserSession } from '../../hooks/useUserActivity';
-import { Modal } from '../molecules/Modal';
-import { LoadingSpinner } from '../atoms/LoadingSpinner';
-import { ErrorMessage } from '../atoms/ErrorMessage';
+import { Modal } from '../../components/molecules/Modal';
+import { LoadingSpinner } from '../../components/atoms/LoadingSpinner';
+import { ErrorMessage } from '../../components/atoms/ErrorMessage';
 import {
     FaUser,
     FaClock,

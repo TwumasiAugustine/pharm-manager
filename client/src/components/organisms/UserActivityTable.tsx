@@ -1,5 +1,6 @@
 import React from 'react';
-import { Table, TableColumn } from '../molecules/Table';
+import { Table } from '../molecules/Table';
+import type { TableColumn } from '../molecules/Table';
 import { Pagination } from '../molecules/Pagination';
 import { LoadingSpinner } from '../atoms/LoadingSpinner';
 import { ErrorMessage } from '../atoms/ErrorMessage';

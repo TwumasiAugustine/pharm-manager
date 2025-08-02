@@ -6,20 +6,41 @@ import { v4 as uuidv4 } from 'uuid';
 const userActivityService = new UserActivityService();
 
 // Store session info in memory (in production, use Redis)
-const sessionStore = new Map<string, {
-    sessionId: string;
-    loginTime: Date;
-    userId: string;
-}>();
+const sessionStore = new Map<
+    string,
+    {
+        sessionId: string;
+        loginTime: Date;
+        userId: string;
+    }
+>();
 
 /**
  * User activity tracking middleware
  */
 export const userActivityTracker = (
-    activityType: 'LOGIN' | 'LOGOUT' | 'CREATE' | 'UPDATE' | 'DELETE' | 'VIEW' | 'DOWNLOAD' | 'SEARCH',
-    resource: 'USER' | 'DRUG' | 'SALE' | 'CUSTOMER' | 'REPORT' | 'SYSTEM' | 'DASHBOARD',
+    activityType:
+        | 'LOGIN'
+        | 'LOGOUT'
+        | 'CREATE'
+        | 'UPDATE'
+        | 'DELETE'
+        | 'VIEW'
+        | 'DOWNLOAD'
+        | 'SEARCH',
+    resource:
+        | 'USER'
+        | 'DRUG'
+        | 'SALE'
+        | 'CUSTOMER'
+        | 'REPORT'
+        | 'SYSTEM'
+        | 'DASHBOARD',
     getActionDescription: (req: Request, res: Response) => string,
-    getResourceInfo?: (req: Request, res: Response) => { id?: string; name?: string },
+    getResourceInfo?: (
+        req: Request,
+        res: Response,
+    ) => { id?: string; name?: string },
     capturePerformance: boolean = false,
 ) => {
     return async (req: Request, res: Response, next: NextFunction) => {
@@ -41,12 +62,20 @@ export const userActivityTracker = (
                         activityType,
                         resource,
                         actionDescription: getActionDescription(req, res),
-                        resourceInfo: getResourceInfo ? getResourceInfo(req, res) : undefined,
-                        performanceMetrics: startTime ? {
-                            responseTime: Date.now() - startTime,
-                            requestSize: JSON.stringify(req.body || {}).length,
-                            responseSize: typeof body === 'string' ? body.length : JSON.stringify(body).length,
-                        } : undefined,
+                        resourceInfo: getResourceInfo
+                            ? getResourceInfo(req, res)
+                            : undefined,
+                        performanceMetrics: startTime
+                            ? {
+                                  responseTime: Date.now() - startTime,
+                                  requestSize: JSON.stringify(req.body || {})
+                                      .length,
+                                  responseSize:
+                                      typeof body === 'string'
+                                          ? body.length
+                                          : JSON.stringify(body).length,
+                              }
+                            : undefined,
                     });
                 });
 
@@ -61,7 +90,9 @@ export const userActivityTracker = (
                         activityType,
                         resource,
                         actionDescription: getActionDescription(req, res),
-                        resourceInfo: getResourceInfo ? getResourceInfo(req, res) : undefined,
+                        resourceInfo: getResourceInfo
+                            ? getResourceInfo(req, res)
+                            : undefined,
                     });
                 });
 
@@ -79,7 +110,7 @@ export const userActivityTracker = (
 export const initializeUserSession = (userId: string, req: Request): string => {
     const sessionId = uuidv4();
     const loginTime = new Date();
-    
+
     sessionStore.set(userId, {
         sessionId,
         loginTime,
@@ -104,13 +135,18 @@ export const initializeUserSession = (userId: string, req: Request): string => {
 /**
  * End user session on logout
  */
-export const endUserSession = async (userId: string, req: Request): Promise<void> => {
+export const endUserSession = async (
+    userId: string,
+    req: Request,
+): Promise<void> => {
     const sessionInfo = sessionStore.get(userId);
-    
+
     if (sessionInfo) {
         // Calculate session duration
-        const duration = Math.round((Date.now() - sessionInfo.loginTime.getTime()) / (1000 * 60));
-        
+        const duration = Math.round(
+            (Date.now() - sessionInfo.loginTime.getTime()) / (1000 * 60),
+        );
+
         // Log logout activity
         await logUserActivity(req, null, {
             activityType: 'LOGOUT',
@@ -123,8 +159,11 @@ export const endUserSession = async (userId: string, req: Request): Promise<void
         });
 
         // Update session status to inactive
-        await userActivityService.updateSessionStatus(sessionInfo.sessionId, false);
-        
+        await userActivityService.updateSessionStatus(
+            sessionInfo.sessionId,
+            false,
+        );
+
         // Remove from session store
         sessionStore.delete(userId);
     }
@@ -134,11 +173,26 @@ export const endUserSession = async (userId: string, req: Request): Promise<void
  * Log user activity
  */
 async function logUserActivity(
-    req: Request, 
-    res: Response | null, 
+    req: Request,
+    res: Response | null,
     options: {
-        activityType: 'LOGIN' | 'LOGOUT' | 'CREATE' | 'UPDATE' | 'DELETE' | 'VIEW' | 'DOWNLOAD' | 'SEARCH';
-        resource: 'USER' | 'DRUG' | 'SALE' | 'CUSTOMER' | 'REPORT' | 'SYSTEM' | 'DASHBOARD';
+        activityType:
+            | 'LOGIN'
+            | 'LOGOUT'
+            | 'CREATE'
+            | 'UPDATE'
+            | 'DELETE'
+            | 'VIEW'
+            | 'DOWNLOAD'
+            | 'SEARCH';
+        resource:
+            | 'USER'
+            | 'DRUG'
+            | 'SALE'
+            | 'CUSTOMER'
+            | 'REPORT'
+            | 'SYSTEM'
+            | 'DASHBOARD';
         actionDescription: string;
         resourceInfo?: { id?: string; name?: string };
         performanceMetrics?: {
@@ -150,7 +204,7 @@ async function logUserActivity(
         loginTime?: Date;
         sessionDuration?: number;
         forceLog?: boolean;
-    }
+    },
 ): Promise<void> {
     try {
         if (!req.user && !options.forceLog) return;
@@ -159,10 +213,13 @@ async function logUserActivity(
         if (!userId && !options.forceLog) return;
 
         // Get session info
-        const sessionInfo = options.sessionId && options.loginTime ? {
-            sessionId: options.sessionId,
-            loginTime: options.loginTime,
-        } : sessionStore.get(userId!);
+        const sessionInfo =
+            options.sessionId && options.loginTime
+                ? {
+                      sessionId: options.sessionId,
+                      loginTime: options.loginTime,
+                  }
+                : sessionStore.get(userId!);
 
         if (!sessionInfo && !options.forceLog) {
             // If no session info and not a forced log (like login), skip
@@ -170,8 +227,11 @@ async function logUserActivity(
         }
 
         // Determine if successful operation (for non-forced logs)
-        const isSuccessful = options.forceLog || !res || (res.statusCode >= 200 && res.statusCode < 300);
-        
+        const isSuccessful =
+            options.forceLog ||
+            !res ||
+            (res.statusCode >= 200 && res.statusCode < 300);
+
         if (!isSuccessful) return;
 
         const activityData: CreateUserActivityRequest = {
@@ -188,18 +248,25 @@ async function logUserActivity(
                     path: req.originalUrl,
                     userAgent: req.get('User-Agent'),
                     timestamp: new Date(),
-                    ...(options.performanceMetrics && { performance: options.performanceMetrics }),
+                    ...(options.performanceMetrics && {
+                        performance: options.performanceMetrics,
+                    }),
                 },
             },
             session: {
-                loginTime: sessionInfo?.loginTime || options.loginTime || new Date(),
+                loginTime:
+                    sessionInfo?.loginTime || options.loginTime || new Date(),
                 lastActivity: new Date(),
                 ipAddress: req.ip || req.connection?.remoteAddress || 'unknown',
                 userAgent: req.get('User-Agent') || 'unknown',
                 isActive: options.activityType !== 'LOGOUT',
-                ...(options.sessionDuration && { duration: options.sessionDuration }),
+                ...(options.sessionDuration && {
+                    duration: options.sessionDuration,
+                }),
             },
-            ...(options.performanceMetrics && { performance: options.performanceMetrics }),
+            ...(options.performanceMetrics && {
+                performance: options.performanceMetrics,
+            }),
         };
 
         await userActivityService.createUserActivity(activityData);

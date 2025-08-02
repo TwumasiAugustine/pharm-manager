@@ -56,7 +56,10 @@ export class AuditLogController {
             const stats = await this.auditLogService.getAuditLogStats();
 
             res.status(200).json(
-                successResponse(stats, 'Audit log statistics retrieved successfully'),
+                successResponse(
+                    stats,
+                    'Audit log statistics retrieved successfully',
+                ),
             );
         } catch (error) {
             next(error);
@@ -96,13 +99,10 @@ export class AuditLogController {
         next: NextFunction,
     ): Promise<void> {
         try {
-            const daysToKeep = req.query.days
-                ? Number(req.query.days)
-                : 90;
+            const daysToKeep = req.query.days ? Number(req.query.days) : 90;
 
-            const deletedCount = await this.auditLogService.deleteOldLogs(
-                daysToKeep,
-            );
+            const deletedCount =
+                await this.auditLogService.deleteOldLogs(daysToKeep);
 
             res.status(200).json(
                 successResponse(

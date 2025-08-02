@@ -40,10 +40,7 @@ router.get(
  * @access  Private
  * @query   page, limit, activityType, resource, startDate, endDate
  */
-router.get(
-    '/my-activities',
-    userActivityController.getMyActivities,
-);
+router.get('/my-activities', userActivityController.getMyActivities);
 
 /**
  * @route   GET /api/user-activities/sessions/:sessionId

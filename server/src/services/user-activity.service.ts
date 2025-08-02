@@ -1,27 +1,30 @@
 import { UserActivity, IUserActivity } from '../models/user-activity.model';
 import { User } from '../models/user.model';
-import { 
-    UserActivityFilters, 
-    CreateUserActivityRequest, 
-    UserActivityResponse, 
+import {
+    UserActivityFilters,
+    CreateUserActivityRequest,
+    UserActivityResponse,
     UserActivityStats,
     UserSessionInfo,
-    UserActivitySummary
+    UserActivitySummary,
 } from '../types/user-activity.types';
 import { BadRequestError } from '../utils/errors';
 
 export class UserActivityService {
-    
     /**
      * Create a new user activity record
      */
-    async createUserActivity(data: CreateUserActivityRequest): Promise<UserActivityResponse> {
+    async createUserActivity(
+        data: CreateUserActivityRequest,
+    ): Promise<UserActivityResponse> {
         try {
             const activity = new UserActivity(data);
             const savedActivity = await activity.save();
-            
+
             // Populate user details and return formatted response
-            const populatedActivity = await UserActivity.findById(savedActivity._id)
+            const populatedActivity = await UserActivity.findById(
+                savedActivity._id,
+            )
                 .populate('userId', 'name email role')
                 .lean();
 
@@ -34,7 +37,9 @@ export class UserActivityService {
     /**
      * Get user activities with filtering and pagination
      */
-    async getUserActivities(filters: UserActivityFilters): Promise<UserActivitySummary> {
+    async getUserActivities(
+        filters: UserActivityFilters,
+    ): Promise<UserActivitySummary> {
         const {
             page = 1,
             limit = 20,
@@ -57,7 +62,8 @@ export class UserActivityService {
         if (activityType) query['activity.type'] = activityType;
         if (resource) query['activity.resource'] = resource;
         if (isActive !== undefined) query['session.isActive'] = isActive;
-        if (ipAddress) query['session.ipAddress'] = { $regex: ipAddress, $options: 'i' };
+        if (ipAddress)
+            query['session.ipAddress'] = { $regex: ipAddress, $options: 'i' };
 
         // Date range filter
         if (startDate || endDate) {
@@ -83,8 +89,8 @@ export class UserActivityService {
         // Filter by user role if specified
         let filteredActivities = activities;
         if (userRole) {
-            filteredActivities = activities.filter((activity: any) => 
-                activity.userId?.role === userRole
+            filteredActivities = activities.filter(
+                (activity: any) => activity.userId?.role === userRole,
             );
         }
 
@@ -95,7 +101,9 @@ export class UserActivityService {
 
         return {
             totalActivities: totalCount,
-            activities: filteredActivities.map(activity => this.formatActivityResponse(activity as any)),
+            activities: filteredActivities.map((activity) =>
+                this.formatActivityResponse(activity as any),
+            ),
             totalPages,
             currentPage: page,
             hasNextPage,
@@ -106,7 +114,9 @@ export class UserActivityService {
     /**
      * Get user activity statistics
      */
-    async getUserActivityStats(filters: Partial<UserActivityFilters> = {}): Promise<UserActivityStats> {
+    async getUserActivityStats(
+        filters: Partial<UserActivityFilters> = {},
+    ): Promise<UserActivityStats> {
         const { startDate, endDate, userId } = filters;
 
         // Build base query
@@ -132,9 +142,16 @@ export class UserActivityService {
             topActions,
         ] = await Promise.all([
             UserActivity.countDocuments(baseQuery),
-            UserActivity.distinct('userId', baseQuery).then(users => users.length),
-            UserActivity.distinct('sessionId', { ...baseQuery, 'session.isActive': true }).then(sessions => sessions.length),
-            UserActivity.distinct('sessionId', baseQuery).then(sessions => sessions.length),
+            UserActivity.distinct('userId', baseQuery).then(
+                (users) => users.length,
+            ),
+            UserActivity.distinct('sessionId', {
+                ...baseQuery,
+                'session.isActive': true,
+            }).then((sessions) => sessions.length),
+            UserActivity.distinct('sessionId', baseQuery).then(
+                (sessions) => sessions.length,
+            ),
             this.getActivityBreakdown(baseQuery),
             this.getResourceBreakdown(baseQuery),
             this.getUserBreakdown(baseQuery),
@@ -146,7 +163,12 @@ export class UserActivityService {
         // Calculate average session duration
         const avgDurationResult = await UserActivity.aggregate([
             { $match: baseQuery },
-            { $group: { _id: null, avgDuration: { $avg: '$session.duration' } } },
+            {
+                $group: {
+                    _id: null,
+                    avgDuration: { $avg: '$session.duration' },
+                },
+            },
         ]);
         const averageSessionDuration = avgDurationResult[0]?.avgDuration || 0;
 
@@ -181,10 +203,12 @@ export class UserActivityService {
 
         const firstActivity = activities[0] as any;
         const lastActivity = activities[activities.length - 1] as any;
-        
+
         const loginTime = firstActivity.session.loginTime;
         const lastActivityTime = lastActivity.session.lastActivity;
-        const duration = Math.round((lastActivityTime.getTime() - loginTime.getTime()) / (1000 * 60)); // in minutes
+        const duration = Math.round(
+            (lastActivityTime.getTime() - loginTime.getTime()) / (1000 * 60),
+        ); // in minutes
 
         return {
             sessionId,
@@ -213,15 +237,18 @@ export class UserActivityService {
     /**
      * Update session status (mark as inactive on logout)
      */
-    async updateSessionStatus(sessionId: string, isActive: boolean): Promise<void> {
+    async updateSessionStatus(
+        sessionId: string,
+        isActive: boolean,
+    ): Promise<void> {
         await UserActivity.updateMany(
             { sessionId },
-            { 
-                $set: { 
+            {
+                $set: {
                     'session.isActive': isActive,
                     'session.lastActivity': new Date(),
-                }
-            }
+                },
+            },
         );
     }
 
@@ -250,8 +277,8 @@ export class UserActivityService {
         ]);
 
         const total = breakdown.reduce((sum, item) => sum + item.count, 0);
-        
-        return breakdown.map(item => ({
+
+        return breakdown.map((item) => ({
             type: item._id,
             count: item.count,
             percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
@@ -269,8 +296,8 @@ export class UserActivityService {
         ]);
 
         const total = breakdown.reduce((sum, item) => sum + item.count, 0);
-        
-        return breakdown.map(item => ({
+
+        return breakdown.map((item) => ({
             resource: item._id,
             count: item.count,
             percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
@@ -283,27 +310,27 @@ export class UserActivityService {
     private async getUserBreakdown(baseQuery: any) {
         const breakdown = await UserActivity.aggregate([
             { $match: baseQuery },
-            { 
-                $group: { 
-                    _id: '$userId', 
+            {
+                $group: {
+                    _id: '$userId',
                     count: { $sum: 1 },
                     lastActivity: { $max: '$timestamp' },
                     avgDuration: { $avg: '$session.duration' },
-                }
+                },
             },
             { $sort: { count: -1 } },
             { $limit: 10 },
         ]);
 
         // Populate user details
-        const userIds = breakdown.map(item => item._id);
+        const userIds = breakdown.map((item) => item._id);
         const users = await User.find({ _id: { $in: userIds } }).lean();
         const userMap = users.reduce((map, user) => {
             map[user._id.toString()] = user;
             return map;
         }, {} as any);
 
-        return breakdown.map(item => {
+        return breakdown.map((item) => {
             const user = userMap[item._id.toString()];
             return {
                 userId: item._id.toString(),
@@ -327,14 +354,14 @@ export class UserActivityService {
                 $group: {
                     _id: { $hour: '$timestamp' },
                     count: { $sum: 1 },
-                }
+                },
             },
             { $sort: { _id: 1 } },
         ]);
 
         // Fill in missing hours with 0 count
         const result = Array.from({ length: 24 }, (_, hour) => {
-            const found = hourlyData.find(item => item._id === hour);
+            const found = hourlyData.find((item) => item._id === hour);
             return {
                 hour,
                 count: found ? found.count : 0,
@@ -367,7 +394,7 @@ export class UserActivityService {
                     },
                     count: { $sum: 1 },
                     uniqueUsers: { $addToSet: '$userId' },
-                }
+                },
             },
             {
                 $project: {
@@ -376,16 +403,16 @@ export class UserActivityService {
                             year: '$_id.year',
                             month: '$_id.month',
                             day: '$_id.day',
-                        }
+                        },
                     },
                     count: 1,
                     uniqueUsers: { $size: '$uniqueUsers' },
-                }
+                },
             },
             { $sort: { date: 1 } },
         ]);
 
-        return dailyData.map(item => ({
+        return dailyData.map((item) => ({
             date: item.date.toISOString().split('T')[0],
             count: item.count,
             uniqueUsers: item.uniqueUsers,
@@ -405,13 +432,13 @@ export class UserActivityService {
                         resource: '$activity.resource',
                     },
                     count: { $sum: 1 },
-                }
+                },
             },
             { $sort: { count: -1 } },
             { $limit: 10 },
         ]);
 
-        return topActions.map(item => ({
+        return topActions.map((item) => ({
             action: item._id.action,
             resource: item._id.resource,
             count: item.count,

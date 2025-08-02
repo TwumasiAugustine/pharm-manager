@@ -1,7 +1,7 @@
 import React from 'react';
 import type { UserActivityStats as StatsType } from '../../types/user-activity.types';
-import { LoadingSpinner } from '../atoms/LoadingSpinner';
-import { ErrorMessage } from '../atoms/ErrorMessage';
+import { LoadingSpinner } from '../../components/atoms/LoadingSpinner';
+import { ErrorMessage } from '../../components/atoms/ErrorMessage';
 import {
     FaUsers,
     FaClipboardList,

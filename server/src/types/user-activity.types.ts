@@ -1,8 +1,23 @@
 export interface UserActivityFilters {
     userId?: string;
     sessionId?: string;
-    activityType?: 'LOGIN' | 'LOGOUT' | 'CREATE' | 'UPDATE' | 'DELETE' | 'VIEW' | 'DOWNLOAD' | 'SEARCH';
-    resource?: 'USER' | 'DRUG' | 'SALE' | 'CUSTOMER' | 'REPORT' | 'SYSTEM' | 'DASHBOARD';
+    activityType?:
+        | 'LOGIN'
+        | 'LOGOUT'
+        | 'CREATE'
+        | 'UPDATE'
+        | 'DELETE'
+        | 'VIEW'
+        | 'DOWNLOAD'
+        | 'SEARCH';
+    resource?:
+        | 'USER'
+        | 'DRUG'
+        | 'SALE'
+        | 'CUSTOMER'
+        | 'REPORT'
+        | 'SYSTEM'
+        | 'DASHBOARD';
     startDate?: Date;
     endDate?: Date;
     isActive?: boolean;
@@ -16,8 +31,23 @@ export interface CreateUserActivityRequest {
     userId: string;
     sessionId: string;
     activity: {
-        type: 'LOGIN' | 'LOGOUT' | 'CREATE' | 'UPDATE' | 'DELETE' | 'VIEW' | 'DOWNLOAD' | 'SEARCH';
-        resource: 'USER' | 'DRUG' | 'SALE' | 'CUSTOMER' | 'REPORT' | 'SYSTEM' | 'DASHBOARD';
+        type:
+            | 'LOGIN'
+            | 'LOGOUT'
+            | 'CREATE'
+            | 'UPDATE'
+            | 'DELETE'
+            | 'VIEW'
+            | 'DOWNLOAD'
+            | 'SEARCH';
+        resource:
+            | 'USER'
+            | 'DRUG'
+            | 'SALE'
+            | 'CUSTOMER'
+            | 'REPORT'
+            | 'SYSTEM'
+            | 'DASHBOARD';
         resourceId?: string;
         resourceName?: string;
         action: string;

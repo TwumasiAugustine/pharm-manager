@@ -64,7 +64,8 @@ export class UserActivityController {
                 }
             }
 
-            const result = await this.userActivityService.getUserActivities(filters);
+            const result =
+                await this.userActivityService.getUserActivities(filters);
 
             res.status(200).json(
                 successResponse(
@@ -91,7 +92,7 @@ export class UserActivityController {
             const { startDate, endDate, userId } = req.query;
 
             const filters: Partial<UserActivityFilters> = {};
-            
+
             if (userId) filters.userId = userId as string;
             if (startDate) {
                 filters.startDate = new Date(startDate as string);
@@ -106,7 +107,8 @@ export class UserActivityController {
                 }
             }
 
-            const stats = await this.userActivityService.getUserActivityStats(filters);
+            const stats =
+                await this.userActivityService.getUserActivityStats(filters);
 
             res.status(200).json(
                 successResponse(
@@ -136,7 +138,8 @@ export class UserActivityController {
                 throw new BadRequestError('Session ID is required');
             }
 
-            const session = await this.userActivityService.getUserSession(sessionId);
+            const session =
+                await this.userActivityService.getUserSession(sessionId);
 
             if (!session) {
                 res.status(404).json({
@@ -202,7 +205,8 @@ export class UserActivityController {
                 }
             }
 
-            const result = await this.userActivityService.getUserActivities(filters);
+            const result =
+                await this.userActivityService.getUserActivities(filters);
 
             res.status(200).json(
                 successResponse(
@@ -230,10 +234,13 @@ export class UserActivityController {
             const days = parseInt(daysToKeep as string, 10);
 
             if (isNaN(days) || days < 1) {
-                throw new BadRequestError('Days to keep must be a positive number');
+                throw new BadRequestError(
+                    'Days to keep must be a positive number',
+                );
             }
 
-            const deletedCount = await this.userActivityService.cleanupOldActivities(days);
+            const deletedCount =
+                await this.userActivityService.cleanupOldActivities(days);
 
             res.status(200).json(
                 successResponse(

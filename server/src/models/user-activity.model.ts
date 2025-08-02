@@ -5,8 +5,23 @@ export interface IUserActivity extends Document {
     userId: Types.ObjectId | IUser;
     sessionId: string;
     activity: {
-        type: 'LOGIN' | 'LOGOUT' | 'CREATE' | 'UPDATE' | 'DELETE' | 'VIEW' | 'DOWNLOAD' | 'SEARCH';
-        resource: 'USER' | 'DRUG' | 'SALE' | 'CUSTOMER' | 'REPORT' | 'SYSTEM' | 'DASHBOARD';
+        type:
+            | 'LOGIN'
+            | 'LOGOUT'
+            | 'CREATE'
+            | 'UPDATE'
+            | 'DELETE'
+            | 'VIEW'
+            | 'DOWNLOAD'
+            | 'SEARCH';
+        resource:
+            | 'USER'
+            | 'DRUG'
+            | 'SALE'
+            | 'CUSTOMER'
+            | 'REPORT'
+            | 'SYSTEM'
+            | 'DASHBOARD';
         resourceId?: string;
         resourceName?: string;
         action: string; // Detailed action description
@@ -41,17 +56,33 @@ const userActivitySchema = new Schema<IUserActivity>(
         sessionId: {
             type: String,
             required: true,
-            index: true,
         },
         activity: {
             type: {
                 type: String,
-                enum: ['LOGIN', 'LOGOUT', 'CREATE', 'UPDATE', 'DELETE', 'VIEW', 'DOWNLOAD', 'SEARCH'],
+                enum: [
+                    'LOGIN',
+                    'LOGOUT',
+                    'CREATE',
+                    'UPDATE',
+                    'DELETE',
+                    'VIEW',
+                    'DOWNLOAD',
+                    'SEARCH',
+                ],
                 required: true,
             },
             resource: {
                 type: String,
-                enum: ['USER', 'DRUG', 'SALE', 'CUSTOMER', 'REPORT', 'SYSTEM', 'DASHBOARD'],
+                enum: [
+                    'USER',
+                    'DRUG',
+                    'SALE',
+                    'CUSTOMER',
+                    'REPORT',
+                    'SYSTEM',
+                    'DASHBOARD',
+                ],
                 required: true,
             },
             resourceId: {
@@ -132,4 +163,7 @@ userActivitySchema.index({ userId: 1, timestamp: -1 });
 userActivitySchema.index({ sessionId: 1, timestamp: -1 });
 userActivitySchema.index({ 'activity.type': 1, timestamp: -1 });
 
-export const UserActivity = model<IUserActivity>('UserActivity', userActivitySchema);
+export const UserActivity = model<IUserActivity>(
+    'UserActivity',
+    userActivitySchema,
+);

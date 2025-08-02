@@ -1,5 +1,4 @@
 import { AuditLog, IAuditLog } from '../models/audit-log.model';
-import { User } from '../models/user.model';
 import type {
     AuditLogFilters,
     CreateAuditLogRequest,
@@ -104,7 +103,11 @@ export class AuditLogService {
      */
     async getAuditLogStats(): Promise<AuditLogStatsResponse> {
         const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayStart = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+        );
         const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
         const [
