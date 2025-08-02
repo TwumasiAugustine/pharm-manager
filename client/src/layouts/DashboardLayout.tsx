@@ -11,6 +11,7 @@ import {
     FaCog,
     FaBars,
     FaTimes,
+    FaClock,
 } from 'react-icons/fa';
 import { useState } from 'react';
 
@@ -46,6 +47,13 @@ const navItems = [
         label: 'Customers',
         match: (pathname: string) =>
             pathname === '/customers' || /^\/customers\/[^/]+$/.test(pathname),
+        adminOnly: false,
+    },
+    {
+        to: '/expiry',
+        icon: <FaClock className="mr-3" />,
+        label: 'Expiry Tracker',
+        match: (pathname: string) => pathname === '/expiry',
         adminOnly: false,
     },
     {
@@ -149,8 +157,9 @@ function Topbar({
         location.pathname !== '/customers'
     )
         title = 'Customer Details';
+    else if (location.pathname === '/expiry') title = 'Expiry Tracker';
     else if (
-        !/^\/(dashboard|drugs|sales|sales\/new|sales\/[^/]+|customers|customers\/[^/]+)$/.test(
+        !/^\/(dashboard|drugs|sales|sales\/new|sales\/[^/]+|customers|customers\/[^/]+|expiry)$/.test(
             location.pathname,
         )
     )

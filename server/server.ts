@@ -11,6 +11,7 @@ import {
 } from './src/middlewares/error.middleware';
 import { requestLogger } from './src/middlewares/logger.middleware';
 import { logger } from './src/utils/logger';
+import { cronJobService } from './src/services/cronJob.service';
 
 // Load environment variables
 dotenv.config();
@@ -23,6 +24,10 @@ if (debugMode) {
 
 // Connect to database
 connectDB();
+
+// Initialize cron jobs
+logger.info('Initializing cron jobs...');
+// cronJobService is automatically initialized when imported
 
 // Initialize express app
 const app = express();
