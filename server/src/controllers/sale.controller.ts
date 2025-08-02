@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { SaleService } from '../services/sale.service';
 import { successResponse } from '../utils/response';
+import { logAuditEvent } from '../middlewares/audit.middleware';
 
 const saleService = new SaleService();
 
@@ -9,6 +10,29 @@ export class SaleController {
         try {
             const userId = req.user!.id;
             const sale = await saleService.createSale({ ...req.body, userId });
+
+            // Log audit event for sale creation
+            setImmediate(async () => {
+                await logAuditEvent(
+                    req.user!.id,
+                    'CREATE',
+                    'SALE',
+                    `Created new sale with total amount: $${sale.totalAmount}`,
+                    {
+                        resourceId: sale._id.toString(),
+                        userRole: req.user!.role,
+                        ipAddress: req.ip || req.connection.remoteAddress,
+                        userAgent: req.get('User-Agent'),
+                        newValues: {
+                            totalAmount: sale.totalAmount,
+                            itemCount: sale.items.length,
+                            paymentMethod: sale.paymentMethod,
+                            customer: req.body.customerId ? 'Yes' : 'Walk-in',
+                        },
+                    },
+                );
+            });
+
             res.status(201).json(successResponse(sale, 'Sale created', 201));
         } catch (err) {
             next(err);

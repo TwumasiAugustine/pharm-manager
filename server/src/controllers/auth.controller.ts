@@ -3,6 +3,8 @@ import { AuthService } from '../services/auth.service';
 import { successResponse } from '../utils/response';
 import { getCookieOptions } from '../utils/jwt';
 import { ILoginRequest, ISignupRequest } from '../types/auth.types';
+import { logAuditEvent } from '../middlewares/audit.middleware';
+import { initializeUserSession, endUserSession } from '../middlewares/user-activity.middleware';
 
 const authService = new AuthService();
 
@@ -62,6 +64,28 @@ export class AuthController {
                 path: '/api/auth/refresh', // Restrict refresh token to refresh endpoint
             });
 
+            // Log audit event for successful login and initialize user session
+            setImmediate(async () => {
+                // Initialize user activity session
+                const sessionId = initializeUserSession(result.user.id, req);
+                
+                await logAuditEvent(
+                    result.user.id,
+                    'LOGIN',
+                    'USER',
+                    `User ${result.user.name} logged in successfully (Session: ${sessionId})`,
+                    {
+                        userRole: result.user.role,
+                        ipAddress: req.ip || req.connection.remoteAddress,
+                        userAgent: req.get('User-Agent'),
+                        newValues: {
+                            sessionId,
+                            loginTime: new Date(),
+                        },
+                    },
+                );
+            });
+
             // Send response
             res.status(200).json(
                 successResponse({ user: result.user }, 'Login successful'),
@@ -85,6 +109,24 @@ export class AuthController {
             }
 
             await authService.logout(req.user.id);
+
+            // End user session and log audit event for logout
+            setImmediate(async () => {
+                // End user activity session
+                await endUserSession(req.user!.id, req);
+                
+                await logAuditEvent(
+                    req.user!.id,
+                    'LOGOUT',
+                    'USER',
+                    `User logged out`,
+                    {
+                        userRole: req.user!.role,
+                        ipAddress: req.ip || req.connection.remoteAddress,
+                        userAgent: req.get('User-Agent'),
+                    },
+                );
+            });
 
             // Clear cookies
             res.clearCookie('accessToken');

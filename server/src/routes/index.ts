@@ -7,6 +7,8 @@ import customerRoutes from './customer.routes';
 import dashboardRoutes from './dashboard.routes';
 import reportRoutes from './report.routes';
 import expiryRoutes from './expiry.routes';
+import auditLogRoutes from './audit-log.routes';
+import userActivityRoutes from './user-activity.routes';
 
 const router = Router();
 
@@ -28,5 +30,7 @@ router.use('/customers', customerRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/reports', reportRoutes);
 router.use('/expiry', expiryRoutes);
+router.use('/audit-logs', auditLogRoutes);
+router.use('/user-activities', userActivityRoutes);
 
 export default router;

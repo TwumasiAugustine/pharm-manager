@@ -14,6 +14,7 @@ import {
     FaTimes,
     FaExclamationTriangle,
     FaChartBar,
+    FaHistory,
 } from 'react-icons/fa';
 import { useState } from 'react';
 
@@ -64,6 +65,13 @@ const navItems = [
         label: 'Reports',
         match: (pathname: string) => pathname === '/reports',
         adminOnly: false,
+    },
+    {
+        to: '/audit-logs',
+        icon: <FaHistory className="mr-3" />,
+        label: 'Audit Logs',
+        match: (pathname: string) => pathname === '/audit-logs',
+        adminOnly: true,
     },
     {
         to: '/pharmacy-setup',

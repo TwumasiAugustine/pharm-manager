@@ -24,6 +24,7 @@ import CustomerManagementPage from './pages/CustomerManagementPage';
 import CustomerDetailsPage from './pages/CustomerDetailsPage';
 import { ExpiryPage } from './pages/ExpiryPage';
 import ReportsPage from './pages/ReportsPage';
+import AuditLogsPage from './pages/AuditLogsPage';
 
 // Components
 import { ProtectedRoute } from './components/molecules/ProtectedRoute';
@@ -100,6 +101,10 @@ const router = createBrowserRouter([
             {
                 path: '/pharmacy-setup',
                 element: <PharmacySetupPage />,
+            },
+            {
+                path: '/audit-logs',
+                element: <AuditLogsPage />,
             },
         ],
     },

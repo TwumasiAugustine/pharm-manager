@@ -6,6 +6,7 @@ import {
     IDrugSearchParams,
     IUpdateDrugRequest,
 } from '../types/drug.types';
+import { logAuditEvent } from '../middlewares/audit.middleware';
 
 const drugService = new DrugService();
 
@@ -24,6 +25,23 @@ export class DrugController {
         try {
             const drugData: ICreateDrugRequest = req.body;
             const drug = await drugService.createDrug(drugData);
+
+            // Log audit event for drug creation
+            setImmediate(async () => {
+                await logAuditEvent(
+                    req.user!.id,
+                    'CREATE',
+                    'DRUG',
+                    `Created new drug: ${drug.name} (${drug.brand})`,
+                    {
+                        resourceId: drug._id.toString(),
+                        userRole: req.user!.role,
+                        ipAddress: req.ip || req.connection.remoteAddress,
+                        userAgent: req.get('User-Agent'),
+                        newValues: drugData,
+                    },
+                );
+            });
 
             res.status(201).json(
                 successResponse(
@@ -71,7 +89,34 @@ export class DrugController {
         try {
             const { id } = req.params;
             const updateData: IUpdateDrugRequest = req.body;
+            
+            // Get original drug data for audit log
+            const originalDrug = await drugService.getDrugById(id);
             const drug = await drugService.updateDrug(id, updateData);
+
+            // Log audit event for drug update
+            setImmediate(async () => {
+                await logAuditEvent(
+                    req.user!.id,
+                    'UPDATE',
+                    'DRUG',
+                    `Updated drug: ${drug.name} (${drug.brand})`,
+                    {
+                        resourceId: drug._id.toString(),
+                        userRole: req.user!.role,
+                        ipAddress: req.ip || req.connection.remoteAddress,
+                        userAgent: req.get('User-Agent'),
+                        oldValues: {
+                            name: originalDrug.name,
+                            brand: originalDrug.brand,
+                            quantity: originalDrug.quantity,
+                            price: originalDrug.price,
+                            expiryDate: originalDrug.expiryDate,
+                        },
+                        newValues: updateData,
+                    },
+                );
+            });
 
             res.status(200).json(
                 successResponse(
@@ -94,7 +139,33 @@ export class DrugController {
     ): Promise<void> {
         try {
             const { id } = req.params;
+            
+            // Get drug data before deletion for audit log
+            const drugToDelete = await drugService.getDrugById(id);
             await drugService.deleteDrug(id);
+
+            // Log audit event for drug deletion
+            setImmediate(async () => {
+                await logAuditEvent(
+                    req.user!.id,
+                    'DELETE',
+                    'DRUG',
+                    `Deleted drug: ${drugToDelete.name} (${drugToDelete.brand})`,
+                    {
+                        resourceId: drugToDelete._id.toString(),
+                        userRole: req.user!.role,
+                        ipAddress: req.ip || req.connection.remoteAddress,
+                        userAgent: req.get('User-Agent'),
+                        oldValues: {
+                            name: drugToDelete.name,
+                            brand: drugToDelete.brand,
+                            quantity: drugToDelete.quantity,
+                            price: drugToDelete.price,
+                            expiryDate: drugToDelete.expiryDate,
+                        },
+                    },
+                );
+            });
 
             res.status(200).json(
                 successResponse(null, 'Drug deleted successfully'),
