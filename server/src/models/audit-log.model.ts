@@ -40,25 +40,28 @@ const auditLogSchema = new Schema<IAuditLog>(
             type: String,
         },
         details: {
-            description: {
-                type: String,
-                required: true,
+            type: {
+                description: {
+                    type: String,
+                    required: true,
+                },
+                oldValues: {
+                    type: Schema.Types.Mixed,
+                },
+                newValues: {
+                    type: Schema.Types.Mixed,
+                },
+                userRole: {
+                    type: String,
+                },
+                ipAddress: {
+                    type: String,
+                },
+                userAgent: {
+                    type: String,
+                },
             },
-            oldValues: {
-                type: Schema.Types.Mixed,
-            },
-            newValues: {
-                type: Schema.Types.Mixed,
-            },
-            userRole: {
-                type: String,
-            },
-            ipAddress: {
-                type: String,
-            },
-            userAgent: {
-                type: String,
-            },
+            required: true,
         },
         timestamp: {
             type: Date,

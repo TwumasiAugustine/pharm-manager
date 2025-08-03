@@ -204,18 +204,20 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({
                                                 {log.userName}
                                             </div>
                                             <div className="text-sm text-gray-500">
-                                                {log.details.userRole}
+                                                {log.details?.userRole ||
+                                                    'Unknown'}
                                             </div>
                                         </div>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="text-sm text-gray-900 max-w-xs truncate">
-                                        {log.details.description}
+                                        {log.details?.description ||
+                                            'No description available'}
                                     </div>
-                                    {log.details.ipAddress && (
+                                    {log.details?.ipAddress && (
                                         <div className="text-xs text-gray-500">
-                                            IP: {log.details.ipAddress}
+                                            IP: {log.details?.ipAddress}
                                         </div>
                                     )}
                                 </td>
