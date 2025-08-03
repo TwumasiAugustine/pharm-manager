@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
     useCustomers,
     useCreateCustomer,
-    useCustomer,
 } from '../../hooks/useCustomers';
+import customerApi from '../../api/customer.api';
 import type { Customer } from '../../types/customer.types';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useSafeNotify } from '../../utils/useSafeNotify';
@@ -107,8 +108,11 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
     }, [data?.customers, recentlyCreatedCustomer, recentlyCreatedCustomerId]);
 
     // Fetch selected customer details if not found in current list
-    const { data: selectedCustomerData } = useCustomer(value || '', {
+    const { data: selectedCustomerData } = useQuery({
+        queryKey: ['customers', value],
+        queryFn: () => customerApi.getCustomerById(value || ''),
         enabled: !!value && !customers.find((c) => c.id === value),
+        staleTime: 5 * 60 * 1000, // 5 minutes
     });
 
     // Clear recently created customer when searching, but not immediately
@@ -220,7 +224,7 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
                     </h3>
                     <div className="space-y-2">
                         <div>
-                            <label className="block text-xs flex items-center">
+                            <label className="text-xs flex items-center">
                                 <FaUser className="mr-1 text-gray-400" />
                                 Name *
                             </label>

@@ -1,15 +1,16 @@
 import React from 'react';
 import {
-    FiDollarSign,
+    FiTrendingUp,
     FiShoppingBag,
     FiUsers,
     FiPackage,
     FiAlertTriangle,
 } from 'react-icons/fi';
 import type { DashboardOverview } from '../../types/dashboard.types';
+import { formatGHSDisplayAmount } from '../../utils/currency';
 
 interface OverviewCardsProps {
-    overview?: DashboardOverview;
+    overview: DashboardOverview;
     isLoading?: boolean;
 }
 
@@ -29,29 +30,14 @@ const StatCard: React.FC<StatCardProps> = ({
     isLoading = false,
 }) => {
     const colorClasses = {
-        blue: {
-            textColor: 'text-blue-600',
-            lightBg: 'bg-blue-50',
-        },
-        green: {
-            textColor: 'text-green-600',
-            lightBg: 'bg-green-50',
-        },
-        purple: {
-            textColor: 'text-purple-600',
-            lightBg: 'bg-purple-50',
-        },
-        orange: {
-            textColor: 'text-orange-600',
-            lightBg: 'bg-orange-50',
-        },
-        red: {
-            textColor: 'text-red-600',
-            lightBg: 'bg-red-50',
-        },
+        blue: 'bg-blue-500 text-blue-600 bg-blue-50',
+        green: 'bg-green-500 text-green-600 bg-green-50',
+        purple: 'bg-purple-500 text-purple-600 bg-purple-50',
+        orange: 'bg-orange-500 text-orange-600 bg-orange-50',
+        red: 'bg-red-500 text-red-600 bg-red-50',
     };
 
-    const { textColor, lightBg } = colorClasses[color];
+    const [, textColor, lightBg] = colorClasses[color].split(' ');
 
     return (
         <div className="bg-white rounded-lg shadow-sm border p-6">
@@ -86,54 +72,34 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
     overview,
     isLoading = false,
 }) => {
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(amount);
-    };
-
-    // Provide default values when overview is undefined or loading
-    const defaultOverview = {
-        totalRevenue: 0,
-        totalSales: 0,
-        totalCustomers: 0,
-        totalDrugs: 0,
-        lowStockCount: 0,
-    };
-
-    const safeOverview = overview || defaultOverview;
-
     const stats = [
         {
             title: 'Total Revenue',
-            value: formatCurrency(safeOverview.totalRevenue),
-            icon: <FiDollarSign />,
+            value: formatGHSDisplayAmount(overview.totalRevenue),
+            icon: <FiTrendingUp />,
             color: 'green' as const,
         },
         {
             title: 'Total Sales',
-            value: safeOverview.totalSales.toLocaleString(),
+            value: overview.totalSales.toLocaleString(),
             icon: <FiShoppingBag />,
             color: 'blue' as const,
         },
         {
             title: 'Total Customers',
-            value: safeOverview.totalCustomers.toLocaleString(),
+            value: overview.totalCustomers.toLocaleString(),
             icon: <FiUsers />,
             color: 'purple' as const,
         },
         {
             title: 'Total Drugs',
-            value: safeOverview.totalDrugs.toLocaleString(),
+            value: overview.totalDrugs.toLocaleString(),
             icon: <FiPackage />,
             color: 'orange' as const,
         },
         {
             title: 'Low Stock Items',
-            value: safeOverview.lowStockCount.toLocaleString(),
+            value: overview.lowStockCount.toLocaleString(),
             icon: <FiAlertTriangle />,
             color: 'red' as const,
         },

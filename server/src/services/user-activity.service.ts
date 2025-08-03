@@ -9,7 +9,6 @@ import {
     UserActivitySummary,
 } from '../types/user-activity.types';
 import { BadRequestError } from '../utils/errors';
-import { createUserActivitySchema } from '../validations/user-activity.validation';
 
 export class UserActivityService {
     /**
@@ -19,19 +18,7 @@ export class UserActivityService {
         data: CreateUserActivityRequest,
     ): Promise<UserActivityResponse> {
         try {
-            // Validate the input data
-            const validatedData = createUserActivitySchema.parse({
-                ...data,
-                session: {
-                    ...data.session,
-                    loginTime: new Date(data.session.loginTime),
-                    lastActivity: data.session.lastActivity
-                        ? new Date(data.session.lastActivity)
-                        : new Date(),
-                },
-            });
-
-            const activity = new UserActivity(validatedData);
+            const activity = new UserActivity(data);
             const savedActivity = await activity.save();
 
             // Populate user details and return formatted response
@@ -41,23 +28,8 @@ export class UserActivityService {
                 .populate('userId', 'name email role')
                 .lean();
 
-            if (!populatedActivity) {
-                throw new BadRequestError(
-                    'Failed to retrieve saved activity record',
-                );
-            }
-
             return this.formatActivityResponse(populatedActivity as any);
         } catch (error) {
-            console.error('Error creating user activity:', error);
-            if (error instanceof BadRequestError) {
-                throw error;
-            }
-            if (error instanceof Error) {
-                throw new BadRequestError(
-                    `Failed to create user activity record: ${error.message}`,
-                );
-            }
             throw new BadRequestError('Failed to create user activity record');
         }
     }
@@ -336,54 +308,43 @@ export class UserActivityService {
      * Get user breakdown with activity counts
      */
     private async getUserBreakdown(baseQuery: any) {
-        try {
-            const breakdown = await UserActivity.aggregate([
-                { $match: baseQuery },
-                {
-                    $group: {
-                        _id: '$userId',
-                        count: { $sum: 1 },
-                        lastActivity: { $max: '$timestamp' },
-                        avgDuration: { $avg: '$session.duration' },
-                    },
+        const breakdown = await UserActivity.aggregate([
+            { $match: baseQuery },
+            {
+                $group: {
+                    _id: '$userId',
+                    count: { $sum: 1 },
+                    lastActivity: { $max: '$timestamp' },
+                    avgDuration: { $avg: '$session.duration' },
                 },
-                { $sort: { count: -1 } },
-                { $limit: 10 },
-            ]);
+            },
+            { $sort: { count: -1 } },
+            { $limit: 10 },
+        ]);
 
-            if (!breakdown || breakdown.length === 0) {
-                return [];
-            }
-
-            // Populate user details
-            const userIds = breakdown.map((item) => item._id);
-
-            if (!User || typeof User.find !== 'function') {
-                throw new Error('User model is not properly initialized');
-            }
-
-            const users = await User.find({ _id: { $in: userIds } }).lean();
-            const userMap = users.reduce((map, user) => {
+        // Populate user details
+        const userIds = breakdown.map((item) => item._id);
+        const users = await User.find({ _id: { $in: userIds } }).lean();
+        const userMap = users.reduce(
+            (map: Record<string, any>, user: any) => {
                 map[user._id.toString()] = user;
                 return map;
-            }, {} as any);
+            },
+            {} as Record<string, any>,
+        );
 
-            return breakdown.map((item) => {
-                const user = userMap[item._id.toString()];
-                return {
-                    userId: item._id.toString(),
-                    userName: user?.name || 'Unknown',
-                    userEmail: user?.email || 'Unknown',
-                    userRole: user?.role || 'Unknown',
-                    activityCount: item.count,
-                    lastActivity: item.lastActivity,
-                    averageSessionDuration: Math.round(item.avgDuration || 0),
-                };
-            });
-        } catch (error) {
-            console.error('Error in getUserBreakdown:', error);
-            throw new BadRequestError('Failed to fetch user breakdown data');
-        }
+        return breakdown.map((item) => {
+            const user = userMap[item._id.toString()];
+            return {
+                userId: item._id.toString(),
+                userName: user?.name || 'Unknown',
+                userEmail: user?.email || 'Unknown',
+                userRole: user?.role || 'Unknown',
+                activityCount: item.count,
+                lastActivity: item.lastActivity,
+                averageSessionDuration: Math.round(item.avgDuration || 0),
+            };
+        });
     }
 
     /**
@@ -507,5 +468,25 @@ export class UserActivityService {
             createdAt: activity.createdAt,
             updatedAt: activity.updatedAt,
         };
+    }
+
+    /**
+     * Cleanup old user activity records
+     */
+    async cleanupOldActivity(daysToKeep: number): Promise<number> {
+        try {
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+
+            const result = await UserActivity.deleteMany({
+                timestamp: { $lt: cutoffDate },
+            });
+
+            return result.deletedCount || 0;
+        } catch (error) {
+            throw new BadRequestError(
+                'Failed to cleanup old user activity records',
+            );
+        }
     }
 }

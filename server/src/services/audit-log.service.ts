@@ -6,7 +6,7 @@ import type {
     AuditLogsListResponse,
     AuditLogStatsResponse,
 } from '../types/audit-log.types';
-import { NotFoundError } from '../utils/errors';
+import { NotFoundError, BadRequestError } from '../utils/errors';
 
 export class AuditLogService {
     /**
@@ -18,16 +18,7 @@ export class AuditLogService {
             action: data.action,
             resource: data.resource,
             resourceId: data.resourceId,
-            details: {
-                description:
-                    data.details?.description ||
-                    `${data.action} operation on ${data.resource}`,
-                oldValues: data.details?.oldValues,
-                newValues: data.details?.newValues,
-                userRole: data.details?.userRole,
-                ipAddress: data.details?.ipAddress,
-                userAgent: data.details?.userAgent,
-            },
+            details: data.details,
             timestamp: new Date(),
         });
 
@@ -83,34 +74,18 @@ export class AuditLogService {
             AuditLog.countDocuments(query),
         ]);
 
-        console.log(`Found ${logs.length} audit logs for query:`, query);
-
         // Map to response format
-        const data: AuditLogResponse[] = logs.map((log: any) => {
-            if (!log.details) {
-                console.warn(
-                    `Audit log ${log._id} is missing details field`,
-                    log,
-                );
-            }
-
-            return {
-                id: log._id.toString(),
-                userId: log.userId._id.toString(),
-                userName: log.userId.name,
-                action: log.action,
-                resource: log.resource,
-                resourceId: log.resourceId,
-                details: log.details || {
-                    description: `${log.action} operation on ${log.resource}`,
-                    userRole: log.userId?.role,
-                    ipAddress: 'Unknown',
-                    userAgent: 'Unknown',
-                },
-                timestamp: log.timestamp.toISOString(),
-                createdAt: log.createdAt.toISOString(),
-            };
-        });
+        const data: AuditLogResponse[] = logs.map((log: any) => ({
+            id: log._id.toString(),
+            userId: log.userId._id.toString(),
+            userName: log.userId.name,
+            action: log.action,
+            resource: log.resource,
+            resourceId: log.resourceId,
+            details: log.details,
+            timestamp: log.timestamp.toISOString(),
+            createdAt: log.createdAt.toISOString(),
+        }));
 
         return {
             data,
@@ -280,5 +255,23 @@ export class AuditLogService {
             userName: item.userName,
             count: item.count,
         }));
+    }
+
+    /**
+     * Cleanup old audit logs
+     */
+    async cleanupOldLogs(daysToKeep: number): Promise<number> {
+        try {
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+
+            const result = await AuditLog.deleteMany({
+                timestamp: { $lt: cutoffDate },
+            });
+
+            return result.deletedCount || 0;
+        } catch (error) {
+            throw new BadRequestError('Failed to cleanup old audit logs');
+        }
     }
 }

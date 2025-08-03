@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import type { Sale } from '../../types/sale.types';
 import type { Drug } from '../../types/drug.types';
 import type { PharmacyInfo } from '../../api/pharmacy.api';
+import { formatGHSDisplayAmount } from '../../utils/currency';
 
 interface ReceiptProps {
     sale: Sale;
@@ -129,10 +130,12 @@ const Receipt: React.FC<ReceiptProps> = ({ sale, drugs, pharmacyInfo }) => {
                                         {item.quantity}
                                     </td>
                                     <td className="text-right p-3">
-                                        ${price.toFixed(2)}
+                                        {formatGHSDisplayAmount(price)}
                                     </td>
                                     <td className="text-right p-3 font-medium">
-                                        ${(price * item.quantity).toFixed(2)}
+                                        {formatGHSDisplayAmount(
+                                            price * item.quantity,
+                                        )}
                                     </td>
                                 </tr>
                             );
@@ -147,16 +150,16 @@ const Receipt: React.FC<ReceiptProps> = ({ sale, drugs, pharmacyInfo }) => {
                     <div className="flex justify-between py-2 border-b">
                         <span className="text-gray-600">Subtotal</span>
                         <span className="font-medium">
-                            ${sale.totalAmount.toFixed(2)}
+                            {formatGHSDisplayAmount(sale.totalAmount)}
                         </span>
                     </div>
                     <div className="flex justify-between py-2 border-b">
                         <span className="text-gray-600">Tax (0%)</span>
-                        <span>$0.00</span>
+                        <span>{formatGHSDisplayAmount(0)}</span>
                     </div>
                     <div className="flex justify-between py-3 text-lg font-bold text-gray-800 bg-gray-50 -mx-3 px-3 rounded">
                         <span>Total Amount</span>
-                        <span>${sale.totalAmount.toFixed(2)}</span>
+                        <span>{formatGHSDisplayAmount(sale.totalAmount)}</span>
                     </div>
                 </div>
             </section>

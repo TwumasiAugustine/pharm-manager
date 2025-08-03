@@ -69,10 +69,14 @@ export const AuditLogFilter: React.FC<AuditLogFilterProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 {/* Action Filter */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label 
+                        htmlFor="action-filter" 
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                         Action
                     </label>
                     <select
+                        id="action-filter"
                         value={filters.action || ''}
                         onChange={(e) =>
                             handleFilterChange(
@@ -94,10 +98,14 @@ export const AuditLogFilter: React.FC<AuditLogFilterProps> = ({
 
                 {/* Resource Filter */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label 
+                        htmlFor="resource-filter" 
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                         Resource
                     </label>
                     <select
+                        id="resource-filter"
                         value={filters.resource || ''}
                         onChange={(e) =>
                             handleFilterChange(
@@ -119,10 +127,14 @@ export const AuditLogFilter: React.FC<AuditLogFilterProps> = ({
 
                 {/* User Role Filter */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label 
+                        htmlFor="user-role-filter" 
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                         User Role
                     </label>
                     <select
+                        id="user-role-filter"
                         value={filters.userRole || ''}
                         onChange={(e) =>
                             handleFilterChange(
@@ -141,10 +153,14 @@ export const AuditLogFilter: React.FC<AuditLogFilterProps> = ({
 
                 {/* Limit Filter */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label 
+                        htmlFor="limit-filter" 
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                         Items per page
                     </label>
                     <select
+                        id="limit-filter"
                         value={filters.limit || 20}
                         onChange={(e) =>
                             handleFilterChange('limit', Number(e.target.value))

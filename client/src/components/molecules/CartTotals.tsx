@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Drug } from '../../types/drug.types';
+import { formatGHSDisplayAmount } from '../../utils/currency';
 
 interface CartItem {
     drug: string;
@@ -30,7 +31,7 @@ const CartTotals: React.FC<CartTotalsProps> = ({ items, drugs }) => {
             </div>
             <div className="flex justify-between text-lg font-bold">
                 <span>Total Amount:</span>
-                <span>${total.toFixed(2)}</span>
+                <span>{formatGHSDisplayAmount(total)}</span>
             </div>
         </div>
     );

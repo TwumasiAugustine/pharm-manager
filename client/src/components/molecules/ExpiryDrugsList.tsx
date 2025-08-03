@@ -7,6 +7,7 @@ import {
     FiPackage,
 } from 'react-icons/fi';
 import type { ExpiryDrug } from '../../types/expiry.types';
+import { formatGHSDisplayAmount } from '../../utils/currency';
 
 interface ExpiryDrugsListProps {
     drugs: ExpiryDrug[];
@@ -102,13 +103,15 @@ const DrugCard: React.FC<DrugCardProps> = ({ drug }) => {
                         <div>
                             <p className="text-gray-500">Price</p>
                             <p className="font-medium text-gray-900">
-                                ${drug.price.toFixed(2)}
+                                {formatGHSDisplayAmount(drug.price)}
                             </p>
                         </div>
                         <div>
                             <p className="text-gray-500">Total Value</p>
                             <p className="font-medium text-gray-900">
-                                ${(drug.quantity * drug.price).toLocaleString()}
+                                {formatGHSDisplayAmount(
+                                    drug.quantity * drug.price,
+                                )}
                             </p>
                         </div>
                     </div>

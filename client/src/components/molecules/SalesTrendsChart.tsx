@@ -10,6 +10,7 @@ import {
     ResponsiveContainer,
 } from 'recharts';
 import type { SalesPeriodData } from '../../types/dashboard.types';
+import { GHS_SYMBOL } from '../../utils/currency';
 
 interface SalesTrendsChartProps {
     data: SalesPeriodData[];
@@ -108,7 +109,7 @@ export const SalesTrendsChart: React.FC<SalesTrendsChartProps> = ({
                             tick={{ fontSize: 12 }}
                             tickLine={{ stroke: '#e5e7eb' }}
                             tickFormatter={(value) =>
-                                `$${(value / 1000).toFixed(0)}K`
+                                `${GHS_SYMBOL}${(value / 1000).toFixed(0)}K`
                             }
                         />
                         <Tooltip

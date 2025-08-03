@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import { FaTimes } from 'react-icons/fa';
 
 interface ModalProps {
@@ -24,6 +24,8 @@ export const Modal: React.FC<ModalProps> = ({
                     <button
                         onClick={onClose}
                         className="text-gray-500 hover:text-gray-800"
+                        aria-label="Close modal"
+                        title="Close modal"
                     >
                         <FaTimes />
                     </button>

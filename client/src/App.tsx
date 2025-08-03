@@ -26,6 +26,7 @@ import { ExpiryPage } from './pages/ExpiryPage';
 import ReportsPage from './pages/ReportsPage';
 import AuditLogsPage from './pages/AuditLogsPage';
 import UserActivityPage from './pages/UserActivityPage';
+import CronManagementPage from './pages/CronManagementPage';
 
 // Components
 import { ProtectedRoute } from './components/molecules/ProtectedRoute';
@@ -110,6 +111,10 @@ const router = createBrowserRouter([
             {
                 path: '/user-activity',
                 element: <UserActivityPage />,
+            },
+            {
+                path: '/cron-management',
+                element: <CronManagementPage />,
             },
         ],
     },
@@ -223,7 +228,7 @@ function AppContent() {
                 clearInterval(refreshInterval);
             }
         };
-    }, [refetch, isAuthenticated, isLoading]);
+    }, [refetch, isAuthenticated, isLoading, setIsAuthenticated, setIsLoading]);
 
     useEffect(() => {
         const checkFirstSetup = async () => {

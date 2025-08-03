@@ -41,44 +41,47 @@ const DashboardPage: React.FC = () => {
                     </div>
                 </div>
 
-                {isError ? (
+                {/* Error State */}
+                {isError && (
                     <div className="bg-red-50 border border-red-300 rounded-md p-4 text-center">
                         <p className="text-red-600">
                             Failed to load dashboard data. Please try again
                             later.
                         </p>
                     </div>
-                ) : (
-                    <>
-                        {/* Overview Cards */}
-                        <OverviewCards
-                            overview={dashboardData?.overview}
-                            isLoading={isLoading}
-                        />
-
-                        {/* Charts Section - Responsive Grid */}
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
-                            <SalesTrendsChart
-                                data={
-                                    dashboardData?.charts?.salesByPeriod || []
-                                }
-                                isLoading={isLoading}
-                            />
-                            <TopSellingDrugsChart
-                                data={
-                                    dashboardData?.charts?.topSellingDrugs || []
-                                }
-                                isLoading={isLoading}
-                            />
-                        </div>
-
-                        {/* Low Stock Drugs */}
-                        <LowStockDrugs
-                            data={dashboardData?.charts?.lowStockDrugs || []}
-                            isLoading={isLoading}
-                        />
-                    </>
                 )}
+
+                {/* Overview Cards */}
+                <OverviewCards
+                    overview={
+                        dashboardData?.overview || {
+                            totalRevenue: 0,
+                            totalSales: 0,
+                            totalCustomers: 0,
+                            totalDrugs: 0,
+                            lowStockCount: 0,
+                        }
+                    }
+                    isLoading={isLoading}
+                />
+
+                {/* Charts Section - Responsive Grid */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+                    <SalesTrendsChart
+                        data={dashboardData?.charts?.salesByPeriod || []}
+                        isLoading={isLoading}
+                    />
+                    <TopSellingDrugsChart
+                        data={dashboardData?.charts?.topSellingDrugs || []}
+                        isLoading={isLoading}
+                    />
+                </div>
+
+                {/* Low Stock Drugs */}
+                <LowStockDrugs
+                    data={dashboardData?.charts?.lowStockDrugs || []}
+                    isLoading={isLoading}
+                />
             </div>
         </DashboardLayout>
     );

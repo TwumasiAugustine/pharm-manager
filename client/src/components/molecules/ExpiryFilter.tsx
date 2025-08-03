@@ -58,78 +58,90 @@ export const ExpiryFilter: React.FC<ExpiryFilterProps> = ({
     ];
 
     return (
-        <div className={`space-y-4 ${className}`}>
-            {/* Days Range Filter */}
-            <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Days Range
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                    {daysRanges.map((range) => (
-                        <button
-                            key={range.value}
-                            onClick={() => handleDaysRangeChange(range.value)}
-                            className={`px-3 py-2 text-sm font-medium rounded-md transition-colors w-full ${
-                                filters.daysRange === range.value
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                        >
-                            {range.label}
-                        </button>
-                    ))}
+        <div
+            className={`bg-white rounded-lg shadow-sm border p-4 sm:p-6 ${className}`}
+        >
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex flex-col gap-4 w-full xl:flex-row xl:w-auto">
+                    {/* Days Range Filter */}
+                    <div className="flex flex-col w-full sm:w-auto">
+                        <label className="text-sm font-medium text-gray-700 mb-2">
+                            Days Range
+                        </label>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
+                            {daysRanges.map((range) => (
+                                <button
+                                    key={range.value}
+                                    onClick={() =>
+                                        handleDaysRangeChange(range.value)
+                                    }
+                                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors w-full ${
+                                        filters.daysRange === range.value
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    {range.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Alert Level Filter */}
+                    <div className="flex flex-col w-full sm:w-auto">
+                        <label className="text-sm font-medium text-gray-700 mb-2">
+                            Alert Level
+                        </label>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-4">
+                            {alertLevels.map((level) => (
+                                <button
+                                    key={level.value}
+                                    onClick={() =>
+                                        handleAlertLevelChange(level.value)
+                                    }
+                                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors w-full ${
+                                        filters.alertLevel === level.value
+                                            ? `bg-${level.color}-600 text-white`
+                                            : `bg-${level.color}-100 text-${level.color}-700 hover:bg-${level.color}-200`
+                                    }`}
+                                >
+                                    {level.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Category Filter */}
+                    <div className="flex flex-col w-full sm:w-auto">
+                        <label className="text-sm font-medium text-gray-700 mb-2">
+                            Category
+                        </label>
+                        <input
+                            type="text"
+                            value={filters.category || ''}
+                            onChange={(e) =>
+                                handleCategoryChange(e.target.value)
+                            }
+                            placeholder="Filter by category..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        />
+                    </div>
                 </div>
-            </div>
 
-            {/* Alert Level Filter */}
-            <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Alert Level
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                    {alertLevels.map((level) => (
-                        <button
-                            key={level.value}
-                            onClick={() => handleAlertLevelChange(level.value)}
-                            className={`px-3 py-2 text-sm font-medium rounded-md transition-colors w-full ${
-                                filters.alertLevel === level.value
-                                    ? `bg-${level.color}-600 text-white`
-                                    : `bg-${level.color}-100 text-${level.color}-700 hover:bg-${level.color}-200`
-                            }`}
-                        >
-                            {level.label}
-                        </button>
-                    ))}
-                </div>
+                {/* Clear Filters */}
+                <button
+                    onClick={clearFilters}
+                    className="w-full xl:w-auto px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                    Clear Filters
+                </button>
             </div>
-
-            {/* Category Filter */}
-            <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Category
-                </label>
-                <input
-                    type="text"
-                    value={filters.category || ''}
-                    onChange={(e) => handleCategoryChange(e.target.value)}
-                    placeholder="Filter by category..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
-            </div>
-
-            {/* Clear Filters */}
-            <button
-                onClick={clearFilters}
-                className="w-full px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-            >
-                Clear Filters
-            </button>
 
             {/* Current Filters Display */}
             {(filters.alertLevel ||
                 filters.category ||
                 filters.daysRange !== 90) && (
-                <div className="pt-4 border-t border-gray-200">
+                <div className="mt-4 pt-4 border-t border-gray-200">
                     <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
                         <span className="font-medium">Active Filters:</span>
                         {filters.daysRange !== 90 && (

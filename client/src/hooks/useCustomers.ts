@@ -12,53 +12,32 @@ import type {
 } from '../types/query.types';
 import { useSafeNotify } from '../utils/useSafeNotify';
 
-// Interface for raw customer data from API
-interface RawCustomer {
-    id?: string;
-    _id?: string;
-    name?: string;
-    phone?: string;
-    email?: string;
-    address?: string;
-    purchases?: string[];
-    createdAt?: string;
-    updatedAt?: string;
-}
-
 /**
  * Hook for fetching a paginated list of customers
  */
 export const useCustomers = (
     params: { page?: number; limit?: number; search?: string } = {},
 ): QueryResultWithPagination<PaginatedCustomersResponse, Error> => {
-    const [searchQuery, setSearchQuery] = React.useState<string>(
-        params.search || '',
-    );
+    const [searchQuery, setSearchQuery] = React.useState<string>('');
     const [page, setPage] = React.useState<number>(params.page || 1);
     const [limit, setLimit] = React.useState<number>(params.limit || 10);
 
-    // Update search query when params.search changes
-    React.useEffect(() => {
-        if (params.search !== undefined) {
-            setSearchQuery(params.search);
-        }
-    }, [params.search]);
-
     const queryParams = React.useMemo(
         () => ({
+            ...params,
             page,
             limit,
             search: searchQuery,
         }),
-        [page, limit, searchQuery],
+        [params, page, limit, searchQuery],
     );
 
     const queryKey = ['customers', queryParams];
 
-    const query = useQuery<PaginatedCustomersResponse, Error>({
+    const query = useQuery<any, Error>({
         queryKey,
         queryFn: () => customerApi.getCustomers(queryParams),
-        staleTime: 30 * 1000, // 30 seconds - shorter for real-time updates
+        staleTime: 5 * 60 * 1000, // 5 minutes
     });
 
     const mappedData: PaginatedCustomersResponse = React.useMemo(() => {
@@ -74,12 +53,10 @@ export const useCustomers = (
         }
         return {
             customers: Array.isArray(raw.customers)
-                ? raw.customers.map((customer: RawCustomer) => ({
+                ? raw.customers.map((customer: any) => ({
                       id: customer.id || customer._id || '',
                       name: customer.name || '',
                       phone: customer.phone || '',
-                      email: customer.email || '',
-                      address: customer.address || '',
                       purchases: Array.isArray(customer.purchases)
                           ? customer.purchases
                           : [],
@@ -124,9 +101,7 @@ export const useCreateCustomer = () => {
     return useMutation<Customer, Error, CreateCustomerRequest>({
         mutationFn: (data) => customerApi.createCustomer(data),
         onSuccess: () => {
-            // Force fresh data by removing cache and refetching
-            queryClient.removeQueries({ queryKey: ['customers'] });
-            queryClient.refetchQueries({ queryKey: ['customers'] });
+            queryClient.invalidateQueries({ queryKey: ['customers'] });
             notify.success('Customer created successfully');
         },
         onError: (error) => {
@@ -141,11 +116,10 @@ export const useCreateCustomer = () => {
 /**
  * Hook for getting customer by ID
  */
-export const useCustomer = (id: string, options?: { enabled?: boolean }) => {
+export const useCustomer = (id: string) => {
     return useQuery<Customer, Error>({
         queryKey: ['customers', id],
         queryFn: () => customerApi.getCustomerById(id),
         staleTime: 5 * 60 * 1000, // 5 minutes
-        enabled: options?.enabled !== false && !!id,
     });
 };

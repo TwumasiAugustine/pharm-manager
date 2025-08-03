@@ -29,20 +29,11 @@ const EditDrugPage: React.FC = () => {
         });
     };
 
-    if (isLoading) {
-        return (
-            <DashboardLayout>
-                <div className="flex justify-center items-center h-40">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
-                </div>
-            </DashboardLayout>
-        );
-    }
-
-    if (isError || !drug) {
-        return (
-            <DashboardLayout>
-                <div className="bg-red-50 border border-red-300 rounded-md p-4 text-center">
+    return (
+        <DashboardLayout>
+            {/* Error State */}
+            {(isError || !drug) && !isLoading && (
+                <div className="bg-red-50 border border-red-300 rounded-md p-4 text-center mb-6">
                     <p className="text-red-600">
                         Failed to load drug data. It might not exist or there
                         was a server error.
@@ -55,20 +46,51 @@ const EditDrugPage: React.FC = () => {
                         Back to Drug List
                     </button>
                 </div>
-            </DashboardLayout>
-        );
-    }
+            )}
 
-    return (
-        <DashboardLayout>
             <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-2xl font-semibold mb-6">Edit Drug</h2>
-                <DrugForm
-                    key={drug.id} // Force re-render when drug changes
-                    onSubmit={handleSubmit}
-                    initialData={drug}
-                    isSubmitting={updateDrug.isPending}
-                />
+
+                {isLoading ? (
+                    <div className="space-y-6 animate-pulse">
+                        {/* Form loading skeleton */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                                <div className="h-10 bg-gray-200 rounded"></div>
+                            </div>
+                            <div>
+                                <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                                <div className="h-10 bg-gray-200 rounded"></div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                                <div className="h-10 bg-gray-200 rounded"></div>
+                            </div>
+                            <div>
+                                <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                                <div className="h-10 bg-gray-200 rounded"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                            <div className="h-20 bg-gray-200 rounded"></div>
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="h-10 bg-gray-200 rounded w-24"></div>
+                            <div className="h-10 bg-gray-200 rounded w-24"></div>
+                        </div>
+                    </div>
+                ) : drug ? (
+                    <DrugForm
+                        key={drug.id} // Force re-render when drug changes
+                        onSubmit={handleSubmit}
+                        initialData={drug}
+                        isSubmitting={updateDrug.isPending}
+                    />
+                ) : null}
             </div>
         </DashboardLayout>
     );

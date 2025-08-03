@@ -6,6 +6,7 @@ import type { TableColumn, TableAction } from '../molecules/Table';
 import { Pagination } from '../molecules/Pagination';
 import { SearchBar } from '../molecules/SearchBar';
 import type { Drug } from '../../types/drug.types';
+import { formatGHSDisplayAmount } from '../../utils/currency';
 
 /**
  * DrugList component to display and manage the list of drugs.
@@ -72,6 +73,92 @@ export const DrugList: React.FC = () => {
                 onBlur={handleSearchBlur}
             />
 
+            {/* Error State */}
+            {isError && !isSearching && (
+                <div className="bg-red-50 border border-red-300 rounded-md p-4 text-center">
+                    <p className="text-red-600">
+                        Failed to load drugs. Please try again later. If the
+                        issue persists, contact support.
+                    </p>
+                    <button
+                        onClick={() => refetch()}
+                        className="mt-2 px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
+                    >
+                        Retry
+                    </button>
+                </div>
+            )}
+
+            {/* No Data State */}
+            {(!drugs || !pagination) && !isSearching && !isLoading && (
+                <div className="bg-yellow-50 border border-yellow-300 rounded-md p-4 text-center">
+                    <p className="text-yellow-700">
+                        No data available. Please refresh the page or try again
+                        later.
+                    </p>
+                    <button
+                        onClick={() => refetch()}
+                        className="mt-2 px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
+                    >
+                        Refresh Page
+                    </button>
+                </div>
+            )}
+
+            {/* Loading skeleton for initial load */}
+            {isLoading && !searchQuery ? (
+                <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow-sm animate-pulse">
+                        <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+                        <div className="h-8 bg-gray-200 rounded w-24"></div>
+                    </div>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                        <div
+                            key={i}
+                            className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 animate-pulse"
+                        >
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="space-y-2">
+                                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                                    <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                                    <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : null}
+
+            {/* Handle empty data list */}
+            {drugs &&
+                drugs.drugs &&
+                drugs.drugs.length === 0 &&
+                !isSearching && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-md p-8 text-center">
+                        <p className="text-gray-500">
+                            No drugs found. Try adjusting your search or add a
+                            new drug.
+                        </p>
+                        <button
+                            onClick={() => refetch()}
+                            className="mt-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200"
+                        >
+                            Refresh Page
+                        </button>
+                    </div>
+                )}
+
             {isSearching && searchQuery.trim() && isSearchFocused && (
                 <div className="flex justify-center items-center py-4">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
@@ -81,51 +168,11 @@ export const DrugList: React.FC = () => {
                 </div>
             )}
 
-            {(!isSearching || !searchQuery.trim() || !isSearchFocused) && (
-                <>
-                    {isError ? (
-                        <div className="bg-red-50 border border-red-300 rounded-md p-4 text-center">
-                            <p className="text-red-600">
-                                Failed to load drugs. Please try again later. If
-                                the issue persists, contact support.
-                            </p>
-                            <button
-                                onClick={() => refetch()}
-                                className="mt-2 px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
-                            >
-                                Retry
-                            </button>
-                        </div>
-                    ) : (!drugs || !pagination) && !isLoading ? (
-                        <div className="bg-yellow-50 border border-yellow-300 rounded-md p-4 text-center">
-                            <p className="text-yellow-700">
-                                No data available. Please refresh the page or
-                                try again later.
-                            </p>
-                            <button
-                                onClick={() => refetch()}
-                                className="mt-2 px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
-                            >
-                                Refresh Page
-                            </button>
-                        </div>
-                    ) : drugs && drugs.drugs.length === 0 && !isLoading ? (
-                        <div className="bg-gray-50 border border-gray-200 rounded-md p-8 text-center">
-                            <p className="text-gray-500">
-                                No drugs found. Try adjusting your search or add
-                                a new drug.
-                            </p>
-                            <button
-                                onClick={() => refetch()}
-                                className="mt-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200"
-                            >
-                                Refresh Page
-                            </button>
-                        </div>
-                    ) : (
+            {(!isSearching || !searchQuery.trim() || !isSearchFocused) &&
+                drugs && (
+                    <>
                         <Table<Drug>
-                            data={drugs?.drugs || []}
-                            isLoading={isLoading}
+                            data={drugs.drugs || []}
                             columns={
                                 [
                                     {
@@ -150,7 +197,9 @@ export const DrugList: React.FC = () => {
                                         header: 'Price',
                                         accessor: 'price' as keyof Drug,
                                         cell: (value: number) =>
-                                            `$${Number(value).toFixed(2)}`,
+                                            formatGHSDisplayAmount(
+                                                Number(value),
+                                            ),
                                     },
                                     {
                                         header: 'Expiry Date',
@@ -186,17 +235,14 @@ export const DrugList: React.FC = () => {
                                 ] as TableAction<Drug>[]
                             }
                         />
-                    )}
 
-                    {!isLoading && drugs && pagination && (
                         <Pagination
-                            currentPage={pagination.page || 1}
-                            totalPages={pagination.totalPages || 1}
+                            currentPage={pagination?.page || 1}
+                            totalPages={pagination?.totalPages || 1}
                             onPageChange={handlePageChange}
                         />
-                    )}
-                </>
-            )}
+                    </>
+                )}
         </div>
     );
 };

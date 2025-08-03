@@ -16,6 +16,7 @@ import type { Drug, PaginatedDrugsResponse } from '../../types/drug.types';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { Sale, CreateSaleRequest } from '../../types/sale.types';
 import type { CreateSaleFormValues } from '../../validations/sale.validation';
+import { formatGHSDisplayAmount } from '../../utils/currency';
 
 interface CreateSaleFormProps {
     onSubmit: (data: CreateSaleFormValues) => void;
@@ -104,7 +105,9 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                                                     In Stock: {drug.quantity}
                                                 </span>
                                                 <span className="text-xs text-gray-500 ml-2">
-                                                    ${drug.price.toFixed(2)}
+                                                    {formatGHSDisplayAmount(
+                                                        drug.price,
+                                                    )}
                                                 </span>
                                             </li>
                                         ))}
@@ -133,7 +136,10 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                                         {field.drugName}
                                     </p>
                                     <p className="text-sm text-gray-500">
-                                        Price: ${field.priceAtSale.toFixed(2)}
+                                        Price:{' '}
+                                        {formatGHSDisplayAmount(
+                                            field.priceAtSale,
+                                        )}
                                     </p>
                                 </div>
                                 <Controller
@@ -160,12 +166,13 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                                     )}
                                 />
                                 <p className="w-full md:w-28 text-right">
-                                    Subtotal: $
-                                    {(
+                                    Subtotal:{' '}
+                                    {formatGHSDisplayAmount(
                                         (watchedItems?.[index]?.priceAtSale ??
                                             0) *
-                                        (watchedItems?.[index]?.quantity ?? 0)
-                                    ).toFixed(2)}
+                                            (watchedItems?.[index]?.quantity ??
+                                                0),
+                                    )}
                                 </p>
                                 <Button
                                     type="button"
@@ -185,7 +192,7 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
 
                     {/* Total Amount */}
                     <div className="text-right text-xl font-bold">
-                        Total: ${totalAmount.toFixed(2)}
+                        Total: {formatGHSDisplayAmount(totalAmount)}
                     </div>
 
                     {/* Payment Method */}

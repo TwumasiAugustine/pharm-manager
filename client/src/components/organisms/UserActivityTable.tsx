@@ -2,7 +2,6 @@ import React from 'react';
 import { Table } from '../molecules/Table';
 import type { TableColumn } from '../molecules/Table';
 import { Pagination } from '../molecules/Pagination';
-import { LoadingSpinner } from '../atoms/LoadingSpinner';
 import { ErrorMessage } from '../atoms/ErrorMessage';
 import type { UserActivity } from '../../types/user-activity.types';
 import { FaEye } from 'react-icons/fa';
@@ -102,36 +101,56 @@ export const UserActivityTable: React.FC<UserActivityTableProps> = ({
         },
     ];
 
-    if (isLoading) {
-        return (
-            <div className="flex justify-center items-center h-64">
-                <LoadingSpinner />
-            </div>
-        );
-    }
-
     if (error) {
         return <ErrorMessage message={error.message} />;
     }
 
     return (
         <div className="bg-white p-4 rounded-lg shadow-sm border">
-            <Table columns={columns} data={activities} />
-            {activities.length > 0 && (
-                <div className="mt-4">
-                    <Pagination
-                        currentPage={pagination.currentPage}
-                        totalPages={pagination.totalPages}
-                        onPageChange={onPageChange}
-                        hasNextPage={pagination.hasNextPage}
-                        hasPrevPage={pagination.hasPrevPage}
-                    />
+            {isLoading ? (
+                <div className="space-y-4 animate-pulse">
+                    {/* Table header skeleton */}
+                    <div className="grid grid-cols-6 gap-4 pb-2 border-b">
+                        <div className="h-4 bg-gray-200 rounded"></div>
+                        <div className="h-4 bg-gray-200 rounded"></div>
+                        <div className="h-4 bg-gray-200 rounded"></div>
+                        <div className="h-4 bg-gray-200 rounded"></div>
+                        <div className="h-4 bg-gray-200 rounded"></div>
+                        <div className="h-4 bg-gray-200 rounded"></div>
+                    </div>
+                    {/* Table rows skeleton */}
+                    {[1, 2, 3, 4, 5].map((i) => (
+                        <div
+                            key={i}
+                            className="grid grid-cols-6 gap-4 py-3 border-b"
+                        >
+                            <div className="h-4 bg-gray-200 rounded"></div>
+                            <div className="h-4 bg-gray-200 rounded"></div>
+                            <div className="h-4 bg-gray-200 rounded"></div>
+                            <div className="h-4 bg-gray-200 rounded"></div>
+                            <div className="h-4 bg-gray-200 rounded"></div>
+                            <div className="h-8 bg-gray-200 rounded w-16"></div>
+                        </div>
+                    ))}
                 </div>
-            )}
-            {activities.length === 0 && !isLoading && (
-                <div className="text-center py-8 text-gray-500">
-                    No activities found for the selected filters.
-                </div>
+            ) : (
+                <>
+                    <Table columns={columns} data={activities} />
+                    {activities.length > 0 && (
+                        <div className="mt-4">
+                            <Pagination
+                                currentPage={pagination.currentPage}
+                                totalPages={pagination.totalPages}
+                                onPageChange={onPageChange}
+                            />
+                        </div>
+                    )}
+                    {activities.length === 0 && !isLoading && (
+                        <div className="text-center py-8 text-gray-500">
+                            No activities found for the selected filters.
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );

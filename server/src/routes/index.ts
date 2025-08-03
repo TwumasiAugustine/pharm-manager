@@ -9,6 +9,7 @@ import reportRoutes from './report.routes';
 import expiryRoutes from './expiry.routes';
 import auditLogRoutes from './audit-log.routes';
 import userActivityRoutes from './user-activity.routes';
+import cronRoutes from './cron.routes';
 
 const router = Router();
 
@@ -32,5 +33,6 @@ router.use('/reports', reportRoutes);
 router.use('/expiry', expiryRoutes);
 router.use('/audit-logs', auditLogRoutes);
 router.use('/user-activities', userActivityRoutes);
+router.use('/cron', cronRoutes);
 
 export default router;

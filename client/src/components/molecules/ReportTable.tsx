@@ -293,7 +293,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                                 Total Profit:{' '}
                                 {formatCurrency(
                                     data.reduce(
-                                        (sum, item) => sum + item.profit,
+                                        (sum, item) => sum + (item.profit || 0),
                                         0,
                                     ),
                                 )}

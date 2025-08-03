@@ -6,7 +6,7 @@ import React from 'react';
 export interface TableColumn<T> {
     header: string;
     accessor: keyof T | ((data: T) => React.ReactNode);
-    cell?: (value: T[keyof T]) => React.ReactNode;
+    cell?: (value: unknown) => React.ReactNode;
     className?: string;
 }
 
@@ -45,29 +45,15 @@ export function Table<T extends { id?: string | number }>({
     emptyMessage = 'No data available',
     className = '',
 }: TableProps<T>) {
-    // Skeleton loading component
-    const SkeletonRow = ({
-        columns,
-        actions,
-    }: {
-        columns: TableColumn<T>[];
-        actions?: TableAction<T>[];
-    }) => (
-        <tr className="animate-pulse">
-            {columns.map((_, index) => (
-                <td key={index} className="px-6 py-4 whitespace-nowrap">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                </td>
-            ))}
-            {actions && actions.length > 0 && (
-                <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="h-4 bg-gray-200 rounded w-16 ml-auto"></div>
-                </td>
-            )}
-        </tr>
-    );
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center py-10">
+                <div className="animate-pulse text-gray-500">Loading...</div>
+            </div>
+        );
+    }
 
-    if (!data.length && !isLoading) {
+    if (!data.length) {
         return (
             <div className="flex justify-center items-center py-10 border rounded-lg">
                 <div className="text-gray-500">{emptyMessage}</div>
@@ -102,80 +88,63 @@ export function Table<T extends { id?: string | number }>({
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                    {isLoading
-                        ? // Show skeleton rows when loading
-                          Array.from({ length: 5 }).map((_, index) => (
-                              <SkeletonRow
-                                  key={`skeleton-${index}`}
-                                  columns={columns}
-                                  actions={actions}
-                              />
-                          ))
-                        : // Show actual data when not loading
-                          data.map((item, rowIndex) => (
-                              <tr
-                                  key={item.id || rowIndex}
-                                  onClick={
-                                      onRowClick
-                                          ? () => onRowClick(item)
-                                          : undefined
-                                  }
-                                  className={
-                                      onRowClick
-                                          ? 'cursor-pointer hover:bg-gray-50'
-                                          : ''
-                                  }
-                              >
-                                  {columns.map((column, colIndex) => (
-                                      <td
-                                          key={colIndex}
-                                          className={`px-6 py-4 whitespace-nowrap text-sm ${
-                                              column.className || ''
-                                          }`}
-                                      >
-                                          {typeof column.accessor === 'function'
-                                              ? column.accessor(item)
-                                              : column.cell
-                                              ? column.cell(
-                                                    item[column.accessor],
-                                                )
-                                              : (item[
-                                                    column.accessor
-                                                ] as React.ReactNode)}
-                                      </td>
-                                  ))}
-                                  {actions && actions.length > 0 && (
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                          <div className="flex justify-end space-x-2">
-                                              {actions.map(
-                                                  (action, actionIndex) => (
-                                                      <button
-                                                          key={actionIndex}
-                                                          onClick={(e) => {
-                                                              e.stopPropagation();
-                                                              action.onClick(
-                                                                  item,
-                                                              );
-                                                          }}
-                                                          className={`px-3 py-1 bg-gray-100 text-gray-800 rounded hover:bg-gray-200 ${
-                                                              action.className ||
-                                                              ''
-                                                          }`}
-                                                      >
-                                                          {action.icon && (
-                                                              <span className="mr-1">
-                                                                  {action.icon}
-                                                              </span>
-                                                          )}
-                                                          {action.label}
-                                                      </button>
-                                                  ),
-                                              )}
-                                          </div>
-                                      </td>
-                                  )}
-                              </tr>
-                          ))}
+                    {data.map((item, rowIndex) => (
+                        <tr
+                            key={item.id || rowIndex}
+                            onClick={
+                                onRowClick ? () => onRowClick(item) : undefined
+                            }
+                            className={
+                                onRowClick
+                                    ? 'cursor-pointer hover:bg-gray-50'
+                                    : ''
+                            }
+                        >
+                            {columns.map((column, colIndex) => (
+                                <td
+                                    key={colIndex}
+                                    className={`px-6 py-4 whitespace-nowrap text-sm ${
+                                        column.className || ''
+                                    }`}
+                                >
+                                    {typeof column.accessor === 'function'
+                                        ? column.accessor(item)
+                                        : column.cell
+                                        ? column.cell(
+                                              item[column.accessor] as unknown,
+                                          )
+                                        : (item[
+                                              column.accessor
+                                          ] as React.ReactNode)}
+                                </td>
+                            ))}
+                            {actions && actions.length > 0 && (
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                    <div className="flex justify-end space-x-2">
+                                        {actions.map((action, actionIndex) => (
+                                            <button
+                                                key={actionIndex}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    action.onClick(item);
+                                                }}
+                                                className={`px-3 py-1 bg-gray-100 text-gray-800 rounded hover:bg-gray-200 ${
+                                                    action.className || ''
+                                                }`}
+                                            >
+                                                {action.icon && (
+                                                    <span className="mr-1">
+                                                        {action.icon}
+                                                    </span>
+                                                )}
+                                                {action.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </td>
+                            )}
+                        </tr>
+                    ))}
                 </tbody>
             </table>
         </div>

@@ -84,7 +84,7 @@ export const userActivityTracker = (
         } else {
             // Log activity after response is sent (without performance metrics)
             const originalEnd = res.end;
-            res.end = function (this: Response, ...args: any[]) {
+            res.end = function (...args: any[]) {
                 setImmediate(async () => {
                     await logUserActivity(req, res, {
                         activityType,
@@ -96,9 +96,9 @@ export const userActivityTracker = (
                     });
                 });
 
-                // Use apply to handle all overloads properly
-                return (originalEnd as any).apply(this, args);
-            } as any;
+                // Use .call with spread to maintain proper typing
+                return (originalEnd as any).call(this, ...args);
+            };
         }
 
         next();
@@ -127,7 +127,6 @@ export const initializeUserSession = (userId: string, req: Request): string => {
             sessionId,
             loginTime,
             forceLog: true,
-            forcedUserId: userId, // Pass userId for forced logs
         });
     });
 
@@ -158,7 +157,6 @@ export const endUserSession = async (
             loginTime: sessionInfo.loginTime,
             sessionDuration: duration,
             forceLog: true,
-            forcedUserId: userId, // Pass userId for forced logs
         });
 
         // Update session status to inactive
@@ -207,22 +205,13 @@ async function logUserActivity(
         loginTime?: Date;
         sessionDuration?: number;
         forceLog?: boolean;
-        forcedUserId?: string; // For forced logs when req.user might not be available
     },
 ): Promise<void> {
     try {
-        // For non-forced logs, ensure user is authenticated
-        if (!options.forceLog && !req.user) {
-            return;
-        }
+        if (!req.user && !options.forceLog) return;
 
-        const userId = options.forcedUserId || req.user?.id;
-
-        // Ensure we have a userId for all logs
-        if (!userId) {
-            console.warn('Cannot log user activity: no userId available');
-            return;
-        }
+        const userId = req.user?.id;
+        if (!userId && !options.forceLog) return;
 
         // Get session info
         const sessionInfo =
@@ -231,7 +220,7 @@ async function logUserActivity(
                       sessionId: options.sessionId,
                       loginTime: options.loginTime,
                   }
-                : sessionStore.get(userId);
+                : sessionStore.get(userId!);
 
         if (!sessionInfo && !options.forceLog) {
             // If no session info and not a forced log (like login), skip
@@ -247,7 +236,7 @@ async function logUserActivity(
         if (!isSuccessful) return;
 
         const activityData: CreateUserActivityRequest = {
-            userId: userId as string, // We've already validated userId exists above
+            userId: userId!,
             sessionId: sessionInfo?.sessionId || 'unknown',
             activity: {
                 type: options.activityType,

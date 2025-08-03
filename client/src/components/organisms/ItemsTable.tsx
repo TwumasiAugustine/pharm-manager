@@ -9,6 +9,7 @@ import {
     CardFooter,
 } from '../molecules/Card';
 import type { SaleItem } from '../../types/sale.types';
+import { formatGHSDisplayAmount } from '../../utils/currency';
 
 // Create a type that extends SaleItem with an optional id property
 type TableSaleItem = SaleItem & { id?: string | number };
@@ -57,14 +58,14 @@ const ItemsTable: React.FC<ItemsTableProps> = ({
                         {
                             header: 'Unit Price',
                             accessor: (item) => item.priceAtSale,
-                            cell: (value) => `$${value.toFixed(2)}`,
+                            cell: (value) => formatGHSDisplayAmount(value),
                             className: 'text-right',
                         },
                         {
                             header: 'Subtotal',
                             accessor: (item) =>
                                 item.quantity * item.priceAtSale,
-                            cell: (value) => `$${value.toFixed(2)}`,
+                            cell: (value) => formatGHSDisplayAmount(value),
                             className: 'text-right font-medium',
                         },
                     ]}
@@ -73,19 +74,19 @@ const ItemsTable: React.FC<ItemsTableProps> = ({
                 <div className="mt-6 space-y-2">
                     <div className="flex justify-between text-sm">
                         <span className="font-medium">Subtotal:</span>
-                        <span>${subtotal.toFixed(2)}</span>
+                        <span>{formatGHSDisplayAmount(subtotal)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="font-medium">Tax:</span>
-                        <span>${tax.toFixed(2)}</span>
+                        <span>{formatGHSDisplayAmount(tax)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="font-medium">Discount:</span>
-                        <span>${discount.toFixed(2)}</span>
+                        <span>{formatGHSDisplayAmount(discount)}</span>
                     </div>
                     <div className="flex justify-between font-bold text-lg pt-2 border-t">
                         <span>Total:</span>
-                        <span>${totalAmount.toFixed(2)}</span>
+                        <span>{formatGHSDisplayAmount(totalAmount)}</span>
                     </div>
                 </div>
             </CardContent>
@@ -95,7 +96,7 @@ const ItemsTable: React.FC<ItemsTableProps> = ({
                         Total Amount
                     </p>
                     <p className="text-2xl font-bold text-primary">
-                        ${totalAmount.toFixed(2)}
+                        {formatGHSDisplayAmount(totalAmount)}
                     </p>
                 </div>
             </CardFooter>

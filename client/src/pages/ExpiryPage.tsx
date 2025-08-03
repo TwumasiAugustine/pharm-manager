@@ -4,24 +4,32 @@ import {
     FiRefreshCw,
     FiDownload,
     FiFilter,
-    FiMoreVertical
+    FiMoreVertical,
+    FiPlay,
 } from 'react-icons/fi';
 import { useExpiry } from '../hooks/useExpiry';
+import { useCronTriggers } from '../hooks/useCron';
 import { useSafeNotify } from '../utils/useSafeNotify';
+import { useAuthStore } from '../store/auth.store';
+import { UserRole } from '../types/auth.types';
 import { ExpiryStatsCards } from '../components/molecules/ExpiryStatsCards';
 import { ExpiryFilter } from '../components/molecules/ExpiryFilter';
 import { ExpiryDrugsList } from '../components/molecules/ExpiryDrugsList';
 import { NotificationPanel } from '../components/molecules/NotificationPanel';
 import DashboardLayout from '../layouts/DashboardLayout';
 import type { ExpiryFilters } from '../types/expiry.types';
+import { formatGHSDisplayAmount } from '../utils/currency';
 
 export const ExpiryPage: React.FC = () => {
+    const { user } = useAuthStore();
     const [showNotifications, setShowNotifications] = useState(false);
     const [showFilters, setShowFilters] = useState(false); // Changed default to false for mobile-first
     const [showActionsDropdown, setShowActionsDropdown] = useState(false);
     const filterDropdownRef = useRef<HTMLDivElement>(null);
     const actionsDropdownRef = useRef<HTMLDivElement>(null);
+    const notificationsDropdownRef = useRef<HTMLDivElement>(null);
     const notify = useSafeNotify();
+    const { triggerExpiryNotifications } = useCronTriggers();
     const [filters, setFilters] = useState<ExpiryFilters>({
         daysRange: 30,
         alertLevel: undefined,
@@ -58,16 +66,27 @@ export const ExpiryPage: React.FC = () => {
             ) {
                 setShowActionsDropdown(false);
             }
+
+            // For notifications dropdown (desktop only)
+            if (
+                notificationsDropdownRef.current &&
+                !notificationsDropdownRef.current.contains(
+                    event.target as Node,
+                ) &&
+                window.innerWidth >= 1024 // Only for lg and up
+            ) {
+                setShowNotifications(false);
+            }
         };
 
-        if (showFilters || showActionsDropdown) {
+        if (showFilters || showActionsDropdown || showNotifications) {
             document.addEventListener('mousedown', handleClickOutside);
         }
 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [showFilters, showActionsDropdown]);
+    }, [showFilters, showActionsDropdown, showNotifications]);
 
     const {
         expiringDrugs,
@@ -119,8 +138,8 @@ export const ExpiryPage: React.FC = () => {
                     `"${drug.expiryDate}"`,
                     drug.daysUntilExpiry,
                     drug.quantity,
-                    drug.price,
-                    (drug.quantity * drug.price).toFixed(2),
+                    `"${formatGHSDisplayAmount(drug.price)}"`,
+                    `"${formatGHSDisplayAmount(drug.quantity * drug.price)}"`,
                     `"${drug.alertLevel}"`,
                 ].join(','),
             ),
@@ -231,6 +250,30 @@ export const ExpiryPage: React.FC = () => {
                                         Refresh
                                     </button>
 
+                                    {/* Trigger Expiry Notifications button (Admin only) */}
+                                    {user?.role === UserRole.ADMIN && (
+                                        <button
+                                            onClick={() =>
+                                                triggerExpiryNotifications.mutate()
+                                            }
+                                            disabled={
+                                                triggerExpiryNotifications.isPending
+                                            }
+                                            className="inline-flex items-center px-3 py-2 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <FiPlay
+                                                className={`h-4 w-4 mr-2 ${
+                                                    triggerExpiryNotifications.isPending
+                                                        ? 'animate-spin'
+                                                        : ''
+                                                }`}
+                                            />
+                                            {triggerExpiryNotifications.isPending
+                                                ? 'Processing...'
+                                                : 'Create Notifications'}
+                                        </button>
+                                    )}
+
                                     {/* Export button */}
                                     <button
                                         onClick={handleExportData}
@@ -244,25 +287,45 @@ export const ExpiryPage: React.FC = () => {
                                         Export
                                     </button>
 
-                                    {/* Notifications button */}
-                                    <button
-                                        onClick={() =>
-                                            setShowNotifications(
-                                                !showNotifications,
-                                            )
-                                        }
-                                        className="relative inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                                    {/* Notifications button with dropdown */}
+                                    <div
+                                        className="relative"
+                                        ref={notificationsDropdownRef}
                                     >
-                                        <FiBell className="h-4 w-4 mr-2" />
-                                        Notifications
-                                        {unreadNotifications > 0 && (
-                                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                                                {unreadNotifications > 9
-                                                    ? '9+'
-                                                    : unreadNotifications}
-                                            </span>
+                                        <button
+                                            onClick={() =>
+                                                setShowNotifications(
+                                                    !showNotifications,
+                                                )
+                                            }
+                                            className="relative inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                                        >
+                                            <FiBell className="h-4 w-4 mr-2" />
+                                            Notifications
+                                            {unreadNotifications > 0 && (
+                                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                                    {unreadNotifications > 9
+                                                        ? '9+'
+                                                        : unreadNotifications}
+                                                </span>
+                                            )}
+                                        </button>
+
+                                        {/* Desktop Notification Dropdown */}
+                                        {showNotifications && (
+                                            <div className="hidden lg:block absolute top-full right-0 mt-2 w-80 lg:w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                                <NotificationPanel
+                                                    isOpen={true}
+                                                    onClose={() =>
+                                                        setShowNotifications(
+                                                            false,
+                                                        )
+                                                    }
+                                                    className=""
+                                                />
+                                            </div>
                                         )}
-                                    </button>
+                                    </div>
                                 </div>
 
                                 {/* Mobile view - Actions dropdown */}
@@ -321,6 +384,34 @@ export const ExpiryPage: React.FC = () => {
                                                     />
                                                     Refresh
                                                 </button>
+
+                                                {/* Trigger Expiry Notifications option (Admin only) */}
+                                                {user?.role ===
+                                                    UserRole.ADMIN && (
+                                                    <button
+                                                        onClick={() => {
+                                                            triggerExpiryNotifications.mutate();
+                                                            setShowActionsDropdown(
+                                                                false,
+                                                            );
+                                                        }}
+                                                        disabled={
+                                                            triggerExpiryNotifications.isPending
+                                                        }
+                                                        className="flex items-center w-full px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                                                    >
+                                                        <FiPlay
+                                                            className={`h-4 w-4 mr-3 ${
+                                                                triggerExpiryNotifications.isPending
+                                                                    ? 'animate-spin'
+                                                                    : ''
+                                                            }`}
+                                                        />
+                                                        {triggerExpiryNotifications.isPending
+                                                            ? 'Processing...'
+                                                            : 'Create Notifications'}
+                                                    </button>
+                                                )}
 
                                                 {/* Export option */}
                                                 <button
@@ -472,12 +563,14 @@ export const ExpiryPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Notification Panel */}
-                <NotificationPanel
-                    isOpen={showNotifications}
-                    onClose={() => setShowNotifications(false)}
-                    className="fixed top-20 right-4 lg:right-6 w-80 lg:w-96 z-50"
-                />
+                {/* Mobile/Tablet Notification Panel */}
+                <div className="lg:hidden">
+                    <NotificationPanel
+                        isOpen={showNotifications}
+                        onClose={() => setShowNotifications(false)}
+                        className="fixed top-24 sm:top-28 right-4 w-80 z-50"
+                    />
+                </div>
             </div>
         </DashboardLayout>
     );
