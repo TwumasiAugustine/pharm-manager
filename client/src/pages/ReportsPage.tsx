@@ -11,6 +11,7 @@ import { useSafeNotify } from '../utils/useSafeNotify';
 import { ReportSummary } from '../components/molecules/ReportSummary';
 import { ReportFilter } from '../components/molecules/ReportFilter';
 import ReportTable from '../components/molecules/ReportTable';
+import { Pagination } from '../components/molecules/Pagination';
 import DashboardLayout from '../layouts/DashboardLayout';
 import type { ReportFilters } from '../types/report.types';
 
@@ -28,6 +29,8 @@ export const ReportsPage: React.FC = () => {
         },
         reportType: 'sales',
         format: 'table',
+        page: 1,
+        limit: 5, // Set limit to 5 for screen display
     });
 
     // Close actions dropdown when clicking outside
@@ -54,6 +57,8 @@ export const ReportsPage: React.FC = () => {
         reportData,
         reportSummary,
         totalRecords,
+        currentPage,
+        totalPages,
         isLoading,
         isGenerating,
         generateReport,
@@ -62,12 +67,22 @@ export const ReportsPage: React.FC = () => {
     } = useReports(filters);
 
     const handleFilterChange = (newFilters: ReportFilters) => {
-        setFilters(newFilters);
+        setFilters({ ...newFilters, page: 1 }); // Reset to first page when filters change
+    };
+
+    const handlePageChange = (page: number) => {
+        setFilters((prev) => ({ ...prev, page }));
     };
 
     const handleExportReport = async (format: 'pdf' | 'csv') => {
         try {
-            await exportReport(format, filters);
+            // Create export filters without pagination to get all data
+            const exportFilters = {
+                ...filters,
+                page: undefined,
+                limit: undefined,
+            };
+            await exportReport(format, exportFilters);
         } catch (error) {
             console.error('Export failed:', error);
             notify.error('Failed to export report. Please try again.');
@@ -82,6 +97,111 @@ export const ReportsPage: React.FC = () => {
             notify.error('Failed to generate report. Please try again.');
         }
     };
+
+    // Loading skeleton component for initial load
+    const ReportsPageSkeleton = () => (
+        <DashboardLayout>
+            <div className="min-h-screen bg-gray-50">
+                <div className="animate-pulse">
+                    {/* Header skeleton */}
+                    <div className="bg-white shadow-sm border-b">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 sm:py-6 gap-4">
+                                <div>
+                                    <div className="h-8 bg-gray-200 rounded w-64 mb-2"></div>
+                                    <div className="h-4 bg-gray-200 rounded w-96"></div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 bg-gray-200 rounded w-20"></div>
+                                    <div className="h-10 bg-gray-200 rounded w-24"></div>
+                                    <div className="h-10 bg-gray-200 rounded w-20"></div>
+                                    <div className="h-10 bg-gray-200 rounded w-20"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Main content skeleton */}
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                            {/* Sidebar skeleton */}
+                            <div className="lg:col-span-1">
+                                <div className="bg-white rounded-lg shadow-sm border p-6">
+                                    <div className="space-y-4">
+                                        <div className="h-6 bg-gray-200 rounded w-24"></div>
+                                        <div className="h-10 bg-gray-200 rounded w-full"></div>
+                                        <div className="h-10 bg-gray-200 rounded w-full"></div>
+                                        <div className="h-10 bg-gray-200 rounded w-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Main content skeleton */}
+                            <div className="lg:col-span-3 space-y-6">
+                                {/* Summary skeleton */}
+                                <div className="bg-white rounded-lg shadow-sm border p-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        {[...Array(4)].map((_, i) => (
+                                            <div key={i} className="space-y-2">
+                                                <div className="h-4 bg-gray-200 rounded w-20"></div>
+                                                <div className="h-8 bg-gray-200 rounded w-16"></div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Table skeleton */}
+                                <div className="bg-white rounded-lg shadow-sm border">
+                                    <div className="p-6 border-b">
+                                        <div className="h-6 bg-gray-200 rounded w-32 mb-2"></div>
+                                        <div className="h-4 bg-gray-200 rounded w-24"></div>
+                                    </div>
+                                    <div className="p-6">
+                                        {/* Table header */}
+                                        <div className="grid grid-cols-7 gap-4 pb-3 border-b mb-4">
+                                            {[...Array(7)].map((_, i) => (
+                                                <div
+                                                    key={i}
+                                                    className="h-5 bg-gray-200 rounded"
+                                                ></div>
+                                            ))}
+                                        </div>
+                                        {/* Table rows */}
+                                        {[...Array(5)].map((_, i) => (
+                                            <div
+                                                key={i}
+                                                className="grid grid-cols-7 gap-4 py-3 border-b border-gray-100"
+                                            >
+                                                {[...Array(7)].map((_, j) => (
+                                                    <div
+                                                        key={j}
+                                                        className="h-5 bg-gray-200 rounded"
+                                                    ></div>
+                                                ))}
+                                            </div>
+                                        ))}
+                                        {/* Pagination skeleton */}
+                                        <div className="mt-6 flex justify-center">
+                                            <div className="flex space-x-2">
+                                                <div className="h-10 bg-gray-200 rounded w-10"></div>
+                                                <div className="h-10 bg-gray-200 rounded w-10"></div>
+                                                <div className="h-10 bg-gray-200 rounded w-10"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </DashboardLayout>
+    );
+
+    // Show skeleton on initial load
+    if (isLoading && !reportData?.length) {
+        return <ReportsPageSkeleton />;
+    }
 
     return (
         <DashboardLayout>
@@ -100,15 +220,15 @@ export const ReportsPage: React.FC = () => {
                                 </p>
                             </div>
 
-                            <div className="flex items-center gap-3 flex-wrap justify-end sm:justify-start">
-                                {/* Desktop view - show all buttons */}
-                                <div className="hidden sm:flex items-center gap-3">
+                            <div className="flex items-center gap-3 flex-wrap justify-end lg:justify-start">
+                                {/* Desktop view - show all buttons (large screens and above) */}
+                                <div className="hidden lg:flex items-center gap-3">
                                     {/* Mobile filter toggle */}
                                     <button
                                         onClick={() =>
                                             setShowFilters(!showFilters)
                                         }
-                                        className="lg:hidden inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                        className="xl:hidden inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                                     >
                                         <FiFilter className="h-4 w-4 mr-2" />
                                         Filters
@@ -169,9 +289,9 @@ export const ReportsPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Mobile view - Actions dropdown */}
+                                {/* Mobile/Tablet view - Actions dropdown (small to large screens) */}
                                 <div
-                                    className="sm:hidden relative"
+                                    className="lg:hidden relative"
                                     ref={actionsDropdownRef}
                                 >
                                     <button
@@ -299,10 +419,10 @@ export const ReportsPage: React.FC = () => {
                 {/* Main Content */}
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                        {/* Left Sidebar - Filters (Desktop) / Collapsible (Mobile) */}
+                        {/* Left Sidebar - Filters (Desktop) / Collapsible (Mobile/Tablet) */}
                         <div
                             className={`lg:col-span-1 ${
-                                showFilters ? 'block' : 'hidden sm:block'
+                                showFilters ? 'block' : 'hidden lg:block'
                             }`}
                         >
                             <div className="bg-white rounded-lg shadow-sm border p-6 sticky top-6">
@@ -358,6 +478,17 @@ export const ReportsPage: React.FC = () => {
                                         reportType={filters.reportType}
                                         isLoading={isLoading}
                                     />
+
+                                    {/* Pagination Controls */}
+                                    {!isLoading && totalPages > 1 && (
+                                        <div className="mt-6 flex justify-center">
+                                            <Pagination
+                                                currentPage={currentPage}
+                                                totalPages={totalPages}
+                                                onPageChange={handlePageChange}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-    useCustomers,
-    useCreateCustomer,
-} from '../../hooks/useCustomers';
+import { useCustomers, useCreateCustomer } from '../../hooks/useCustomers';
 import customerApi from '../../api/customer.api';
 import type { Customer } from '../../types/customer.types';
 import { useDebounce } from '../../hooks/useDebounce';

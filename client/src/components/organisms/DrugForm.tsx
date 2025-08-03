@@ -194,7 +194,7 @@ export const DrugForm = ({
                 <div className="md:col-span-2 lg:col-span-1">
                     <label
                         htmlFor="name"
-                        className="block text-sm font-medium text-gray-700 flex items-center"
+                        className="text-sm font-medium text-gray-700 flex items-center"
                     >
                         <FaPills className="mr-1 text-blue-500" />
                         Drug Name *
@@ -239,7 +239,7 @@ export const DrugForm = ({
                 <div className="md:col-span-2 lg:col-span-1">
                     <label
                         htmlFor="brand"
-                        className="block text-sm font-medium text-gray-700 flex items-center"
+                        className="text-sm font-medium text-gray-700 flex items-center"
                     >
                         <FaTrademark className="mr-1 text-blue-500" />
                         Brand *
@@ -284,7 +284,7 @@ export const DrugForm = ({
                 <div className="md:col-span-2">
                     <label
                         htmlFor="category"
-                        className="block text-sm font-medium text-gray-700 flex items-center"
+                        className="text-sm font-medium text-gray-700 flex items-center"
                     >
                         <FaLayerGroup className="mr-1 text-blue-500" />
                         Category *
@@ -309,8 +309,17 @@ export const DrugForm = ({
                         {showCategoryResults && (
                             <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-auto">
                                 {loadingCategories ? (
-                                    <div className="p-3 text-center text-gray-500">
-                                        Loading categories...
+                                    <div className="p-3">
+                                        {Array.from({ length: 3 }).map(
+                                            (_, i) => (
+                                                <div
+                                                    key={i}
+                                                    className="py-2 animate-pulse"
+                                                >
+                                                    <div className="h-4 bg-gray-200 rounded w-full"></div>
+                                                </div>
+                                            ),
+                                        )}
                                     </div>
                                 ) : filteredCategories.length > 0 ? (
                                     <ul className="py-1">
@@ -376,7 +385,7 @@ export const DrugForm = ({
                 <div className="lg:col-span-1">
                     <label
                         htmlFor="quantity"
-                        className="block text-sm font-medium text-gray-700 flex items-center"
+                        className="text-sm font-medium text-gray-700 flex items-center"
                     >
                         <FaBoxes className="mr-1 text-blue-500" />
                         Quantity *
@@ -423,7 +432,7 @@ export const DrugForm = ({
                 <div className="lg:col-span-1">
                     <label
                         htmlFor="price"
-                        className="block text-sm font-medium text-gray-700 flex items-center"
+                        className="text-sm font-medium text-gray-700 flex items-center"
                     >
                         <FaMoneyBillAlt className="mr-1 text-blue-500" />
                         Price (GHC) *
@@ -475,7 +484,7 @@ export const DrugForm = ({
                 <div>
                     <label
                         htmlFor="expiryDate"
-                        className="block text-sm font-medium text-gray-700 flex items-center"
+                        className="text-sm font-medium text-gray-700 flex items-center"
                     >
                         <FaCalendarAlt className="mr-1 text-blue-500" />
                         Expiry Date *

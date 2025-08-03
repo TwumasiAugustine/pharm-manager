@@ -19,7 +19,10 @@ export const AuditLogFilter: React.FC<AuditLogFilterProps> = ({
 }) => {
     const [showAdvanced, setShowAdvanced] = useState(false);
 
-    const handleFilterChange = (key: keyof AuditLogFilters, value: any) => {
+    const handleFilterChange = (
+        key: keyof AuditLogFilters,
+        value: string | number | undefined,
+    ) => {
         onFiltersChange({
             ...filters,
             [key]: value,
@@ -69,8 +72,8 @@ export const AuditLogFilter: React.FC<AuditLogFilterProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 {/* Action Filter */}
                 <div>
-                    <label 
-                        htmlFor="action-filter" 
+                    <label
+                        htmlFor="action-filter"
                         className="block text-sm font-medium text-gray-700 mb-1"
                     >
                         Action
@@ -98,8 +101,8 @@ export const AuditLogFilter: React.FC<AuditLogFilterProps> = ({
 
                 {/* Resource Filter */}
                 <div>
-                    <label 
-                        htmlFor="resource-filter" 
+                    <label
+                        htmlFor="resource-filter"
                         className="block text-sm font-medium text-gray-700 mb-1"
                     >
                         Resource
@@ -127,8 +130,8 @@ export const AuditLogFilter: React.FC<AuditLogFilterProps> = ({
 
                 {/* User Role Filter */}
                 <div>
-                    <label 
-                        htmlFor="user-role-filter" 
+                    <label
+                        htmlFor="user-role-filter"
                         className="block text-sm font-medium text-gray-700 mb-1"
                     >
                         User Role
@@ -153,8 +156,8 @@ export const AuditLogFilter: React.FC<AuditLogFilterProps> = ({
 
                 {/* Limit Filter */}
                 <div>
-                    <label 
-                        htmlFor="limit-filter" 
+                    <label
+                        htmlFor="limit-filter"
                         className="block text-sm font-medium text-gray-700 mb-1"
                     >
                         Items per page
@@ -190,10 +193,14 @@ export const AuditLogFilter: React.FC<AuditLogFilterProps> = ({
                 {showAdvanced && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label
+                                htmlFor="start-date-filter"
+                                className="block text-sm font-medium text-gray-700 mb-1"
+                            >
                                 Start Date
                             </label>
                             <input
+                                id="start-date-filter"
                                 type="date"
                                 value={filters.startDate || ''}
                                 onChange={(e) =>
@@ -206,10 +213,14 @@ export const AuditLogFilter: React.FC<AuditLogFilterProps> = ({
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label
+                                htmlFor="end-date-filter"
+                                className="block text-sm font-medium text-gray-700 mb-1"
+                            >
                                 End Date
                             </label>
                             <input
+                                id="end-date-filter"
                                 type="date"
                                 value={filters.endDate || ''}
                                 onChange={(e) =>

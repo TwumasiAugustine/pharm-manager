@@ -7,6 +7,8 @@ export interface ReportFilters {
     format: 'table' | 'chart';
     category?: string;
     status?: string;
+    page?: number;
+    limit?: number;
 }
 
 export interface ReportSummaryData {

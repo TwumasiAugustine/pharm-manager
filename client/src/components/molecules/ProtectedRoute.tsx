@@ -11,12 +11,16 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
         useAuthStore();
     const location = useLocation();
 
-    
-    // If auth is still loading, show a loading spinner
+    // If auth is still loading, show a minimalist loading screen
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-screen">
-                <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary-500"></div>
+            <div className="flex items-center justify-center h-screen bg-gray-50">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary-500 mx-auto"></div>
+                    <p className="mt-4 text-gray-600 text-sm">
+                        Verifying authentication...
+                    </p>
+                </div>
             </div>
         );
     }

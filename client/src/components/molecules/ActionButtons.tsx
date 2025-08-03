@@ -64,13 +64,18 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
                             {React.Children.map(children, (child, index) => {
                                 if (React.isValidElement(child)) {
                                     // Clone the child and add dropdown styling
-                                    const childElement = child as React.ReactElement<{
-                                        className?: string;
-                                        onClick?: (e: React.MouseEvent) => void;
-                                    }>;
+                                    const childElement =
+                                        child as React.ReactElement<{
+                                            className?: string;
+                                            onClick?: (
+                                                e: React.MouseEvent,
+                                            ) => void;
+                                        }>;
                                     return React.cloneElement(childElement, {
                                         key: index,
-                                        className: `${childElement.props.className || ''} btn-dropdown`,
+                                        className: `${
+                                            childElement.props.className || ''
+                                        } btn-dropdown`,
                                         onClick: (e: React.MouseEvent) => {
                                             if (childElement.props.onClick) {
                                                 childElement.props.onClick(e);

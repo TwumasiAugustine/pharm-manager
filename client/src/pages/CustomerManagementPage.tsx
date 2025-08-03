@@ -34,7 +34,7 @@ const CustomerManagementPage: React.FC = () => {
         refetch,
         pagination,
         setSearchQuery,
-    } = useCustomers();
+    } = useCustomers({ limit: 5 }); // Set limit to 5 customers per page
 
     const createCustomer = useCreateCustomer();
 
@@ -113,6 +113,70 @@ const CustomerManagementPage: React.FC = () => {
         );
     }
 
+    // Loading skeleton component
+    const CustomerManagementSkeleton = () => (
+        <DashboardLayout>
+            <div className="space-y-6">
+                <div className="animate-pulse">
+                    {/* Header skeleton */}
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                        <div>
+                            <div className="h-8 bg-gray-200 rounded w-48 mb-2"></div>
+                            <div className="h-5 bg-gray-200 rounded w-64"></div>
+                        </div>
+                        <div className="flex gap-2">
+                            <div className="h-10 bg-gray-200 rounded w-24"></div>
+                            <div className="h-10 bg-gray-200 rounded w-20"></div>
+                        </div>
+                    </div>
+
+                    {/* Search bar skeleton */}
+                    <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+                        <div className="h-10 bg-gray-200 rounded w-full"></div>
+                    </div>
+
+                    {/* Table skeleton */}
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                        {/* Table header */}
+                        <div className="grid grid-cols-4 gap-4 pb-3 border-b mb-4">
+                            <div className="h-5 bg-gray-200 rounded"></div>
+                            <div className="h-5 bg-gray-200 rounded"></div>
+                            <div className="h-5 bg-gray-200 rounded"></div>
+                            <div className="h-5 bg-gray-200 rounded"></div>
+                        </div>
+
+                        {/* Table rows */}
+                        {[...Array(5)].map((_, i) => (
+                            <div
+                                key={i}
+                                className="grid grid-cols-4 gap-4 py-3 border-b border-gray-100"
+                            >
+                                <div className="h-5 bg-gray-200 rounded"></div>
+                                <div className="h-5 bg-gray-200 rounded"></div>
+                                <div className="h-5 bg-gray-200 rounded"></div>
+                                <div className="h-5 bg-gray-200 rounded"></div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Pagination skeleton */}
+                    <div className="flex justify-center mt-6">
+                        <div className="flex space-x-2">
+                            <div className="h-10 bg-gray-200 rounded w-10"></div>
+                            <div className="h-10 bg-gray-200 rounded w-10"></div>
+                            <div className="h-10 bg-gray-200 rounded w-10"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </DashboardLayout>
+    );
+
+    // Show skeleton on initial load
+    if (isLoading && !customers) {
+        return <CustomerManagementSkeleton />;
+    }
+
     return (
         <DashboardLayout>
             <div className="space-y-6">
@@ -128,9 +192,9 @@ const CustomerManagementPage: React.FC = () => {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-3 flex-wrap justify-end sm:justify-start">
-                        {/* Desktop view - show all buttons */}
-                        <div className="hidden sm:flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap justify-end lg:justify-start">
+                        {/* Desktop view - show all buttons (large screens and above) */}
+                        <div className="hidden lg:flex items-center gap-3">
                             <button
                                 onClick={() => setShowForm(!showForm)}
                                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
@@ -140,9 +204,9 @@ const CustomerManagementPage: React.FC = () => {
                             </button>
                         </div>
 
-                        {/* Mobile view - Actions dropdown */}
+                        {/* Mobile/Tablet view - Actions dropdown (small to large screens) */}
                         <div
-                            className="sm:hidden relative"
+                            className="lg:hidden relative"
                             ref={actionsDropdownRef}
                         >
                             <button

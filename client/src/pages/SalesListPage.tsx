@@ -36,7 +36,7 @@ const SalesListPage: React.FC = () => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const [filters, setFilters] = useState<SaleSearchParams>({
         page: 1,
-        limit: 10, // Ensure this is a number, not a string
+        limit: 19, // Set limit to 19 for individual sales
         groupByDate: true,
         sortBy: 'date',
         sortOrder: 'desc',
@@ -339,6 +339,59 @@ const SalesListPage: React.FC = () => {
         }
     }, [data, filters.sortOrder]);
 
+    // Loading skeleton component
+    const SalesListSkeleton = () => (
+        <DashboardLayout>
+            <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="animate-pulse">
+                    {/* Header skeleton */}
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="h-8 bg-gray-200 rounded w-48"></div>
+                        <div className="hidden md:flex space-x-2">
+                            <div className="h-10 bg-gray-200 rounded w-32"></div>
+                            <div className="h-10 bg-gray-200 rounded w-24"></div>
+                            <div className="h-10 bg-gray-200 rounded w-36"></div>
+                        </div>
+                        <div className="md:hidden h-10 bg-gray-200 rounded w-20"></div>
+                    </div>
+
+                    {/* Table skeleton */}
+                    <div className="space-y-4">
+                        {/* Table header */}
+                        <div className="grid grid-cols-4 gap-4 pb-3 border-b">
+                            <div className="h-5 bg-gray-200 rounded"></div>
+                            <div className="h-5 bg-gray-200 rounded"></div>
+                            <div className="h-5 bg-gray-200 rounded"></div>
+                            <div className="h-5 bg-gray-200 rounded"></div>
+                        </div>
+
+                        {/* Table rows */}
+                        {[...Array(5)].map((_, i) => (
+                            <div
+                                key={i}
+                                className="grid grid-cols-4 gap-4 py-3 border-b border-gray-100"
+                            >
+                                <div className="h-5 bg-gray-200 rounded"></div>
+                                <div className="h-5 bg-gray-200 rounded"></div>
+                                <div className="h-5 bg-gray-200 rounded"></div>
+                                <div className="h-5 bg-gray-200 rounded"></div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Pagination skeleton */}
+                    <div className="mt-6 flex justify-center">
+                        <div className="flex space-x-2">
+                            <div className="h-10 bg-gray-200 rounded w-10"></div>
+                            <div className="h-10 bg-gray-200 rounded w-10"></div>
+                            <div className="h-10 bg-gray-200 rounded w-10"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </DashboardLayout>
+    );
+
     if (error) {
         return (
             <Alert variant="destructive">
@@ -348,14 +401,19 @@ const SalesListPage: React.FC = () => {
         );
     }
 
+    // Show skeleton on initial load
+    if (isLoading && !data) {
+        return <SalesListSkeleton />;
+    }
+
     return (
         <DashboardLayout>
             <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-semibold">Sales History</h2>
 
-                    {/* Desktop view - regular buttons */}
-                    <div className="hidden md:flex space-x-2">
+                    {/* Desktop view - regular buttons (large screens and above) */}
+                    <div className="hidden lg:flex space-x-2">
                         <Button
                             variant="secondary"
                             onClick={toggleGrouping}
@@ -378,8 +436,8 @@ const SalesListPage: React.FC = () => {
                         </Link>
                     </div>
 
-                    {/* Mobile view - dropdown menu */}
-                    <div className="relative md:hidden" ref={dropdownRef}>
+                    {/* Mobile/Tablet view - dropdown menu (small to large screens) */}
+                    <div className="relative lg:hidden" ref={dropdownRef}>
                         <Button
                             variant="secondary"
                             onClick={() =>
