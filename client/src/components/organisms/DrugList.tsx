@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {useNavigate} from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
 import { useDrugs, useDeleteDrug } from '../../hooks/useDrugs';
 import { Table } from '../molecules/Table';
 import type { TableColumn, TableAction } from '../molecules/Table';
@@ -169,7 +169,8 @@ export const DrugList: React.FC = () => {
             {(!isSearching || !searchQuery.trim() || !isSearchFocused) && (
                 <>
                     <Table<Drug>
-                        data={drugs.drugs || []}
+                        data={drugs?.drugs || []}
+                        isLoading={isLoading}
                         columns={
                             [
                                 {
@@ -229,11 +230,13 @@ export const DrugList: React.FC = () => {
                         }
                     />
 
-                    <Pagination
-                        currentPage={pagination.page}
-                        totalPages={pagination.totalPages}
-                        onPageChange={handlePageChange}
-                    />
+                    {!isLoading && (
+                        <Pagination
+                            currentPage={pagination?.page || 1}
+                            totalPages={pagination?.totalPages || 1}
+                            onPageChange={handlePageChange}
+                        />
+                    )}
                 </>
             )}
         </div>

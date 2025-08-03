@@ -1,5 +1,11 @@
-import React, { useState } from 'react';
-import { FiDownload, FiRefreshCw, FiFilter, FiCalendar } from 'react-icons/fi';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+    FiDownload,
+    FiRefreshCw,
+    FiFilter,
+    FiCalendar,
+    FiMoreVertical,
+} from 'react-icons/fi';
 import { useReports } from '../hooks/useReports';
 import { useSafeNotify } from '../utils/useSafeNotify';
 import { ReportSummary } from '../components/molecules/ReportSummary';
@@ -10,6 +16,8 @@ import type { ReportFilters } from '../types/report.types';
 
 export const ReportsPage: React.FC = () => {
     const [showFilters, setShowFilters] = useState(true);
+    const [showActionsDropdown, setShowActionsDropdown] = useState(false);
+    const actionsDropdownRef = useRef<HTMLDivElement>(null);
     const notify = useSafeNotify();
     const [filters, setFilters] = useState<ReportFilters>({
         dateRange: {
@@ -21,6 +29,26 @@ export const ReportsPage: React.FC = () => {
         reportType: 'sales',
         format: 'table',
     });
+
+    // Close actions dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                actionsDropdownRef.current &&
+                !actionsDropdownRef.current.contains(event.target as Node)
+            ) {
+                setShowActionsDropdown(false);
+            }
+        };
+
+        if (showActionsDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showActionsDropdown]);
 
     const {
         reportData,
@@ -72,64 +100,196 @@ export const ReportsPage: React.FC = () => {
                                 </p>
                             </div>
 
-                            <div className="flex items-center gap-3">
-                                {/* Mobile filter toggle */}
-                                <button
-                                    onClick={() => setShowFilters(!showFilters)}
-                                    className="sm:hidden inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                                >
-                                    <FiFilter className="h-4 w-4 mr-2" />
-                                    Filters
-                                </button>
-
-                                {/* Refresh button */}
-                                <button
-                                    onClick={() => refreshData()}
-                                    className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                                    disabled={isLoading}
-                                >
-                                    <FiRefreshCw
-                                        className={`h-4 w-4 mr-2 ${
-                                            isLoading ? 'animate-spin' : ''
-                                        }`}
-                                    />
-                                    Refresh
-                                </button>
-
-                                {/* Generate Report button */}
-                                <button
-                                    onClick={handleGenerateReport}
-                                    className="inline-flex items-center px-3 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-                                    disabled={isGenerating}
-                                >
-                                    <FiCalendar className="h-4 w-4 mr-2" />
-                                    {isGenerating
-                                        ? 'Generating...'
-                                        : 'Generate'}
-                                </button>
-
-                                {/* Export buttons */}
-                                <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-3 flex-wrap justify-end sm:justify-start">
+                                {/* Desktop view - show all buttons */}
+                                <div className="hidden sm:flex items-center gap-3">
+                                    {/* Mobile filter toggle */}
                                     <button
                                         onClick={() =>
-                                            handleExportReport('csv')
+                                            setShowFilters(!showFilters)
                                         }
-                                        className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                                        disabled={!reportData || isGenerating}
+                                        className="lg:hidden inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                                     >
-                                        <FiDownload className="h-4 w-4 mr-2" />
-                                        CSV
+                                        <FiFilter className="h-4 w-4 mr-2" />
+                                        Filters
                                     </button>
+
+                                    {/* Refresh button */}
+                                    <button
+                                        onClick={() => refreshData()}
+                                        className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                                        disabled={isLoading}
+                                    >
+                                        <FiRefreshCw
+                                            className={`h-4 w-4 mr-2 ${
+                                                isLoading ? 'animate-spin' : ''
+                                            }`}
+                                        />
+                                        Refresh
+                                    </button>
+
+                                    {/* Generate Report button */}
+                                    <button
+                                        onClick={handleGenerateReport}
+                                        className="inline-flex items-center px-3 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+                                        disabled={isGenerating}
+                                    >
+                                        <FiCalendar className="h-4 w-4 mr-2" />
+                                        {isGenerating
+                                            ? 'Generating...'
+                                            : 'Generate'}
+                                    </button>
+
+                                    {/* Export buttons */}
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() =>
+                                                handleExportReport('csv')
+                                            }
+                                            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                                            disabled={
+                                                !reportData || isGenerating
+                                            }
+                                        >
+                                            <FiDownload className="h-4 w-4 mr-2" />
+                                            CSV
+                                        </button>
+                                        <button
+                                            onClick={() =>
+                                                handleExportReport('pdf')
+                                            }
+                                            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                                            disabled={
+                                                !reportData || isGenerating
+                                            }
+                                        >
+                                            <FiDownload className="h-4 w-4 mr-2" />
+                                            PDF
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Mobile view - Actions dropdown */}
+                                <div
+                                    className="sm:hidden relative"
+                                    ref={actionsDropdownRef}
+                                >
                                     <button
                                         onClick={() =>
-                                            handleExportReport('pdf')
+                                            setShowActionsDropdown(
+                                                !showActionsDropdown,
+                                            )
                                         }
                                         className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                                        disabled={!reportData || isGenerating}
                                     >
-                                        <FiDownload className="h-4 w-4 mr-2" />
-                                        PDF
+                                        <span className="mr-2">Actions</span>
+                                        <FiMoreVertical className="h-4 w-4" />
                                     </button>
+
+                                    {/* Actions dropdown panel */}
+                                    {showActionsDropdown && (
+                                        <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-40">
+                                            <div className="py-1">
+                                                {/* Filter option */}
+                                                <button
+                                                    onClick={() => {
+                                                        setShowFilters(
+                                                            !showFilters,
+                                                        );
+                                                        setShowActionsDropdown(
+                                                            false,
+                                                        );
+                                                    }}
+                                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <FiFilter className="h-4 w-4 mr-3" />
+                                                    {showFilters
+                                                        ? 'Hide Filters'
+                                                        : 'Show Filters'}
+                                                </button>
+
+                                                {/* Refresh option */}
+                                                <button
+                                                    onClick={() => {
+                                                        refreshData();
+                                                        setShowActionsDropdown(
+                                                            false,
+                                                        );
+                                                    }}
+                                                    disabled={isLoading}
+                                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                                >
+                                                    <FiRefreshCw
+                                                        className={`h-4 w-4 mr-3 ${
+                                                            isLoading
+                                                                ? 'animate-spin'
+                                                                : ''
+                                                        }`}
+                                                    />
+                                                    Refresh
+                                                </button>
+
+                                                {/* Generate Report option */}
+                                                <button
+                                                    onClick={() => {
+                                                        handleGenerateReport();
+                                                        setShowActionsDropdown(
+                                                            false,
+                                                        );
+                                                    }}
+                                                    disabled={isGenerating}
+                                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                                >
+                                                    <FiCalendar className="h-4 w-4 mr-3" />
+                                                    {isGenerating
+                                                        ? 'Generating...'
+                                                        : 'Generate Report'}
+                                                </button>
+
+                                                <div className="border-t border-gray-100 my-1"></div>
+
+                                                {/* Export CSV option */}
+                                                <button
+                                                    onClick={() => {
+                                                        handleExportReport(
+                                                            'csv',
+                                                        );
+                                                        setShowActionsDropdown(
+                                                            false,
+                                                        );
+                                                    }}
+                                                    disabled={
+                                                        !reportData ||
+                                                        isGenerating
+                                                    }
+                                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                                >
+                                                    <FiDownload className="h-4 w-4 mr-3" />
+                                                    Export CSV
+                                                </button>
+
+                                                {/* Export PDF option */}
+                                                <button
+                                                    onClick={() => {
+                                                        handleExportReport(
+                                                            'pdf',
+                                                        );
+                                                        setShowActionsDropdown(
+                                                            false,
+                                                        );
+                                                    }}
+                                                    disabled={
+                                                        !reportData ||
+                                                        isGenerating
+                                                    }
+                                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                                >
+                                                    <FiDownload className="h-4 w-4 mr-3" />
+                                                    Export PDF
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

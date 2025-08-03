@@ -105,19 +105,19 @@ function Sidebar({
     return (
         <>
             {/* Overlay for mobile */}
-            <div
-                className={`fixed inset-0 bg-black bg-opacity-30 z-30 transition-opacity md:hidden ${
-                    open ? 'block' : 'hidden'
-                }`}
-                onClick={onClose}
-            />
+            {open && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+                    onClick={onClose}
+                />
+            )}
             <aside
                 className={`fixed z-40 inset-y-0 left-0 w-64 bg-white shadow-md transform transition-transform duration-200 ease-in-out
                 ${
                     open ? 'translate-x-0' : '-translate-x-full'
-                } md:translate-x-0 md:static md:inset-0`}
+                } md:translate-x-0 md:relative md:flex md:flex-col md:w-64`}
             >
-                <div className="p-6 flex items-center justify-between md:block">
+                <div className="p-6 flex items-center justify-between md:block border-b border-gray-200">
                     <h1 className="text-2xl font-bold text-primary-600">
                         Pharmacy App
                     </h1>
@@ -129,7 +129,7 @@ function Sidebar({
                         <FaTimes />
                     </button>
                 </div>
-                <nav className="mt-6">
+                <nav className="flex-1 overflow-y-auto py-4">
                     {navItems.map(
                         (item) =>
                             (!item.adminOnly || user?.role === 'admin') && (
@@ -138,7 +138,7 @@ function Sidebar({
                                     to={item.to}
                                     className={`flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors ${
                                         item.match(location.pathname)
-                                            ? 'bg-blue-50 border-r-4 border-blue-500'
+                                            ? 'bg-blue-50 border-r-4 border-blue-500 text-blue-700'
                                             : ''
                                     }`}
                                     onClick={onClose}
@@ -168,54 +168,51 @@ function Topbar({
 
     // Title logic
     let title = 'Dashboard';
-    if (location.pathname === '/drugs') title = 'Drug Inventory';
-    else if (location.pathname === '/sales') title = 'Sales & Billing';
-    else if (location.pathname === '/sales/new') title = 'Create New Sale';
-    else if (
-        /^\/sales\/[^/]+$/.test(location.pathname) &&
-        location.pathname !== '/sales'
-    )
+    const { pathname } = location;
+
+    if (pathname === '/drugs') title = 'Drug Inventory';
+    else if (pathname === '/sales') title = 'Sales & Billing';
+    else if (pathname === '/sales/new') title = 'Create New Sale';
+    else if (pathname === '/customers') title = 'Customer Management';
+    else if (pathname === '/expiry') title = 'Expiry Tracker';
+    else if (pathname === '/reports') title = 'Reports';
+    else if (pathname === '/audit-logs') title = 'Audit Logs';
+    else if (pathname === '/user-activity') title = 'Activity Tracker';
+    else if (pathname === '/pharmacy-setup') title = 'Pharmacy Settings';
+    else if (/^\/sales\/[^/]+$/.test(pathname) && pathname !== '/sales')
         title = 'Sale Details';
-    else if (location.pathname === '/customers') title = 'Customer Management';
-    else if (
-        /^\/customers\/[^/]+$/.test(location.pathname) &&
-        location.pathname !== '/customers'
-    )
+    else if (/^\/customers\/[^/]+$/.test(pathname) && pathname !== '/customers')
         title = 'Customer Details';
-    else if (
-        !/^\/(dashboard|drugs|sales|sales\/new|sales\/[^/]+|customers|customers\/[^/]+)$/.test(
-            location.pathname,
-        )
-    )
-        title = 'Dashboard';
+    else if (/^\/drugs\/[^/]+\/edit$/.test(pathname)) title = 'Edit Drug';
+    else if (pathname === '/dashboard') title = 'Dashboard';
 
     return (
-        <header className="bg-white shadow-sm z-10">
+        <header className="bg-white shadow-sm z-10 w-full">
             <div className="flex items-center justify-between p-4">
-                <div className="flex items-center">
+                <div className="flex items-center min-w-0 flex-1">
                     {/* Hamburger menu for mobile */}
                     <button
-                        className="md:hidden mr-4 text-2xl text-gray-700"
+                        className="md:hidden mr-4 text-2xl text-gray-700 flex-shrink-0"
                         onClick={onMenuClick}
                         aria-label="Open sidebar"
                     >
                         <FaBars />
                     </button>
-                    <h1 className="text-xl font-semibold">{title}</h1>
+                    <h1 className="text-xl font-semibold truncate">{title}</h1>
                 </div>
-                <div className="flex items-center">
+                <div className="flex items-center flex-shrink-0 ml-4">
                     <div className="mr-4 flex items-center">
-                        <FaUser className="mr-2" />
-                        <span className="truncate max-w-[120px]">
+                        <FaUser className="mr-2 flex-shrink-0" />
+                        <span className="truncate max-w-[120px] text-sm">
                             {user?.email} ({user?.role})
                         </span>
                     </div>
                     <button
                         onClick={onLogout}
-                        className="flex items-center text-red-600 hover:text-red-800"
+                        className="flex items-center text-red-600 hover:text-red-800 flex-shrink-0"
                     >
                         <FaSignOutAlt className="mr-2" />
-                        Logout
+                        <span className="hidden sm:inline">Logout</span>
                     </button>
                 </div>
             </div>
@@ -236,7 +233,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     const handleLogout = () => logout();
 
     return (
-        <div className="flex h-screen bg-gray-100">
+        <div className="flex h-screen bg-gray-100 overflow-hidden">
             {/* Sidebar */}
             <Sidebar
                 user={user}
@@ -246,14 +243,14 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col overflow-hidden md:ml-64">
+            <div className="flex-1 flex flex-col overflow-hidden min-w-0">
                 <Topbar
                     user={user}
                     onLogout={handleLogout}
                     onMenuClick={() => setSidebarOpen(true)}
                 />
-                <main className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-100">
-                    {children}
+                <main className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-100 w-full">
+                    <div className="max-w-full mx-auto">{children}</div>
                 </main>
             </div>
         </div>

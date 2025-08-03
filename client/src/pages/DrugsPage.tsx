@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { DrugList } from '../components/organisms/DrugList';
 import { DrugForm } from '../components/organisms/DrugForm';
 import { useCreateDrug } from '../hooks/useDrugs';
+import {
+    FiPlus,
+    FiMoreVertical,
+    FiRefreshCw,
+    FiDownload,
+} from 'react-icons/fi';
 import type { DrugFormValues } from '../validations/drug.validation';
 
 /**
@@ -10,7 +16,29 @@ import type { DrugFormValues } from '../validations/drug.validation';
  */
 const DrugsPage: React.FC = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [showActionsDropdown, setShowActionsDropdown] = useState(false);
+    const actionsDropdownRef = useRef<HTMLDivElement>(null);
     const createDrug = useCreateDrug();
+
+    // Close actions dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                actionsDropdownRef.current &&
+                !actionsDropdownRef.current.contains(event.target as Node)
+            ) {
+                setShowActionsDropdown(false);
+            }
+        };
+
+        if (showActionsDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showActionsDropdown]);
 
     const handleAddDrug = (data: DrugFormValues) => {
         createDrug.mutate(data, {
@@ -23,14 +51,89 @@ const DrugsPage: React.FC = () => {
     return (
         <DashboardLayout>
             <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-semibold">Drug Inventory</h2>
-                    <button
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        Add New Drug
-                    </button>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+                    <div>
+                        <h2 className="text-2xl font-semibold">
+                            Drug Inventory
+                        </h2>
+                        <p className="mt-1 text-sm text-gray-600">
+                            Manage your pharmacy's drug inventory and stock
+                            levels
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-3 flex-wrap justify-end sm:justify-start">
+                        {/* Desktop view - show all buttons */}
+                        <div className="hidden sm:flex items-center gap-3">
+                            <button
+                                onClick={() => setIsAddModalOpen(true)}
+                                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                            >
+                                <FiPlus className="h-4 w-4 mr-2" />
+                                Add New Drug
+                            </button>
+                        </div>
+
+                        {/* Mobile view - Actions dropdown */}
+                        <div
+                            className="sm:hidden relative"
+                            ref={actionsDropdownRef}
+                        >
+                            <button
+                                onClick={() =>
+                                    setShowActionsDropdown(!showActionsDropdown)
+                                }
+                                className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                            >
+                                <span className="mr-2">Actions</span>
+                                <FiMoreVertical className="h-4 w-4" />
+                            </button>
+
+                            {/* Actions dropdown panel */}
+                            {showActionsDropdown && (
+                                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-40">
+                                    <div className="py-1">
+                                        {/* Add Drug option */}
+                                        <button
+                                            onClick={() => {
+                                                setIsAddModalOpen(true);
+                                                setShowActionsDropdown(false);
+                                            }}
+                                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                        >
+                                            <FiPlus className="h-4 w-4 mr-3" />
+                                            Add New Drug
+                                        </button>
+
+                                        {/* Refresh option */}
+                                        <button
+                                            onClick={() => {
+                                                window.location.reload();
+                                                setShowActionsDropdown(false);
+                                            }}
+                                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                        >
+                                            <FiRefreshCw className="h-4 w-4 mr-3" />
+                                            Refresh
+                                        </button>
+
+                                        {/* Export option */}
+                                        <button
+                                            onClick={() => {
+                                                // TODO: Implement export functionality
+                                                console.log('Export clicked');
+                                                setShowActionsDropdown(false);
+                                            }}
+                                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                        >
+                                            <FiDownload className="h-4 w-4 mr-3" />
+                                            Export
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 <DrugList />
@@ -46,7 +149,9 @@ const DrugsPage: React.FC = () => {
                                     onClick={() => setIsAddModalOpen(false)}
                                     className="text-gray-500 hover:text-gray-700"
                                 >
-                                    <span className='sr-only'>Modal button</span>
+                                    <span className="sr-only">
+                                        Modal button
+                                    </span>
                                     <svg
                                         className="w-6 h-6"
                                         fill="none"

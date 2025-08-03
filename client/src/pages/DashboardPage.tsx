@@ -25,28 +25,6 @@ const DashboardPage: React.FC = () => {
         setFilters(newFilters);
     };
 
-    if (isLoading) {
-        return (
-            <DashboardLayout>
-                <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                </div>
-            </DashboardLayout>
-        );
-    }
-
-    if (isError) {
-        return (
-            <DashboardLayout>
-                <div className="bg-red-50 border border-red-300 rounded-md p-4 text-center">
-                    <p className="text-red-600">
-                        Failed to load dashboard data. Please try again later.
-                    </p>
-                </div>
-            </DashboardLayout>
-        );
-    }
-
     return (
         <DashboardLayout>
             <div className="space-y-6">
@@ -63,24 +41,37 @@ const DashboardPage: React.FC = () => {
                     </div>
                 </div>
 
-                {dashboardData && (
+                {isError ? (
+                    <div className="bg-red-50 border border-red-300 rounded-md p-4 text-center">
+                        <p className="text-red-600">
+                            Failed to load dashboard data. Please try again
+                            later.
+                        </p>
+                    </div>
+                ) : (
                     <>
                         {/* Overview Cards */}
-                        <OverviewCards overview={dashboardData.overview} />
+                        <OverviewCards
+                            overview={dashboardData?.overview}
+                            isLoading={isLoading}
+                        />
 
                         {/* Charts Section - Responsive Grid */}
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
                             <SalesTrendsChart
-                                data={dashboardData.charts.salesByPeriod}
+                                data={dashboardData?.charts?.salesByPeriod}
+                                isLoading={isLoading}
                             />
                             <TopSellingDrugsChart
-                                data={dashboardData.charts.topSellingDrugs}
+                                data={dashboardData?.charts?.topSellingDrugs}
+                                isLoading={isLoading}
                             />
                         </div>
 
                         {/* Low Stock Drugs */}
                         <LowStockDrugs
-                            data={dashboardData.charts.lowStockDrugs}
+                            data={dashboardData?.charts?.lowStockDrugs}
+                            isLoading={isLoading}
                         />
                     </>
                 )}

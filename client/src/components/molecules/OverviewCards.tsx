@@ -9,7 +9,7 @@ import {
 import type { DashboardOverview } from '../../types/dashboard.types';
 
 interface OverviewCardsProps {
-    overview: DashboardOverview;
+    overview?: DashboardOverview;
     isLoading?: boolean;
 }
 
@@ -80,34 +80,45 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
         }).format(amount);
     };
 
+    // Provide default values when overview is undefined or loading
+    const defaultOverview = {
+        totalRevenue: 0,
+        totalSales: 0,
+        totalCustomers: 0,
+        totalDrugs: 0,
+        lowStockCount: 0,
+    };
+
+    const safeOverview = overview || defaultOverview;
+
     const stats = [
         {
             title: 'Total Revenue',
-            value: formatCurrency(overview.totalRevenue),
+            value: formatCurrency(safeOverview.totalRevenue),
             icon: <FiDollarSign />,
             color: 'green' as const,
         },
         {
             title: 'Total Sales',
-            value: overview.totalSales.toLocaleString(),
+            value: safeOverview.totalSales.toLocaleString(),
             icon: <FiShoppingBag />,
             color: 'blue' as const,
         },
         {
             title: 'Total Customers',
-            value: overview.totalCustomers.toLocaleString(),
+            value: safeOverview.totalCustomers.toLocaleString(),
             icon: <FiUsers />,
             color: 'purple' as const,
         },
         {
             title: 'Total Drugs',
-            value: overview.totalDrugs.toLocaleString(),
+            value: safeOverview.totalDrugs.toLocaleString(),
             icon: <FiPackage />,
             color: 'orange' as const,
         },
         {
             title: 'Low Stock Items',
-            value: overview.lowStockCount.toLocaleString(),
+            value: safeOverview.lowStockCount.toLocaleString(),
             icon: <FiAlertTriangle />,
             color: 'red' as const,
         },

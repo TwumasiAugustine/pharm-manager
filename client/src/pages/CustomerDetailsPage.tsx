@@ -20,21 +20,15 @@ const CustomerDetailsPage: React.FC = () => {
     const navigate = useNavigate();
     const { data: customer, isLoading, isError } = useCustomer(id || '');
 
-    if (isLoading) {
+    if (isError) {
         return (
-            <div className="flex justify-center items-center h-40">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
-            </div>
-        );
-    }
-
-    if (isError || !customer) {
-        return (
-            <div className="bg-red-50 border border-red-300 rounded-md p-4 text-center">
-                <p className="text-red-600">
-                    Failed to load customer details. Please try again later.
-                </p>
-            </div>
+            <DashboardLayout>
+                <div className="bg-red-50 border border-red-300 rounded-md p-4 text-center">
+                    <p className="text-red-600">
+                        Failed to load customer details. Please try again later.
+                    </p>
+                </div>
+            </DashboardLayout>
         );
     }
 
@@ -61,48 +55,82 @@ const CustomerDetailsPage: React.FC = () => {
                             <h2 className="text-xl font-semibold mb-4">
                                 Customer Information
                             </h2>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-sm text-gray-500 flex items-center">
-                                        <FaUser className="mr-1 text-gray-400" />
-                                        Name
-                                    </p>
-                                    <p className="font-medium">
-                                        {customer.name}
-                                    </p>
+                            {isLoading ? (
+                                <div className="grid grid-cols-2 gap-4">
+                                    {/* Skeleton for customer info */}
+                                    <div className="animate-pulse">
+                                        <div className="flex items-center mb-2">
+                                            <div className="h-4 w-4 bg-gray-200 rounded mr-1"></div>
+                                            <div className="h-4 w-12 bg-gray-200 rounded"></div>
+                                        </div>
+                                        <div className="h-5 w-32 bg-gray-200 rounded"></div>
+                                    </div>
+                                    <div className="animate-pulse">
+                                        <div className="flex items-center mb-2">
+                                            <div className="h-4 w-4 bg-gray-200 rounded mr-1"></div>
+                                            <div className="h-4 w-12 bg-gray-200 rounded"></div>
+                                        </div>
+                                        <div className="h-5 w-28 bg-gray-200 rounded"></div>
+                                    </div>
+                                    <div className="animate-pulse">
+                                        <div className="flex items-center mb-2">
+                                            <div className="h-4 w-4 bg-gray-200 rounded mr-1"></div>
+                                            <div className="h-4 w-12 bg-gray-200 rounded"></div>
+                                        </div>
+                                        <div className="h-5 w-40 bg-gray-200 rounded"></div>
+                                    </div>
+                                    <div className="animate-pulse">
+                                        <div className="flex items-center mb-2">
+                                            <div className="h-4 w-4 bg-gray-200 rounded mr-1"></div>
+                                            <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                                        </div>
+                                        <div className="h-5 w-48 bg-gray-200 rounded"></div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-sm text-gray-500 flex items-center">
-                                        <FaPhone className="mr-1 text-gray-400" />
-                                        Phone
-                                    </p>
-                                    <p className="font-medium">
-                                        {customer.phone}
-                                    </p>
-                                </div>
-                                {customer.email && (
+                            ) : customer ? (
+                                <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <p className="text-sm text-gray-500 flex items-center">
-                                            <FaEnvelope className="mr-1 text-gray-400" />
-                                            Email
+                                            <FaUser className="mr-1 text-gray-400" />
+                                            Name
                                         </p>
                                         <p className="font-medium">
-                                            {customer.email}
+                                            {customer.name}
                                         </p>
                                     </div>
-                                )}
-                                {customer.address && (
                                     <div>
                                         <p className="text-sm text-gray-500 flex items-center">
-                                            <FaMapMarkerAlt className="mr-1 text-gray-400" />
-                                            Address
+                                            <FaPhone className="mr-1 text-gray-400" />
+                                            Phone
                                         </p>
                                         <p className="font-medium">
-                                            {customer.address}
+                                            {customer.phone}
                                         </p>
                                     </div>
-                                )}
-                            </div>
+                                    {customer.email && (
+                                        <div>
+                                            <p className="text-sm text-gray-500 flex items-center">
+                                                <FaEnvelope className="mr-1 text-gray-400" />
+                                                Email
+                                            </p>
+                                            <p className="font-medium">
+                                                {customer.email}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {customer.address && (
+                                        <div>
+                                            <p className="text-sm text-gray-500 flex items-center">
+                                                <FaMapMarkerAlt className="mr-1 text-gray-400" />
+                                                Address
+                                            </p>
+                                            <p className="font-medium">
+                                                {customer.address}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : null}
                         </div>
 
                         <div>
@@ -110,8 +138,40 @@ const CustomerDetailsPage: React.FC = () => {
                                 <FaShoppingBag className="mr-2 text-green-500" />
                                 Purchase History
                             </h2>
-                            {customer.purchases &&
-                            customer.purchases.length > 0 ? (
+                            {isLoading ? (
+                                <Table<Sale>
+                                    data={[]}
+                                    isLoading={true}
+                                    columns={
+                                        [
+                                            {
+                                                header: 'Date',
+                                                accessor: 'createdAt',
+                                            },
+                                            {
+                                                header: 'Total Amount',
+                                                accessor: 'totalAmount',
+                                            },
+                                            {
+                                                header: 'Items',
+                                                accessor: 'items',
+                                            },
+                                            {
+                                                header: 'Payment',
+                                                accessor: 'paymentMethod',
+                                            },
+                                        ] as TableColumn<Sale>[]
+                                    }
+                                    actions={[
+                                        {
+                                            label: 'View Receipt',
+                                            icon: <FaReceipt />,
+                                            onClick: () => {},
+                                        },
+                                    ]}
+                                />
+                            ) : customer?.purchases &&
+                              customer.purchases.length > 0 ? (
                                 <Table<Sale>
                                     data={customer.purchases}
                                     columns={
@@ -153,7 +213,7 @@ const CustomerDetailsPage: React.FC = () => {
                                             label: 'View Receipt',
                                             icon: <FaReceipt />,
                                             onClick: (sale: Sale) => {
-    navigate(`/sales/${sale._id}`);
+                                                navigate(`/sales/${sale._id}`);
                                             },
                                         },
                                     ]}
