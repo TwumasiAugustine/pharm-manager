@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useCustomers, useCreateCustomer } from '../../hooks/useCustomers';
+import {
+    useCustomers,
+    useCreateCustomer,
+    useCustomer,
+} from '../../hooks/useCustomers';
 import type { Customer } from '../../types/customer.types';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useSafeNotify } from '../../utils/useSafeNotify';
@@ -27,6 +31,9 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
     const notify = useSafeNotify();
     const [searchTerm, setSearchTerm] = useState('');
     const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
+    const [recentlyCreatedCustomerId, setRecentlyCreatedCustomerId] = useState<
+        string | null
+    >(null);
     const [recentlyCreatedCustomer, setRecentlyCreatedCustomer] =
         useState<Customer | null>(null);
     const [newCustomer, setNewCustomer] = useState({
@@ -42,20 +49,77 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
     // Fetch customers with search
     const { data, isLoading } = useCustomers({
         page: 1,
-        limit: 10,
+        limit: 20, // Increased limit to ensure we get enough data for sorting
         search: debouncedSearchTerm,
     });
 
     // Mutation for creating new customer
     const createCustomer = useCreateCustomer();
 
-    // Get customers from the API response
-    const customers = data?.customers || [];
+    // Get customers from the API response and sort them
+    const customers = React.useMemo(() => {
+        const allCustomers = (data?.customers || []).filter(
+            (customer) => customer.id,
+        ); // Filter out customers without IDs
 
-    // Clear recently created customer when search term changes
+        console.log(
+            'All customers:',
+            allCustomers.map((c) => c.name),
+        );
+        console.log('Recently created customer ID:', recentlyCreatedCustomerId);
+        console.log(
+            'Recently created customer object:',
+            recentlyCreatedCustomer,
+        );
+
+        // If there's a recently created customer, put it at the top
+        if (recentlyCreatedCustomer && recentlyCreatedCustomer.id) {
+            console.log(
+                'Processing recently created customer for top placement',
+            );
+            // First filter out the recently created customer from the API list (if it exists there)
+            const otherCustomers = allCustomers.filter(
+                (c) => c.id !== recentlyCreatedCustomer.id,
+            );
+
+            console.log(
+                'Other customers after filtering out recent:',
+                otherCustomers.map((c) => c.name),
+            );
+
+            const sortedCustomers = [
+                recentlyCreatedCustomer,
+                ...otherCustomers,
+            ].slice(0, 5);
+            console.log(
+                'Final sorted customers with recent at top:',
+                sortedCustomers.map((c) => ({ name: c.name, id: c.id })),
+            );
+            return sortedCustomers;
+        }
+
+        const finalCustomers = allCustomers.slice(0, 5);
+        console.log(
+            'No recent customer, final customers:',
+            finalCustomers.map((c) => c.name),
+        );
+        return finalCustomers;
+    }, [data?.customers, recentlyCreatedCustomer, recentlyCreatedCustomerId]);
+
+    // Fetch selected customer details if not found in current list
+    const { data: selectedCustomerData } = useCustomer(value || '', {
+        enabled: !!value && !customers.find((c) => c.id === value),
+    });
+
+    // Clear recently created customer when searching, but not immediately
     useEffect(() => {
         if (searchTerm) {
-            setRecentlyCreatedCustomer(null);
+            // Use a timeout to allow the user to see the newly created customer briefly
+            const timer = setTimeout(() => {
+                setRecentlyCreatedCustomer(null);
+                setRecentlyCreatedCustomerId(null);
+            }, 100);
+            return () => clearTimeout(timer);
         }
     }, [searchTerm]);
 
@@ -65,16 +129,15 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
      * @param customerId - The ID of the customer to select
      */
     const handleSelectCustomer = (customerId: string) => {
+        console.log('Selecting customer with ID:', customerId);
         onChange(customerId);
         setSearchTerm(''); // Clear search when customer is selected
-    };
 
-    // Clear recently created customer when selected customer changes
-    useEffect(() => {
-        if (value && value !== recentlyCreatedCustomer?.id) {
-            setRecentlyCreatedCustomer(null);
+        // If the selected customer is the recently created one, keep it highlighted for a bit longer
+        if (customerId === recentlyCreatedCustomerId) {
+            console.log('Selected customer is the recently created one');
         }
-    }, [value, recentlyCreatedCustomer]);
+    };
 
     /**
      * Handle creating a new customer
@@ -94,22 +157,40 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
                 address: newCustomer.address,
             });
 
-            // Store the created customer to display it exclusively
-            setRecentlyCreatedCustomer({
-                id: createdCustomer.id,
+            console.log('Created customer:', createdCustomer);
+
+            // The API should now return a properly formatted customer with id field
+            const customerId = createdCustomer.id;
+            console.log('Customer ID:', customerId);
+
+            // Store the customer object directly for immediate display
+            const customerObject: Customer = {
+                id: customerId,
                 name: newCustomer.name,
                 phone: newCustomer.phone,
                 email: newCustomer.email || '',
                 address: newCustomer.address || '',
-                purchases: [], // Add empty purchases array
+                purchases: [],
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-            });
+            };
 
-            onChange(createdCustomer.id);
+            setRecentlyCreatedCustomer(customerObject);
+            setRecentlyCreatedCustomerId(customerId);
+            console.log('Set recently created customer:', customerObject);
+            console.log('Set recently created customer ID:', customerId);
+
+            onChange(customerId);
             setShowNewCustomerForm(false);
             setNewCustomer({ name: '', phone: '', email: '', address: '' });
             setSearchTerm(''); // Clear search term
+
+            // Auto-clear the "new" status after 30 seconds (increased for usability)
+            setTimeout(() => {
+                console.log('Clearing recently created customer status');
+                setRecentlyCreatedCustomer(null);
+                setRecentlyCreatedCustomerId(null);
+            }, 30000);
         } catch (error) {
             console.error('Error creating customer:', error);
             notify.error('Failed to create customer. Please try again.');
@@ -117,13 +198,17 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
     };
 
     /**
-     * Find the currently selected customer from the customers list
+     * Find the currently selected customer from the customers list or fetched data
      * Returns null if no customer is selected or customers aren't loaded
      */
     const selectedCustomer = React.useMemo(() => {
-        if (!value || !data?.customers) return null;
-        return data.customers.find((c) => c.id === value);
-    }, [value, data?.customers]);
+        if (!value) return null;
+        // First try to find in current customer list
+        const customerInList = customers.find((c) => c.id === value);
+        if (customerInList) return customerInList;
+        // If not found in list, use the individually fetched customer data
+        return selectedCustomerData || null;
+    }, [value, customers, selectedCustomerData]);
 
     return (
         <div className="mb-4">
@@ -268,8 +353,8 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
                                 <span role="img" aria-label="info">
                                     ℹ️
                                 </span>{' '}
-                                Select a customer to add to this sale or create
-                                a new one
+                                Search and select a customer or create a new
+                                one. Newly created customers appear at the top.
                             </div>
                             <div className="max-h-48 overflow-y-auto border rounded-md">
                                 {isLoading ? (
@@ -278,58 +363,6 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
                                             ? `Searching for "${debouncedSearchTerm}"...`
                                             : 'Loading customers...'}
                                     </div>
-                                ) : searchTerm && debouncedSearchTerm ? (
-                                    // When actively searching, show search results
-                                    customers.length === 0 ? (
-                                        <div className="p-2 text-center text-gray-500">
-                                            No customers found for "
-                                            {debouncedSearchTerm}"
-                                        </div>
-                                    ) : (
-                                        <ul className="divide-y">
-                                            {customers.map((customer) => (
-                                                <li
-                                                    key={customer.id}
-                                                    onClick={() =>
-                                                        handleSelectCustomer(
-                                                            customer.id,
-                                                        )
-                                                    }
-                                                    className="p-2 hover:bg-gray-100 cursor-pointer"
-                                                >
-                                                    <div className="font-medium">
-                                                        {customer.name}
-                                                    </div>
-                                                    <div className="text-sm text-gray-500">
-                                                        {customer.phone}
-                                                    </div>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )
-                                ) : recentlyCreatedCustomer && !searchTerm ? (
-                                    // Show only recently created customer if exists and no search term
-                                    <ul className="divide-y">
-                                        <li
-                                            key={recentlyCreatedCustomer.id}
-                                            onClick={() =>
-                                                handleSelectCustomer(
-                                                    recentlyCreatedCustomer.id,
-                                                )
-                                            }
-                                            className="p-2 hover:bg-gray-100 cursor-pointer bg-green-50"
-                                        >
-                                            <div className="font-medium">
-                                                {recentlyCreatedCustomer.name}
-                                                <span className="ml-2 text-xs text-green-600">
-                                                    New
-                                                </span>
-                                            </div>
-                                            <div className="text-sm text-gray-500">
-                                                {recentlyCreatedCustomer.phone}
-                                            </div>
-                                        </li>
-                                    </ul>
                                 ) : customers.length === 0 ? (
                                     <div className="p-2 text-center text-gray-500">
                                         {searchTerm
@@ -338,26 +371,43 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({
                                     </div>
                                 ) : (
                                     <ul className="divide-y">
-                                        {customers
-                                            .slice(0, 10)
-                                            .map((customer) => (
-                                                <li
-                                                    key={customer.id}
-                                                    onClick={() =>
-                                                        handleSelectCustomer(
-                                                            customer.id,
-                                                        )
-                                                    }
-                                                    className="p-2 hover:bg-gray-100 cursor-pointer"
-                                                >
-                                                    <div className="font-medium">
-                                                        {customer.name}
-                                                    </div>
-                                                    <div className="text-sm text-gray-500">
-                                                        {customer.phone}
-                                                    </div>
+                                        {customers.map((customer) => (
+                                            <li
+                                                key={customer.id}
+                                                onClick={() =>
+                                                    handleSelectCustomer(
+                                                        customer.id,
+                                                    )
+                                                }
+                                                className={`p-2 hover:bg-gray-100 cursor-pointer ${
+                                                    customer.id ===
+                                                    recentlyCreatedCustomerId
+                                                        ? 'bg-green-50 border-l-4 border-green-500'
+                                                        : ''
+                                                }`}
+                                            >
+                                                <div className="font-medium flex items-center">
+                                                    {customer.name}
+                                                    {customer.id ===
+                                                        recentlyCreatedCustomerId && (
+                                                        <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                                                            New
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="text-sm text-gray-500">
+                                                    {customer.phone}
+                                                </div>
+                                            </li>
+                                        ))}
+                                        {data?.customers &&
+                                            data.customers.length > 5 && (
+                                                <li className="p-2 text-center text-sm text-gray-500 italic">
+                                                    {data.customers.length - 5}{' '}
+                                                    more customers available -
+                                                    refine your search
                                                 </li>
-                                            ))}
+                                            )}
                                     </ul>
                                 )}
                             </div>

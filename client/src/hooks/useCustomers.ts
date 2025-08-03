@@ -18,18 +18,26 @@ import { useSafeNotify } from '../utils/useSafeNotify';
 export const useCustomers = (
     params: { page?: number; limit?: number; search?: string } = {},
 ): QueryResultWithPagination<PaginatedCustomersResponse, Error> => {
-    const [searchQuery, setSearchQuery] = React.useState<string>('');
+    const [searchQuery, setSearchQuery] = React.useState<string>(
+        params.search || '',
+    );
     const [page, setPage] = React.useState<number>(params.page || 1);
     const [limit, setLimit] = React.useState<number>(params.limit || 10);
 
+    // Update search query when params.search changes
+    React.useEffect(() => {
+        if (params.search !== undefined) {
+            setSearchQuery(params.search);
+        }
+    }, [params.search]);
+
     const queryParams = React.useMemo(
         () => ({
-            ...params,
             page,
             limit,
             search: searchQuery,
         }),
-        [params, page, limit, searchQuery],
+        [page, limit, searchQuery],
     );
 
     const queryKey = ['customers', queryParams];
@@ -37,7 +45,7 @@ export const useCustomers = (
     const query = useQuery<any, Error>({
         queryKey,
         queryFn: () => customerApi.getCustomers(queryParams),
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        staleTime: 30 * 1000, // 30 seconds - shorter for real-time updates
     });
 
     const mappedData: PaginatedCustomersResponse = React.useMemo(() => {
@@ -101,7 +109,9 @@ export const useCreateCustomer = () => {
     return useMutation<Customer, Error, CreateCustomerRequest>({
         mutationFn: (data) => customerApi.createCustomer(data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['customers'] });
+            // Force fresh data by removing cache and refetching
+            queryClient.removeQueries({ queryKey: ['customers'] });
+            queryClient.refetchQueries({ queryKey: ['customers'] });
             notify.success('Customer created successfully');
         },
         onError: (error) => {
@@ -116,10 +126,11 @@ export const useCreateCustomer = () => {
 /**
  * Hook for getting customer by ID
  */
-export const useCustomer = (id: string) => {
+export const useCustomer = (id: string, options?: { enabled?: boolean }) => {
     return useQuery<Customer, Error>({
         queryKey: ['customers', id],
         queryFn: () => customerApi.getCustomerById(id),
         staleTime: 5 * 60 * 1000, // 5 minutes
+        enabled: options?.enabled !== false && !!id,
     });
 };

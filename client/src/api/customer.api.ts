@@ -20,7 +20,21 @@ const customerApi = {
     },
     async createCustomer(data: CreateCustomerRequest): Promise<Customer> {
         const response = await api.post('/customers', data);
-        return response.data.data;
+        const rawCustomer = response.data.data;
+
+        // Transform the response to ensure id field is present
+        return {
+            id: rawCustomer.id || rawCustomer._id || '',
+            name: rawCustomer.name || '',
+            phone: rawCustomer.phone || '',
+            email: rawCustomer.email || '',
+            address: rawCustomer.address || '',
+            purchases: Array.isArray(rawCustomer.purchases)
+                ? rawCustomer.purchases
+                : [],
+            createdAt: rawCustomer.createdAt || '',
+            updatedAt: rawCustomer.updatedAt || '',
+        };
     },
 };
 
