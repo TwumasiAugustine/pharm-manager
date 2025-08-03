@@ -84,7 +84,7 @@ export const userActivityTracker = (
         } else {
             // Log activity after response is sent (without performance metrics)
             const originalEnd = res.end;
-            res.end = function (...args: any[]) {
+            res.end = function (this: Response, ...args: any[]) {
                 setImmediate(async () => {
                     await logUserActivity(req, res, {
                         activityType,
@@ -96,8 +96,9 @@ export const userActivityTracker = (
                     });
                 });
 
-                return originalEnd.apply(this, args);
-            };
+                // Use apply to handle all overloads properly
+                return (originalEnd as any).apply(this, args);
+            } as any;
         }
 
         next();

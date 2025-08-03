@@ -1,10 +1,8 @@
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useCustomer } from '../hooks/useCustomers';
-import { Table } from '../components/molecules/Table';
-import type { TableColumn } from '../components/molecules/Table';
-import type { Sale } from '../types/sale.types';
 import DashboardLayout from '../layouts/DashboardLayout';
+import type { Sale } from '../types/sale.types';
 import {
     FaUser,
     FaPhone,
@@ -14,6 +12,9 @@ import {
     FaArrowLeft,
     FaReceipt,
 } from 'react-icons/fa';
+
+// Type for purchase that can be either string ID or Sale object
+type Purchase = string | Sale;
 
 const CustomerDetailsPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -139,85 +140,98 @@ const CustomerDetailsPage: React.FC = () => {
                                 Purchase History
                             </h2>
                             {isLoading ? (
-                                <Table<Sale>
-                                    data={[]}
-                                    isLoading={true}
-                                    columns={
-                                        [
-                                            {
-                                                header: 'Date',
-                                                accessor: 'createdAt',
-                                            },
-                                            {
-                                                header: 'Total Amount',
-                                                accessor: 'totalAmount',
-                                            },
-                                            {
-                                                header: 'Items',
-                                                accessor: 'items',
-                                            },
-                                            {
-                                                header: 'Payment',
-                                                accessor: 'paymentMethod',
-                                            },
-                                        ] as TableColumn<Sale>[]
-                                    }
-                                    actions={[
-                                        {
-                                            label: 'View Receipt',
-                                            icon: <FaReceipt />,
-                                            onClick: () => {},
-                                        },
-                                    ]}
-                                />
+                                <div className="animate-pulse space-y-3">
+                                    {[...Array(3)].map((_, i) => (
+                                        <div
+                                            key={i}
+                                            className="border rounded p-3 bg-gray-50"
+                                        >
+                                            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                                        </div>
+                                    ))}
+                                </div>
                             ) : customer?.purchases &&
                               customer.purchases.length > 0 ? (
-                                <Table<Sale>
-                                    data={customer.purchases}
-                                    columns={
-                                        [
-                                            {
-                                                header: 'Date',
-                                                accessor: 'createdAt',
-                                                cell: (value) =>
-                                                    new Date(
-                                                        value,
-                                                    ).toLocaleDateString(),
-                                            },
-                                            {
-                                                header: 'Total Amount',
-                                                accessor: 'totalAmount',
-                                                cell: (value) =>
-                                                    `$${Number(value).toFixed(
-                                                        2,
-                                                    )}`,
-                                            },
-                                            {
-                                                header: 'Items',
-                                                accessor: 'items',
-                                                cell: (value) => value.length,
-                                            },
-                                            {
-                                                header: 'Payment',
-                                                accessor: 'paymentMethod',
-                                                cell: (value) =>
-                                                    value
-                                                        .charAt(0)
-                                                        .toUpperCase() +
-                                                    value.slice(1),
-                                            },
-                                        ] as TableColumn<Sale>[]
-                                    }
-                                    actions={[
-                                        {
-                                            label: 'View Receipt',
-                                            icon: <FaReceipt />,
-                                            onClick: (sale: Sale) => {
-                                                navigate(`/sales/${sale._id}`);
-                                            },
+                                <div className="space-y-3">
+                                    {(customer.purchases as Purchase[]).map(
+                                        (purchase, index) => {
+                                            // Handle both string IDs and Sale objects
+                                            const purchaseId =
+                                                typeof purchase === 'string'
+                                                    ? purchase
+                                                    : purchase._id ||
+                                                      purchase.id ||
+                                                      `purchase-${index}`;
+
+                                            const saleObject =
+                                                typeof purchase !== 'string'
+                                                    ? purchase
+                                                    : null;
+                                            const purchaseDate =
+                                                saleObject?.createdAt
+                                                    ? new Date(
+                                                          saleObject.createdAt,
+                                                      ).toLocaleDateString()
+                                                    : null;
+                                            const totalAmount =
+                                                saleObject?.totalAmount
+                                                    ? `$${Number(
+                                                          saleObject.totalAmount,
+                                                      ).toFixed(2)}`
+                                                    : null;
+
+                                            return (
+                                                <div
+                                                    key={purchaseId}
+                                                    className="border rounded p-3 bg-gray-50"
+                                                >
+                                                    <div className="flex justify-between items-center">
+                                                        <div>
+                                                            <p className="font-medium text-gray-800">
+                                                                Purchase #
+                                                                {index + 1}
+                                                            </p>
+                                                            <div className="text-sm text-gray-500 space-y-1">
+                                                                <p>
+                                                                    ID:{' '}
+                                                                    {purchaseId}
+                                                                </p>
+                                                                {purchaseDate && (
+                                                                    <p>
+                                                                        Date:{' '}
+                                                                        {
+                                                                            purchaseDate
+                                                                        }
+                                                                    </p>
+                                                                )}
+                                                                {totalAmount && (
+                                                                    <p>
+                                                                        Total:{' '}
+                                                                        {
+                                                                            totalAmount
+                                                                        }
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={() =>
+                                                                navigate(
+                                                                    `/sales/${purchaseId}`,
+                                                                )
+                                                            }
+                                                            className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 flex items-center"
+                                                        >
+                                                            <FaReceipt className="mr-1" />
+                                                            View Receipt
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
                                         },
-                                    ]}
-                                />
+                                    )}
+                                </div>
                             ) : (
                                 <p className="text-gray-500">
                                     No purchase history available.

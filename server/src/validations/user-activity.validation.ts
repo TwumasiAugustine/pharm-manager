@@ -26,7 +26,7 @@ export const createUserActivitySchema = z.object({
         resourceId: z.string().optional(),
         resourceName: z.string().optional(),
         action: z.string().min(1, 'Action description is required'),
-        metadata: z.record(z.any()).optional(),
+        metadata: z.record(z.string(), z.unknown()).optional(),
     }),
     session: z.object({
         loginTime: z.date(),

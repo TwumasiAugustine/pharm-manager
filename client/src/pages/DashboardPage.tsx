@@ -59,18 +59,22 @@ const DashboardPage: React.FC = () => {
                         {/* Charts Section - Responsive Grid */}
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
                             <SalesTrendsChart
-                                data={dashboardData?.charts?.salesByPeriod}
+                                data={
+                                    dashboardData?.charts?.salesByPeriod || []
+                                }
                                 isLoading={isLoading}
                             />
                             <TopSellingDrugsChart
-                                data={dashboardData?.charts?.topSellingDrugs}
+                                data={
+                                    dashboardData?.charts?.topSellingDrugs || []
+                                }
                                 isLoading={isLoading}
                             />
                         </div>
 
                         {/* Low Stock Drugs */}
                         <LowStockDrugs
-                            data={dashboardData?.charts?.lowStockDrugs}
+                            data={dashboardData?.charts?.lowStockDrugs || []}
                             isLoading={isLoading}
                         />
                     </>

@@ -6,7 +6,7 @@ import React from 'react';
 export interface TableColumn<T> {
     header: string;
     accessor: keyof T | ((data: T) => React.ReactNode);
-    cell?: (value: any) => React.ReactNode;
+    cell?: (value: T[keyof T]) => React.ReactNode;
     className?: string;
 }
 
@@ -137,9 +137,7 @@ export function Table<T extends { id?: string | number }>({
                                               ? column.accessor(item)
                                               : column.cell
                                               ? column.cell(
-                                                    item[
-                                                        column.accessor
-                                                    ] as any,
+                                                    item[column.accessor],
                                                 )
                                               : (item[
                                                     column.accessor

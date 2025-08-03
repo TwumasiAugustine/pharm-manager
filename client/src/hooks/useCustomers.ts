@@ -12,6 +12,19 @@ import type {
 } from '../types/query.types';
 import { useSafeNotify } from '../utils/useSafeNotify';
 
+// Interface for raw customer data from API
+interface RawCustomer {
+    id?: string;
+    _id?: string;
+    name?: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+    purchases?: string[];
+    createdAt?: string;
+    updatedAt?: string;
+}
+
 /**
  * Hook for fetching a paginated list of customers
  */
@@ -42,7 +55,7 @@ export const useCustomers = (
 
     const queryKey = ['customers', queryParams];
 
-    const query = useQuery<any, Error>({
+    const query = useQuery<PaginatedCustomersResponse, Error>({
         queryKey,
         queryFn: () => customerApi.getCustomers(queryParams),
         staleTime: 30 * 1000, // 30 seconds - shorter for real-time updates
@@ -61,10 +74,12 @@ export const useCustomers = (
         }
         return {
             customers: Array.isArray(raw.customers)
-                ? raw.customers.map((customer: any) => ({
+                ? raw.customers.map((customer: RawCustomer) => ({
                       id: customer.id || customer._id || '',
                       name: customer.name || '',
                       phone: customer.phone || '',
+                      email: customer.email || '',
+                      address: customer.address || '',
                       purchases: Array.isArray(customer.purchases)
                           ? customer.purchases
                           : [],

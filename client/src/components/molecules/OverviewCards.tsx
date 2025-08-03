@@ -29,14 +29,29 @@ const StatCard: React.FC<StatCardProps> = ({
     isLoading = false,
 }) => {
     const colorClasses = {
-        blue: 'bg-blue-500 text-blue-600 bg-blue-50',
-        green: 'bg-green-500 text-green-600 bg-green-50',
-        purple: 'bg-purple-500 text-purple-600 bg-purple-50',
-        orange: 'bg-orange-500 text-orange-600 bg-orange-50',
-        red: 'bg-red-500 text-red-600 bg-red-50',
+        blue: {
+            textColor: 'text-blue-600',
+            lightBg: 'bg-blue-50',
+        },
+        green: {
+            textColor: 'text-green-600',
+            lightBg: 'bg-green-50',
+        },
+        purple: {
+            textColor: 'text-purple-600',
+            lightBg: 'bg-purple-50',
+        },
+        orange: {
+            textColor: 'text-orange-600',
+            lightBg: 'bg-orange-50',
+        },
+        red: {
+            textColor: 'text-red-600',
+            lightBg: 'bg-red-50',
+        },
     };
 
-    const [bgColor, textColor, lightBg] = colorClasses[color].split(' ');
+    const { textColor, lightBg } = colorClasses[color];
 
     return (
         <div className="bg-white rounded-lg shadow-sm border p-6">
