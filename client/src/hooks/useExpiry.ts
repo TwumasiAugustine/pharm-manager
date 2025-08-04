@@ -177,8 +177,8 @@ export const useExpiry = (
         isStatsLoading: expiryStatsQuery.isLoading,
 
         // Notifications with defensive programming
-        notifications: Array.isArray(notificationsQuery.data?.data)
-            ? notificationsQuery.data.data
+        notifications: Array.isArray(notificationsQuery.data?.data?.data)
+            ? notificationsQuery.data.data.data
             : [],
         isNotificationsLoading: notificationsQuery.isLoading,
 

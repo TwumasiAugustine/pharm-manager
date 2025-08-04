@@ -5,6 +5,10 @@ import { NotificationProvider } from './context/NotificationContext';
 import { NotificationContainer } from './components/molecules/NotificationContainer';
 import { useAuthStore } from './store/auth.store';
 import ErrorBoundary from './components/ErrorBoundary';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Services
+import { socketService } from './services/socket.service';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -134,11 +138,35 @@ const router = createBrowserRouter([
     },
 ]);
 
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            refetchOnWindowFocus: false,
+            staleTime: 5 * 60 * 1000, // 5 minutes
+        },
+    },
+});
+
+// Socket listeners for real-time updates
+socketService.on('expiry-notifications-updated', () => {
+    queryClient.invalidateQueries({ queryKey: ['expiry-notifications'] });
+});
+
+socketService.on('audit-logs-updated', () => {
+    queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+});
+
+socketService.on('user-activity-updated', () => {
+    queryClient.invalidateQueries({ queryKey: ['user-activity'] });
+});
+
 function App() {
     return (
-        <NotificationProvider>
-            <AppContent />
-        </NotificationProvider>
+        <QueryClientProvider client={queryClient}>
+            <NotificationProvider>
+                <AppContent />
+            </NotificationProvider>
+        </QueryClientProvider>
     );
 }
 

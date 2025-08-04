@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { ExpiryService } from '../services/expiry.service';
 import { AuditLogService } from '../services/audit-log.service';
 import { UserActivityService } from '../services/user-activity.service';
+import { io } from '../../server';
 
 class CronJobService {
     private expiryService: ExpiryService;
@@ -21,6 +22,7 @@ class CronJobService {
             try {
                 console.log('Running daily expiry notification check...');
                 await this.expiryService.createExpiryNotifications();
+                io.emit('expiry-notifications-updated');
                 console.log('Expiry notifications created successfully');
             } catch (error) {
                 console.error('Error creating expiry notifications:', error);
@@ -32,9 +34,47 @@ class CronJobService {
             try {
                 console.log('Running weekly cleanup of old notifications...');
                 await this.expiryService.cleanupOldNotifications();
+                io.emit('expiry-notifications-updated');
                 console.log('Old notifications cleaned up successfully');
             } catch (error) {
                 console.error('Error cleaning up old notifications:', error);
+            }
+        });
+
+        // Run every day at 3:00 AM to cleanup old audit logs (keeps last 30 days)
+        cron.schedule('0 3 * * *', async () => {
+            try {
+                console.log('Running daily audit log cleanup...');
+                const daysToKeep = 30;
+                const result =
+                    await this.auditLogService.cleanupOldLogs(daysToKeep);
+                io.emit('audit-logs-updated');
+                console.log(
+                    `Daily audit log cleanup completed. Deleted ${result} records`,
+                );
+            } catch (error) {
+                console.error('Error during daily audit log cleanup:', error);
+            }
+        });
+
+        // Run on the 1st of every month at 4:00 AM to cleanup user activity
+        cron.schedule('0 4 1 * *', async () => {
+            try {
+                console.log('Running monthly user activity cleanup...');
+                const daysToKeep = 30;
+                const result =
+                    await this.userActivityService.cleanupOldActivity(
+                        daysToKeep,
+                    );
+                io.emit('user-activity-updated');
+                console.log(
+                    `Monthly user activity cleanup completed. Deleted ${result} records`,
+                );
+            } catch (error) {
+                console.error(
+                    'Error during monthly user activity cleanup:',
+                    error,
+                );
             }
         });
 
@@ -45,6 +85,7 @@ class CronJobService {
     async triggerExpiryNotifications(): Promise<void> {
         try {
             await this.expiryService.createExpiryNotifications();
+            io.emit('expiry-notifications-updated');
             console.log('Manual expiry notifications trigger completed');
         } catch (error) {
             console.error(
@@ -58,6 +99,7 @@ class CronJobService {
     async triggerCleanupNotifications(): Promise<void> {
         try {
             await this.expiryService.cleanupOldNotifications();
+            io.emit('expiry-notifications-updated');
             console.log('Manual cleanup notifications trigger completed');
         } catch (error) {
             console.error('Error in manual cleanup trigger:', error);
@@ -69,6 +111,7 @@ class CronJobService {
         try {
             const result =
                 await this.auditLogService.cleanupOldLogs(daysToKeep);
+            io.emit('audit-logs-updated');
             console.log(
                 `Manual daily audit log cleanup completed. Deleted ${result} records`,
             );
@@ -82,6 +125,7 @@ class CronJobService {
     async triggerWeeklyAuditLogCleanup(): Promise<number> {
         try {
             const result = await this.auditLogService.cleanupOldLogs(7);
+            io.emit('audit-logs-updated');
             console.log(
                 `Manual weekly audit log cleanup completed. Deleted ${result} records`,
             );
@@ -96,6 +140,7 @@ class CronJobService {
         try {
             const result =
                 await this.userActivityService.cleanupOldActivity(30);
+            io.emit('user-activity-updated');
             console.log(
                 `Manual monthly user activity cleanup completed. Deleted ${result} records`,
             );
