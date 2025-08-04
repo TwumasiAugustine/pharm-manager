@@ -10,6 +10,11 @@ const connectDB = async (): Promise<void> => {
             maxPoolSize: 15, // Maintain up to 15 socket connections
             autoIndex: true, // Always create indexes in development
             autoCreate: true, // Auto-create collections
+            // Additional transaction-related options
+            retryWrites: true, // Retry write operations on transient network errors
+            retryReads: true, // Retry read operations on transient network errors
+            maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+            heartbeatFrequencyMS: 10000, // Check server status every 10 seconds
         });
 
         // Add event listeners for monitoring connection issues

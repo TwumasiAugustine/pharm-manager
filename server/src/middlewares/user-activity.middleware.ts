@@ -127,6 +127,7 @@ export const initializeUserSession = (userId: string, req: Request): string => {
             sessionId,
             loginTime,
             forceLog: true,
+            userId: userId, // Pass the userId for forced login log
         });
     });
 
@@ -157,6 +158,7 @@ export const endUserSession = async (
             loginTime: sessionInfo.loginTime,
             sessionDuration: duration,
             forceLog: true,
+            userId: userId, // Pass the userId for forced logout log
         });
 
         // Update session status to inactive
@@ -205,13 +207,15 @@ async function logUserActivity(
         loginTime?: Date;
         sessionDuration?: number;
         forceLog?: boolean;
+        userId?: string; // Add userId option for forced logs
     },
 ): Promise<void> {
     try {
         if (!req.user && !options.forceLog) return;
 
-        const userId = req.user?.id;
-        if (!userId && !options.forceLog) return;
+        // Use provided userId from options or from req.user
+        const userId = options.userId || req.user?.id;
+        if (!userId) return; // Can't log without a user ID
 
         // Get session info
         const sessionInfo =
@@ -220,7 +224,7 @@ async function logUserActivity(
                       sessionId: options.sessionId,
                       loginTime: options.loginTime,
                   }
-                : sessionStore.get(userId!);
+                : sessionStore.get(userId);
 
         if (!sessionInfo && !options.forceLog) {
             // If no session info and not a forced log (like login), skip
@@ -236,7 +240,7 @@ async function logUserActivity(
         if (!isSuccessful) return;
 
         const activityData: CreateUserActivityRequest = {
-            userId: userId!,
+            userId: userId,
             sessionId: sessionInfo?.sessionId || 'unknown',
             activity: {
                 type: options.activityType,

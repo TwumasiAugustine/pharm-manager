@@ -347,12 +347,12 @@ const SalesListPage: React.FC = () => {
                     {/* Header skeleton */}
                     <div className="flex justify-between items-center mb-6">
                         <div className="h-8 bg-gray-200 rounded w-48"></div>
-                        <div className="hidden md:flex space-x-2">
+                        <div className="hidden lg:flex space-x-2">
                             <div className="h-10 bg-gray-200 rounded w-32"></div>
                             <div className="h-10 bg-gray-200 rounded w-24"></div>
                             <div className="h-10 bg-gray-200 rounded w-36"></div>
                         </div>
-                        <div className="md:hidden h-10 bg-gray-200 rounded w-20"></div>
+                        <div className="lg:hidden h-10 bg-gray-200 rounded w-20"></div>
                     </div>
 
                     {/* Table skeleton */}
