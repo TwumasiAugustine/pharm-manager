@@ -47,8 +47,51 @@ export function Table<T extends { id?: string | number }>({
 }: TableProps<T>) {
     if (isLoading) {
         return (
-            <div className="flex justify-center items-center py-10">
-                <div className="animate-pulse text-gray-500">Loading...</div>
+            <div className="overflow-x-auto animate-pulse">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            {columns.map((column, index) => (
+                                <th
+                                    key={index}
+                                    scope="col"
+                                    className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                                        column.className || ''
+                                    }`}
+                                >
+                                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                                </th>
+                            ))}
+                            {actions && actions.length > 0 && (
+                                <th
+                                    scope="col"
+                                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                    <div className="h-4 bg-gray-200 rounded w-1/2 ml-auto"></div>
+                                </th>
+                            )}
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {[...Array(5)].map((_, rowIndex) => (
+                            <tr key={rowIndex}>
+                                {columns.map((_, colIndex) => (
+                                    <td
+                                        key={colIndex}
+                                        className="px-6 py-4 whitespace-nowrap"
+                                    >
+                                        <div className="h-4 bg-gray-200 rounded"></div>
+                                    </td>
+                                ))}
+                                {actions && actions.length > 0 && (
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                        <div className="h-8 w-20 bg-gray-200 rounded ml-auto"></div>
+                                    </td>
+                                )}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         );
     }

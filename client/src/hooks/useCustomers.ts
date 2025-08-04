@@ -18,23 +18,21 @@ import { useSafeNotify } from '../utils/useSafeNotify';
 export const useCustomers = (
     params: { page?: number; limit?: number; search?: string } = {},
 ): QueryResultWithPagination<PaginatedCustomersResponse, Error> => {
-    const [searchQuery, setSearchQuery] = React.useState<string>('');
     const [page, setPage] = React.useState<number>(params.page || 1);
     const [limit, setLimit] = React.useState<number>(params.limit || 10);
 
     const queryParams = React.useMemo(
         () => ({
-            ...params,
             page,
             limit,
-            search: searchQuery,
+            search: params.search || '', // Use the search parameter directly
         }),
-        [params, page, limit, searchQuery],
+        [page, limit, params.search],
     );
 
     const queryKey = ['customers', queryParams];
 
-    const query = useQuery<any, Error>({
+    const query = useQuery<PaginatedCustomersResponse, Error>({
         queryKey,
         queryFn: () => customerApi.getCustomers(queryParams),
         staleTime: 5 * 60 * 1000, // 5 minutes
@@ -53,16 +51,20 @@ export const useCustomers = (
         }
         return {
             customers: Array.isArray(raw.customers)
-                ? raw.customers.map((customer: any) => ({
-                      id: customer.id || customer._id || '',
-                      name: customer.name || '',
-                      phone: customer.phone || '',
-                      purchases: Array.isArray(customer.purchases)
-                          ? customer.purchases
-                          : [],
-                      createdAt: customer.createdAt || '',
-                      updatedAt: customer.updatedAt || '',
-                  }))
+                ? raw.customers.map(
+                      (customer: Customer & { _id?: string }) => ({
+                          id: customer.id || customer._id || '',
+                          name: customer.name || '',
+                          phone: customer.phone || '',
+                          email: customer.email || '',
+                          address: customer.address || '',
+                          purchases: Array.isArray(customer.purchases)
+                              ? customer.purchases
+                              : [],
+                          createdAt: customer.createdAt || '',
+                          updatedAt: customer.updatedAt || '',
+                      }),
+                  )
                 : [],
             totalCount: raw.totalCount ?? 0,
             page: raw.page ?? page,
@@ -87,7 +89,6 @@ export const useCustomers = (
         ...query,
         data: mappedData,
         pagination,
-        setSearchQuery,
     } as QueryResultWithPagination<PaginatedCustomersResponse, Error>;
 };
 
@@ -100,8 +101,14 @@ export const useCreateCustomer = () => {
 
     return useMutation<Customer, Error, CreateCustomerRequest>({
         mutationFn: (data) => customerApi.createCustomer(data),
-        onSuccess: () => {
+        onSuccess: (newCustomer) => {
+            // Invalidate all customer queries to refresh data
             queryClient.invalidateQueries({ queryKey: ['customers'] });
+            // Set the individual customer in cache for immediate access
+            queryClient.setQueryData(
+                ['customers', newCustomer.id],
+                newCustomer,
+            );
             notify.success('Customer created successfully');
         },
         onError: (error) => {

@@ -19,6 +19,11 @@ export const authenticate = (
     next: NextFunction,
 ): void => {
     try {
+        // Exclude the refresh token route from authentication checks
+        if (req.path === '/refresh') {
+            return next();
+        }
+
         // Log request path for debugging
         const debugMode = process.env.DEBUG === 'true';
         if (debugMode) {

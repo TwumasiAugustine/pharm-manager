@@ -15,6 +15,5 @@ export interface QueryResultWithPagination<TData, TError> {
     error: TError | null;
     refetch: () => Promise<any>;
     pagination: PaginationControls;
-    setSearchQuery: (query: string) => void;
     [key: string]: any; // Allow for additional properties from useQuery
 }

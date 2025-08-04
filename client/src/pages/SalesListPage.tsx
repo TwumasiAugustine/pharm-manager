@@ -144,7 +144,7 @@ const SalesListPage: React.FC = () => {
         },
         {
             header: 'Total Amount',
-            accessor: (group) => `$${group.totalAmount.toFixed(2)}`,
+            accessor: (group) => `GH₵${group.totalAmount.toFixed(2)}`,
             className: 'text-right font-bold',
         },
     ];
@@ -212,7 +212,7 @@ const SalesListPage: React.FC = () => {
             accessor: (sale) => {
                 const amount =
                     typeof sale.totalAmount === 'number' ? sale.totalAmount : 0;
-                return `$${amount.toFixed(2)}`;
+                return `GH₵${amount.toFixed(2)}`;
             },
             className: 'text-right',
         },

@@ -176,7 +176,7 @@ const CustomerDetailsPage: React.FC = () => {
                                                     : null;
                                             const totalAmount =
                                                 saleObject?.totalAmount
-                                                    ? `$${Number(
+                                                    ? `GH₵${Number(
                                                           saleObject.totalAmount,
                                                       ).toFixed(2)}`
                                                     : null;

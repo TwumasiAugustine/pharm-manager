@@ -31,17 +31,23 @@ export class CustomerService {
     }) {
         const query: any = {};
         if (params.search) {
-            query.name = { $regex: params.search, $options: 'i' };
+            // Search in name, phone, and email fields
+            query.$or = [
+                { name: { $regex: params.search, $options: 'i' } },
+                { phone: { $regex: params.search, $options: 'i' } },
+                { email: { $regex: params.search, $options: 'i' } },
+            ];
         }
         const customers = await Customer.find(query)
-            .skip((params.page! - 1) * (params.limit || 10))
+            .sort({ createdAt: -1 }) // Sort by newest first
+            .skip(((params.page || 1) - 1) * (params.limit || 10))
             .limit(params.limit || 10);
         const totalCount = await Customer.countDocuments(query);
         return {
             customers,
             totalCount,
-            page: params.page,
-            limit: params.limit,
+            page: params.page || 1,
+            limit: params.limit || 10,
             totalPages: Math.ceil(totalCount / (params.limit || 10)),
         };
     }

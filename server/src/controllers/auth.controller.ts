@@ -30,7 +30,7 @@ export class AuthController {
             );
             res.cookie('refreshToken', result.tokens?.refreshToken, {
                 ...getCookieOptions(isProduction),
-                path: '/api/auth/refresh', // Restrict refresh token to refresh endpoint
+                path: '/api/auth', // Restrict refresh token to auth endpoints
             });
 
             // Send response
@@ -64,7 +64,7 @@ export class AuthController {
             );
             res.cookie('refreshToken', result.tokens?.refreshToken, {
                 ...getCookieOptions(isProduction),
-                path: '/api/auth/refresh', // Restrict refresh token to refresh endpoint
+                path: '/api/auth', // Restrict refresh token to auth endpoints
             });
 
             // Log audit event for successful login and initialize user session
@@ -133,7 +133,7 @@ export class AuthController {
 
             // Clear cookies
             res.clearCookie('accessToken');
-            res.clearCookie('refreshToken', { path: '/api/auth/refresh' });
+            res.clearCookie('refreshToken', { path: '/api/auth' });
 
             // Send response
             res.status(200).json(
@@ -155,7 +155,7 @@ export class AuthController {
             if (!refreshToken) {
                 // Clear cookies just in case
                 res.clearCookie('accessToken');
-                res.clearCookie('refreshToken', { path: '/api/auth/refresh' });
+                res.clearCookie('refreshToken', { path: '/api/auth' });
 
                 res.status(401).json({
                     success: false,
@@ -175,7 +175,7 @@ export class AuthController {
             );
             res.cookie('refreshToken', result.tokens?.refreshToken, {
                 ...getCookieOptions(isProduction),
-                path: '/api/auth/refresh',
+                path: '/api/auth',
             });
 
             // Send response
@@ -188,7 +188,7 @@ export class AuthController {
         } catch (error) {
             // Clear cookies on error
             res.clearCookie('accessToken');
-            res.clearCookie('refreshToken', { path: '/api/auth/refresh' });
+            res.clearCookie('refreshToken', { path: '/api/auth' });
 
             next(error);
         }

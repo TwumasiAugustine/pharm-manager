@@ -33,8 +33,7 @@ const CustomerManagementPage: React.FC = () => {
         isError,
         refetch,
         pagination,
-        setSearchQuery,
-    } = useCustomers({ limit: 5 }); // Set limit to 5 customers per page
+    } = useCustomers({ limit: 5, search: debouncedSearchTerm }); // Set limit to 5 customers per page
 
     const createCustomer = useCreateCustomer();
 
@@ -57,11 +56,6 @@ const CustomerManagementPage: React.FC = () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [showActionsDropdown]);
-
-    // Apply the debounced search term to the actual search query
-    useEffect(() => {
-        setSearchQuery(debouncedSearchTerm);
-    }, [debouncedSearchTerm, setSearchQuery]);
 
     const handleSearch = (query: string) => {
         setSearchTerm(query);
