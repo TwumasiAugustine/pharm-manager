@@ -114,9 +114,9 @@ export const LowStockDrugs: React.FC<LowStockDrugsProps> = ({
                         <div className="flex items-center gap-3">
                             <div className="text-right">
                                 <p className="text-sm font-medium text-gray-900">
-                                    {new Intl.NumberFormat('en-US', {
+                                    {new Intl.NumberFormat('en-GH', {
                                         style: 'currency',
-                                        currency: 'USD',
+                                        currency: 'GHS',
                                     }).format(drug.price)}
                                 </p>
                                 <p className="text-xs text-gray-500">

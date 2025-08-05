@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-    FiDollarSign,
-    FiTrendingUp,
-    FiPackage,
-    FiPercent,
-} from 'react-icons/fi';
+import { FiTrendingUp, FiPackage, FiPercent } from 'react-icons/fi';
 import type { ReportSummaryData } from '../../types/report.types';
 
 interface ReportSummaryProps {
@@ -49,7 +44,7 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
         {
             label: 'Total Revenue',
             value: `GH₵${summary.totalRevenue.toLocaleString()}`,
-            icon: FiDollarSign,
+            icon: () => <span className="font-bold text-lg">₵</span>,
             color: 'text-green-600',
             bgColor: 'bg-green-100',
         },

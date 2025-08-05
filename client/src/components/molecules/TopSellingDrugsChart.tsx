@@ -63,9 +63,9 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
     const formatTooltipValue = (value: number, name: string) => {
         if (name === 'revenue') {
             return [
-                new Intl.NumberFormat('en-US', {
+                new Intl.NumberFormat('en-GH', {
                     style: 'currency',
-                    currency: 'USD',
+                    currency: 'GHS',
                 }).format(value),
                 'Revenue',
             ];
@@ -96,9 +96,9 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
                         <p className="text-sm">
                             <span className="text-green-600 font-medium">
                                 Revenue:{' '}
-                                {new Intl.NumberFormat('en-US', {
+                                {new Intl.NumberFormat('en-GH', {
                                     style: 'currency',
-                                    currency: 'USD',
+                                    currency: 'GHS',
                                 }).format(data.revenue)}
                             </span>
                         </p>
@@ -202,9 +202,9 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
                                         {drug.totalQuantity.toLocaleString()}
                                     </td>
                                     <td className="py-2 text-right text-green-600 font-medium">
-                                        {new Intl.NumberFormat('en-US', {
+                                        {new Intl.NumberFormat('en-GH', {
                                             style: 'currency',
-                                            currency: 'USD',
+                                            currency: 'GHS',
                                         }).format(drug.totalRevenue)}
                                     </td>
                                 </tr>

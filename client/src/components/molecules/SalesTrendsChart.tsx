@@ -52,9 +52,9 @@ export const SalesTrendsChart: React.FC<SalesTrendsChartProps> = ({
     const formatTooltipValue = (value: number, name: string) => {
         if (name === 'revenue') {
             return [
-                new Intl.NumberFormat('en-US', {
+                new Intl.NumberFormat('en-GH', {
                     style: 'currency',
-                    currency: 'USD',
+                    currency: 'GHS',
                 }).format(value),
                 'Revenue',
             ];

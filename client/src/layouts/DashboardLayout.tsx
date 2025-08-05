@@ -123,7 +123,7 @@ function Sidebar({
                 className={`fixed z-40 inset-y-0 left-0 w-64 bg-white shadow-md transform transition-transform duration-200 ease-in-out
                 ${
                     open ? 'translate-x-0' : '-translate-x-full'
-                } md:translate-x-0 md:static md:inset-0`}
+                } md:translate-x-0 md:relative md:inset-auto md:w-64 md:flex-shrink-0`}
             >
                 <div className="p-6 flex items-center justify-between md:block">
                     <h1 className="text-2xl font-bold text-primary-600">
@@ -254,7 +254,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col overflow-hidden md:ml-64">
+            <div className="flex-1 flex flex-col overflow-hidden">
                 <Topbar
                     user={user}
                     onLogout={handleLogout}

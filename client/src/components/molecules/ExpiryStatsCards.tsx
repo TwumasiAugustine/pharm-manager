@@ -4,7 +4,6 @@ import {
     FiAlertCircle,
     FiClock,
     FiInfo,
-    FiDollarSign,
 } from 'react-icons/fi';
 import type { ExpiryStats } from '../../types/expiry.types';
 
@@ -74,9 +73,9 @@ export const ExpiryStatsCards: React.FC<ExpiryStatsCardsProps> = ({
     isLoading = false,
 }) => {
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
+        return new Intl.NumberFormat('en-GH', {
             style: 'currency',
-            currency: 'USD',
+            currency: 'GHS',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
         }).format(amount);
@@ -110,7 +109,7 @@ export const ExpiryStatsCards: React.FC<ExpiryStatsCardsProps> = ({
         {
             title: 'Risk Value',
             value: formatCurrency(stats.expiredValue + stats.criticalValue),
-            icon: <FiDollarSign />,
+            icon: <span className="font-bold text-lg">₵</span>,
             color: 'green' as const,
         },
     ];
