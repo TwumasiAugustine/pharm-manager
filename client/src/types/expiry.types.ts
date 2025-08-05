@@ -56,23 +56,33 @@ export interface ExpiryFilters {
 }
 
 export interface ExpiryDrugsResponse {
-    data: ExpiryDrug[];
-    pagination: {
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
+    data: {
+        data: ExpiryDrug[];
+        pagination: {
+            total: number;
+            page: number;
+            limit: number;
+            totalPages: number;
+        };
     };
+    success: boolean;
+    message: string;
+    statusCode: number;
 }
 
 export interface ExpiryNotificationsResponse {
-    data: ExpiryNotification[];
-    pagination: {
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
+    data: {
+        data: ExpiryNotification[];
+        pagination: {
+            total: number;
+            page: number;
+            limit: number;
+            totalPages: number;
+        };
     };
+    success: boolean;
+    message: string;
+    statusCode: number;
 }
 
 export interface DrugExpiryCheck {
