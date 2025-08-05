@@ -77,7 +77,7 @@ const CreateSalePage: React.FC = () => {
                     quantity: item.quantity,
                 })),
                 totalAmount,
-                paymentMethod: data.paymentMethod,
+                paymentMethod: data.paymentMethod as "cash" | "card" | "mobile",
                 transactionId: data.transactionId,
                 notes: data.notes,
             };

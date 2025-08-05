@@ -81,16 +81,19 @@ export const useMarkNotificationAsRead = () => {
             queryClient.setQueriesData(
                 { queryKey: EXPIRY_QUERY_KEYS.notifications() },
                 (oldData: ExpiryNotificationsResponse | undefined) => {
-                    if (!oldData?.data) return oldData;
+                    if (!oldData?.data?.data) return oldData;
 
                     return {
                         ...oldData,
-                        data: oldData.data.map(
-                            (notification: ExpiryNotification) =>
-                                notification.id === updatedNotification.id
-                                    ? updatedNotification
-                                    : notification,
-                        ),
+                        data: {
+                            ...oldData.data,
+                            data: oldData.data.data.map(
+                                (notification: ExpiryNotification) =>
+                                    notification.id === updatedNotification.id
+                                        ? updatedNotification
+                                        : notification,
+                            ),
+                        },
                     };
                 },
             );
@@ -109,16 +112,19 @@ export const useMarkAllNotificationsAsRead = () => {
             queryClient.setQueriesData(
                 { queryKey: EXPIRY_QUERY_KEYS.notifications() },
                 (oldData: ExpiryNotificationsResponse | undefined) => {
-                    if (!oldData?.data) return oldData;
+                    if (!oldData?.data?.data) return oldData;
 
                     return {
                         ...oldData,
-                        data: oldData.data.map(
-                            (notification: ExpiryNotification) => ({
-                                ...notification,
-                                isRead: true,
-                            }),
-                        ),
+                        data: {
+                            ...oldData.data,
+                            data: oldData.data.data.map(
+                                (notification: ExpiryNotification) => ({
+                                    ...notification,
+                                    isRead: true,
+                                }),
+                            ),
+                        },
                     };
                 },
             );

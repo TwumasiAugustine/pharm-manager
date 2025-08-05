@@ -44,15 +44,21 @@ class SocketService {
         });
     }
 
-    public on(event: string, listener: (...args: any[]) => void): void {
+    public on<T extends unknown[]>(
+        event: string,
+        listener: (...args: T) => void,
+    ): void {
         this.socket.on(event, listener);
     }
 
-    public off(event: string, listener: (...args: any[]) => void): void {
+    public off<T extends unknown[]>(
+        event: string,
+        listener: (...args: T) => void,
+    ): void {
         this.socket.off(event, listener);
     }
 
-    public emit(event: string, ...args: any[]): void {
+    public emit<T extends unknown[]>(event: string, ...args: T): void {
         this.socket.emit(event, ...args);
     }
 }
