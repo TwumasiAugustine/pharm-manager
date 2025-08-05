@@ -11,6 +11,7 @@ import { useSafeNotify } from '../utils/useSafeNotify';
 import { ReportSummary } from '../components/molecules/ReportSummary';
 import { ReportFilter } from '../components/molecules/ReportFilter';
 import ReportTable from '../components/molecules/ReportTable';
+import ReportChart from '../components/molecules/ReportChart';
 import { Pagination } from '../components/molecules/Pagination';
 import DashboardLayout from '../layouts/DashboardLayout';
 import type { ReportFilters } from '../types/report.types';
@@ -473,21 +474,35 @@ export const ReportsPage: React.FC = () => {
                                 </div>
 
                                 <div className="p-4 sm:p-6">
-                                    <ReportTable
-                                        data={reportData || []}
-                                        reportType={filters.reportType}
-                                        isLoading={isLoading}
-                                    />
-
-                                    {/* Pagination Controls */}
-                                    {!isLoading && totalPages > 1 && (
-                                        <div className="mt-6 flex justify-center">
-                                            <Pagination
-                                                currentPage={currentPage}
-                                                totalPages={totalPages}
-                                                onPageChange={handlePageChange}
+                                    {filters.format === 'table' ? (
+                                        <>
+                                            <ReportTable
+                                                data={reportData || []}
+                                                reportType={filters.reportType}
+                                                isLoading={isLoading}
                                             />
-                                        </div>
+
+                                            {/* Pagination Controls */}
+                                            {!isLoading && totalPages > 1 && (
+                                                <div className="mt-6 flex justify-center">
+                                                    <Pagination
+                                                        currentPage={
+                                                            currentPage
+                                                        }
+                                                        totalPages={totalPages}
+                                                        onPageChange={
+                                                            handlePageChange
+                                                        }
+                                                    />
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <ReportChart
+                                            data={reportData || []}
+                                            reportType={filters.reportType}
+                                            isLoading={isLoading}
+                                        />
                                     )}
                                 </div>
                             </div>

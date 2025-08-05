@@ -1,0 +1,21 @@
+/* Expiry Status Colors */
+.expiry-critical {
+    background-color: #ef4444;
+}
+.expiry-warning {
+    background-color: #f59e0b;
+}
+.expiry-good {
+    background-color: #10b981;
+}
+
+/* Chart Color Indicators */
+.chart-indicator-critical {
+    background-color: #ef4444;
+}
+.chart-indicator-warning {
+    background-color: #f59e0b;
+}
+.chart-indicator-good {
+    background-color: #10b981;
+}
