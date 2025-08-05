@@ -4,6 +4,7 @@ import { useCurrentUser } from './hooks/useAuth';
 import { NotificationProvider } from './context/NotificationContext';
 import { DisplayProvider } from './context/DisplayContext';
 import { NotificationContainer } from './components/molecules/NotificationContainer';
+import CronJobNotifications from './components/organisms/CronJobNotifications';
 import { useAuthStore } from './store/auth.store';
 import ErrorBoundary from './components/ErrorBoundary';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -161,6 +162,49 @@ socketService.on('user-activity-updated', () => {
     queryClient.invalidateQueries({ queryKey: ['user-activity'] });
 });
 
+// Enhanced cron job socket listeners
+socketService.on('cron-job-triggered', (data) => {
+    queryClient.invalidateQueries({ queryKey: ['cronJobStatus'] });
+});
+
+socketService.on('cron-job-completed', (data) => {
+    queryClient.invalidateQueries({ queryKey: ['cronJobStatus'] });
+
+    // Update relevant data based on job type
+    switch (data.jobType) {
+        case 'expiry-notifications':
+            queryClient.invalidateQueries({
+                queryKey: ['expiry-notifications'],
+            });
+            queryClient.invalidateQueries({ queryKey: ['expiry'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+            break;
+        case 'notification-cleanup':
+            queryClient.invalidateQueries({
+                queryKey: ['expiry-notifications'],
+            });
+            break;
+        case 'audit-cleanup':
+            queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+            break;
+        case 'user-activity-cleanup':
+            queryClient.invalidateQueries({ queryKey: ['user-activity'] });
+            break;
+        case 'inventory-check':
+            queryClient.invalidateQueries({ queryKey: ['drugs'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+            break;
+        default:
+            // Refresh dashboard for unknown job types
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+            break;
+    }
+});
+
+socketService.on('cron-job-failed', (data) => {
+    queryClient.invalidateQueries({ queryKey: ['cronJobStatus'] });
+});
+
 function App() {
     return (
         <QueryClientProvider client={queryClient}>
@@ -292,6 +336,7 @@ function AppContent() {
                 </DisplayProvider>
             </ErrorBoundary>
             <NotificationContainer />
+            <CronJobNotifications />
         </>
     );
 }

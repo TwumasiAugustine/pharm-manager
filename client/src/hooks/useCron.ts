@@ -1,17 +1,101 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeNotify } from '../utils/useSafeNotify';
+import { socketService } from '../services/socket.service';
 import cronApi from '../api/cron.api';
 import type { CronJobStatus, CronTriggerResponse } from '../api/cron.api';
+import type {
+    CronJobTriggeredEvent,
+    CronJobCompletedEvent,
+    CronJobFailedEvent,
+} from '../types/socket.types';
+import { useEffect } from 'react';
 
 /**
- * Hook for fetching cron job status
+ * Hook for fetching cron job status with real-time updates
  */
 export const useCronJobStatus = () => {
+    const queryClient = useQueryClient();
+
+    // Set up real-time listeners for cron job updates
+    useEffect(() => {
+        const handleCronUpdate = () => {
+            queryClient.invalidateQueries({ queryKey: ['cronJobStatus'] });
+        };
+
+        const handleCronJobTriggered = (data: CronJobTriggeredEvent) => {
+            queryClient.setQueryData(
+                ['cronJobStatus'],
+                (oldData: CronJobStatus | undefined) => {
+                    if (!oldData) return oldData;
+                    return {
+                        ...oldData,
+                        lastTriggered: {
+                            jobName: data.jobName,
+                            timestamp: data.timestamp,
+                            status: 'running',
+                        },
+                    };
+                },
+            );
+        };
+
+        const handleCronJobCompleted = (data: CronJobCompletedEvent) => {
+            queryClient.setQueryData(
+                ['cronJobStatus'],
+                (oldData: CronJobStatus | undefined) => {
+                    if (!oldData) return oldData;
+                    return {
+                        ...oldData,
+                        lastCompleted: {
+                            jobName: data.jobName,
+                            timestamp: data.timestamp,
+                            status: 'completed',
+                            duration: data.duration,
+                        },
+                    };
+                },
+            );
+        };
+
+        const handleCronJobFailed = (data: CronJobFailedEvent) => {
+            queryClient.setQueryData(
+                ['cronJobStatus'],
+                (oldData: CronJobStatus | undefined) => {
+                    if (!oldData) return oldData;
+                    return {
+                        ...oldData,
+                        lastFailed: {
+                            jobName: data.jobName,
+                            timestamp: data.timestamp,
+                            status: 'failed',
+                            error: data.error,
+                        },
+                    };
+                },
+            );
+        };
+
+        // Subscribe to socket events
+        socketService.on('cron-job-triggered', handleCronJobTriggered);
+        socketService.on('cron-job-completed', handleCronJobCompleted);
+        socketService.on('cron-job-failed', handleCronJobFailed);
+        socketService.on('cron-status-updated', handleCronUpdate);
+
+        // Cleanup on unmount
+        return () => {
+            socketService.off('cron-job-triggered', handleCronJobTriggered);
+            socketService.off('cron-job-completed', handleCronJobCompleted);
+            socketService.off('cron-job-failed', handleCronJobFailed);
+            socketService.off('cron-status-updated', handleCronUpdate);
+        };
+    }, [queryClient]);
+
     return useQuery<CronJobStatus>({
         queryKey: ['cronJobStatus'],
         queryFn: () => cronApi.getCronJobStatus(),
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        refetchInterval: 30 * 1000, // Refetch every 30 seconds
+        staleTime: 2 * 60 * 1000, // 2 minutes (reduced for more frequent updates)
+        refetchInterval: 15 * 1000, // Refetch every 15 seconds (increased frequency)
+        refetchIntervalInBackground: true, // Continue refreshing in background
     });
 };
 

@@ -3,6 +3,7 @@ import { FaCogs, FaSync, FaExclamationTriangle } from 'react-icons/fa';
 import { useCronJobStatus, useCronTriggers } from '../hooks/useCron';
 import CronJobCard from '../components/molecules/CronJobCard';
 import ManualControlCard from '../components/molecules/ManualControlCard';
+import CronJobActivityWidget from '../components/organisms/CronJobActivityWidget';
 import DashboardLayout from '../layouts/DashboardLayout';
 
 const CronManagementPage: React.FC = () => {
@@ -196,6 +197,9 @@ const CronManagementPage: React.FC = () => {
                         )
                     )}
                 </div>
+
+                {/* Real-time Activity Widget */}
+                <CronJobActivityWidget />
 
                 {/* Information Panel */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
