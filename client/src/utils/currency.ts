@@ -69,3 +69,45 @@ export const parseGHSAmount = (currencyString: string): number => {
 export const isValidCurrencyAmount = (amount: number): boolean => {
     return !isNaN(amount) && isFinite(amount) && amount >= 0;
 };
+
+/**
+ * Format large numbers with K/M suffixes for display (numbers > 5 digits)
+ * Example: formatCompactNumber(123456) -> "123.5K"
+ * Example: formatCompactNumber(1234567) -> "1.2M"
+ * Example: formatCompactNumber(12345) -> "12,345" (no formatting, less than 5 digits)
+ */
+export const formatCompactNumber = (amount: number): string => {
+    const absAmount = Math.abs(amount);
+    const sign = amount < 0 ? '-' : '';
+
+    // If number has 5 digits or less, format normally
+    if (absAmount < 100000) {
+        return `${sign}${new Intl.NumberFormat('en-GH').format(absAmount)}`;
+    }
+
+    // Format millions (7+ digits)
+    if (absAmount >= 1000000) {
+        const millions = absAmount / 1000000;
+        return `${sign}${millions.toFixed(1)}M`;
+    }
+
+    // Format thousands (6+ digits)
+    if (absAmount >= 100000) {
+        const thousands = absAmount / 1000;
+        return `${sign}${thousands.toFixed(1)}K`;
+    }
+
+    return `${sign}${new Intl.NumberFormat('en-GH').format(absAmount)}`;
+};
+
+/**
+ * Format currency amounts with K/M suffixes for display
+ * Example: formatCompactCurrency(123456) -> "₵123.5K"
+ * Example: formatCompactCurrency(1234567) -> "₵1.2M"
+ * Example: formatCompactCurrency(12345) -> "₵12,345"
+ */
+export const formatCompactCurrency = (amount: number): string => {
+    return `${GHS_SYMBOL}${formatCompactNumber(amount).replace(/^-/, '')}${
+        amount < 0 ? '' : ''
+    }`;
+};

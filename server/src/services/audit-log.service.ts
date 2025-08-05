@@ -39,7 +39,7 @@ export class AuditLogService {
             startDate,
             endDate,
             page = 1,
-            limit = 20,
+            limit = 10,
             userRole,
         } = filters;
 

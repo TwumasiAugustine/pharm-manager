@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useReports } from './useReports';
 import { useSafeNotify } from '../utils/useSafeNotify';
+import { useDisplayMode } from './useDisplayMode';
 import type { ReportFilters } from '../types/report.types';
 
 export const useReportsPage = () => {
@@ -8,6 +9,7 @@ export const useReportsPage = () => {
     const [showActionsDropdown, setShowActionsDropdown] = useState(false);
     const actionsDropdownRef = useRef<HTMLDivElement>(null);
     const notify = useSafeNotify();
+    const { setExportMode } = useDisplayMode();
     const [filters, setFilters] = useState<ReportFilters>({
         dateRange: {
             start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
@@ -64,6 +66,9 @@ export const useReportsPage = () => {
 
     const handleExportReport = async (format: 'pdf' | 'csv') => {
         try {
+            // Set export mode to true for full number formatting
+            setExportMode(true);
+
             // Create export filters without pagination to get all data
             const exportFilters = {
                 ...filters,
@@ -74,15 +79,23 @@ export const useReportsPage = () => {
         } catch (error) {
             console.error('Export failed:', error);
             notify.error('Failed to export report. Please try again.');
+        } finally {
+            // Reset to display mode
+            setExportMode(false);
         }
     };
 
     const handleGenerateReport = async () => {
         try {
+            // Set export mode to true for full number formatting during generation
+            setExportMode(true);
             await generateReport(filters);
         } catch (error) {
             console.error('Report generation failed:', error);
             notify.error('Failed to generate report. Please try again.');
+        } finally {
+            // Reset to display mode
+            setExportMode(false);
         }
     };
 

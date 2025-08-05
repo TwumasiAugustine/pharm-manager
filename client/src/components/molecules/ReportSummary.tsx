@@ -1,5 +1,6 @@
 import React from 'react';
 import { FiTrendingUp, FiPackage, FiPercent } from 'react-icons/fi';
+import { useNumberFormatter } from '../../hooks/useDisplayMode';
 import type { ReportSummaryData } from '../../types/report.types';
 
 interface ReportSummaryProps {
@@ -11,6 +12,8 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
     summary,
     isLoading,
 }) => {
+    const { formatNumber, formatCurrency } = useNumberFormatter();
+
     if (isLoading) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -43,21 +46,21 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
     const stats = [
         {
             label: 'Total Revenue',
-            value: `GH₵${summary.totalRevenue.toLocaleString()}`,
+            value: formatCurrency(summary.totalRevenue),
             icon: () => <span className="font-bold text-lg">₵</span>,
             color: 'text-green-600',
             bgColor: 'bg-green-100',
         },
         {
             label: 'Total Sales',
-            value: summary.totalSales.toLocaleString(),
+            value: formatNumber(summary.totalSales),
             icon: FiTrendingUp,
             color: 'text-blue-600',
             bgColor: 'bg-blue-100',
         },
         {
             label: 'Items Sold',
-            value: summary.totalItems.toLocaleString(),
+            value: formatNumber(summary.totalItems),
             icon: FiPackage,
             color: 'text-purple-600',
             bgColor: 'bg-purple-100',

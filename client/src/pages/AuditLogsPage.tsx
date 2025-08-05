@@ -21,7 +21,7 @@ import { getErrorMessage } from '../utils/error';
 export const AuditLogsPage: React.FC = () => {
     const [filters, setFilters] = useState<AuditLogFilters>({
         page: 1,
-        limit: 20,
+        limit: 10,
     });
 
     const {

@@ -28,7 +28,7 @@ export class AuditLogController {
                 startDate: req.query.startDate as string,
                 endDate: req.query.endDate as string,
                 page: req.query.page ? Number(req.query.page) : 1,
-                limit: req.query.limit ? Number(req.query.limit) : 20,
+                limit: req.query.limit ? Number(req.query.limit) : 10,
                 userRole: req.query.userRole as string,
             };
 

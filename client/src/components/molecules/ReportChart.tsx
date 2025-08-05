@@ -15,6 +15,7 @@ import {
     Legend,
 } from 'recharts';
 import { FiBarChart } from 'react-icons/fi';
+import { useNumberFormatter } from '../../hooks/useDisplayMode';
 import type { ReportDataItem, ReportFilters } from '../../types/report.types';
 
 interface ReportChartProps {
@@ -28,6 +29,8 @@ export const ReportChart: React.FC<ReportChartProps> = ({
     reportType,
     isLoading,
 }) => {
+    const { formatNumber, formatCurrency } = useNumberFormatter();
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-96 bg-gray-50 rounded-lg">
@@ -54,8 +57,6 @@ export const ReportChart: React.FC<ReportChartProps> = ({
             </div>
         );
     }
-
-    const formatCurrency = (value: number) => `GH₵${value.toLocaleString()}`;
 
     const prepareChartData = () => {
         switch (reportType) {

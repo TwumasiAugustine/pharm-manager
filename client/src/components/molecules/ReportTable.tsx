@@ -1,5 +1,6 @@
 import React from 'react';
 import { FiPackage, FiCalendar, FiTrendingUp } from 'react-icons/fi';
+import { useNumberFormatter } from '../../hooks/useDisplayMode';
 import type { ReportDataItem, ReportFilters } from '../../types/report.types';
 
 interface ReportTableProps {
@@ -13,6 +14,8 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     reportType,
     isLoading,
 }) => {
+    const { formatNumber, formatCurrency } = useNumberFormatter();
+
     if (isLoading) {
         return (
             <div className="space-y-4">
@@ -91,10 +94,6 @@ export const ReportTable: React.FC<ReportTableProps> = ({
             default:
                 return ['Date', 'Description', 'Amount'];
         }
-    };
-
-    const formatCurrency = (amount: number) => {
-        return `GH₵${amount.toLocaleString()}`;
     };
 
     const formatDate = (dateString: string) => {

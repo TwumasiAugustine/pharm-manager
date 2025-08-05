@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useCurrentUser } from './hooks/useAuth';
 import { NotificationProvider } from './context/NotificationContext';
+import { DisplayProvider } from './context/DisplayContext';
 import { NotificationContainer } from './components/molecules/NotificationContainer';
 import { useAuthStore } from './store/auth.store';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -286,7 +287,9 @@ function AppContent() {
     return (
         <>
             <ErrorBoundary>
-                <RouterProvider router={router} />
+                <DisplayProvider>
+                    <RouterProvider router={router} />
+                </DisplayProvider>
             </ErrorBoundary>
             <NotificationContainer />
         </>
