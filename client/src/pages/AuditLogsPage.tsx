@@ -133,6 +133,12 @@ export const AuditLogsPage: React.FC = () => {
                                         auditLogsData.pagination.totalPages
                                     }
                                     onPageChange={handlePageChange}
+                                    showInfo={true}
+                                    totalItems={auditLogsData.pagination.total}
+                                    itemsPerPage={
+                                        auditLogsData.pagination.limit
+                                    }
+                                    size="md"
                                 />
                             </div>
                         )}
@@ -141,8 +147,6 @@ export const AuditLogsPage: React.FC = () => {
                     {auditLogsData && (
                         <div className="mt-6 bg-white rounded-lg shadow-sm border p-4">
                             <div className="text-sm text-gray-600">
-                                Showing {auditLogsData.data.length} of{' '}
-                                {auditLogsData.pagination.total} audit logs
                                 {filters.action && (
                                     <span> • Action: {filters.action}</span>
                                 )}

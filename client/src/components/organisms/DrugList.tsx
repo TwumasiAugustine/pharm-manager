@@ -240,6 +240,10 @@ export const DrugList: React.FC = () => {
                             currentPage={pagination?.page || 1}
                             totalPages={pagination?.totalPages || 1}
                             onPageChange={handlePageChange}
+                            showInfo={true}
+                            totalItems={pagination?.total || 0}
+                            itemsPerPage={pagination?.limit || 10}
+                            size="md"
                         />
                     </>
                 )}

@@ -724,6 +724,10 @@ const SalesListPage: React.FC = () => {
                             currentPage={data.pagination.page}
                             totalPages={data.pagination.totalPages}
                             onPageChange={handlePageChange}
+                            showInfo={true}
+                            totalItems={data.pagination.total}
+                            itemsPerPage={data.pagination.limit}
+                            size="md"
                         />
                     </div>
                 )}

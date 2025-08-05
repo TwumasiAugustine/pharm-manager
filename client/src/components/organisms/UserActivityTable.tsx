@@ -142,6 +142,10 @@ export const UserActivityTable: React.FC<UserActivityTableProps> = ({
                                 currentPage={pagination.currentPage}
                                 totalPages={pagination.totalPages}
                                 onPageChange={onPageChange}
+                                showInfo={true}
+                                totalItems={activities.length}
+                                itemsPerPage={10}
+                                size="md"
                             />
                         </div>
                     )}

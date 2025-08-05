@@ -415,6 +415,10 @@ const CustomerManagementPage: React.FC = () => {
                                 currentPage={pagination.page}
                                 totalPages={pagination.totalPages}
                                 onPageChange={handlePageChange}
+                                showInfo={true}
+                                totalItems={pagination.total}
+                                itemsPerPage={pagination.limit}
+                                size="md"
                             />
                         </div>
                     )}

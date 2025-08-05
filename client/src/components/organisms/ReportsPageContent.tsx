@@ -84,6 +84,10 @@ export const ReportsPageContent: React.FC<ReportsPageContentProps> = ({
                                         currentPage={currentPage}
                                         totalPages={totalPages}
                                         onPageChange={onPageChange}
+                                        showInfo={true}
+                                        totalItems={totalRecords}
+                                        itemsPerPage={filters.limit}
+                                        size="md"
                                     />
                                 </div>
                             )}
