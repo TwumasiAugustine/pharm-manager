@@ -15,7 +15,7 @@ import { FaChartLine, FaListAlt, FaFilter } from 'react-icons/fa';
 const UserActivityPage: React.FC = () => {
     const [filters, setFilters] = useState<UserActivityFilters>({
         page: 1,
-        limit: 15,
+        limit: 10,
     });
     const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
         null,
