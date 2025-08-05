@@ -7,6 +7,7 @@
  */
 export interface Drug {
     id: string;
+    _id?: string; // Add optional _id property for MongoDB compatibility
     name: string;
     brand: string;
     category: string;

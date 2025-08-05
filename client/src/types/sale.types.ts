@@ -1,3 +1,19 @@
+// Drug details as returned from backend
+export interface DrugDetails {
+    _id?: string;
+    id?: string;
+    name: string;
+    brand: string;
+    category?: string;
+    quantity?: number;
+    price?: number;
+    expiryDate?: string;
+    batchNumber?: string;
+    requiresPrescription?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
 // Sale item as returned from the backend
 export interface SaleItem {
     drugId: string;
@@ -7,6 +23,7 @@ export interface SaleItem {
     priceAtSale: number;
     id?: string;
     _id?: string;
+    drug?: DrugDetails; // Add the nested drug object
 }
 
 // Sale as returned from the backend

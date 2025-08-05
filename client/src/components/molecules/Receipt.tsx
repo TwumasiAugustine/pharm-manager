@@ -110,20 +110,34 @@ const Receipt: React.FC<ReceiptProps> = ({ sale, drugs, pharmacyInfo }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {sale.items.map((item, index) => {
-                            const drug = drugs.find(
-                                (d) => d.id === item.drugId,
-                            );
+                        {(sale.items || []).map((item, index) => {
+                            // Use the attached drug object directly if available
+                            // Otherwise fall back to the drug search
+                            const drug =
+                                item.drug ||
+                                drugs.find(
+                                    (d) =>
+                                        d.id === item.drugId ||
+                                        d._id === item.drugId,
+                                );
                             const price = drug?.price || item.priceAtSale || 0;
+                            // Use drug properties if available
+                            const displayName = drug?.name || item.name;
+                            const displayBrand =
+                                drug?.brand || item.brand || 'N/A';
+
                             return (
-                                <tr key={item.drugId} className="border-b">
+                                <tr
+                                    key={`${item.drugId || ''}-${index}`}
+                                    className="border-b"
+                                >
                                     <td className="p-3">{index + 1}</td>
                                     <td className="p-3">
                                         <p className="font-medium text-gray-800">
-                                            {item.name}
+                                            {displayName}
                                         </p>
                                         <p className="text-xs text-gray-500">
-                                            Brand: {item.brand || 'N/A'}
+                                            Brand: {displayBrand}
                                         </p>
                                     </td>
                                     <td className="text-right p-3">

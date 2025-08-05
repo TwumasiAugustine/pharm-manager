@@ -13,6 +13,7 @@ export const useSales = (params: SaleSearchParams) => {
         queryKey: ['sales', params],
         queryFn: async () => {
             const raw = await saleApi.getSales(params);
+            console.log(raw)
             return raw;
         },
     });

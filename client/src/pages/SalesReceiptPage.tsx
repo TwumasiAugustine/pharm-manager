@@ -39,10 +39,43 @@ const SalesReceiptPage: React.FC = () => {
         error: pharmacyInfoError,
     } = usePharmacyInfo();
 
-    const drugs = drugsResponse?.drugs || [];
+    // Use useMemo to prevent re-creation on every render
+    const drugs = React.useMemo(
+        () => drugsResponse?.drugs || [],
+        [drugsResponse],
+    );
+
+    // Enhance sale data with drug information - placed immediately after all hooks
+    const enhancedSale = React.useMemo(() => {
+        if (!sale) return null;
+
+        return {
+            ...sale,
+            items:
+                sale.items?.map((item) => {
+                    // Try to find matching drug from drugs array
+                    const matchingDrug = drugs.find(
+                        (drug) =>
+                            drug.id === item.drugId || drug._id === item.drugId,
+                    );
+
+                    // If found, add drug property to item
+                    if (matchingDrug) {
+                        return {
+                            ...item,
+                            drug: matchingDrug,
+                            name: item.name || matchingDrug.name,
+                            brand: item.brand || matchingDrug.brand,
+                        };
+                    }
+
+                    return item;
+                }) || [],
+        };
+    }, [sale, drugs]);
 
     const handlePrint = () => {
-        if (!sale || !pharmacyInfo) return;
+        if (!enhancedSale || !pharmacyInfo) return;
 
         const printWindow = window.open('', '_blank');
         if (!printWindow) {
@@ -52,7 +85,7 @@ const SalesReceiptPage: React.FC = () => {
 
         const receiptHtml = ReactDOMServer.renderToString(
             <Receipt
-                sale={sale}
+                sale={enhancedSale}
                 drugs={drugs}
                 pharmacyInfo={pharmacyInfo.pharmacyInfo}
             />,
@@ -109,11 +142,13 @@ const SalesReceiptPage: React.FC = () => {
         return <LoadingSkeleton />;
     }
 
+    if (!enhancedSale) return null;
+
     return (
         <DashboardLayout>
             <div className="flex flex-col items-center py-8 bg-gray-50">
                 <Receipt
-                    sale={sale}
+                    sale={enhancedSale}
                     drugs={drugs}
                     pharmacyInfo={pharmacyInfo?.pharmacyInfo}
                 />

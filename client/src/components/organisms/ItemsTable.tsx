@@ -8,11 +8,15 @@ import {
     CardDescription,
     CardFooter,
 } from '../molecules/Card';
-import type { SaleItem } from '../../types/sale.types';
+import type { SaleItem, DrugDetails } from '../../types/sale.types';
 import { formatGHSDisplayAmount } from '../../utils/currency';
 
 // Create a type that extends SaleItem with an optional id property
-type TableSaleItem = SaleItem & { id?: string | number };
+// Make sure it includes the drug property
+type TableSaleItem = SaleItem & {
+    id?: string | number;
+    drug?: DrugDetails;
+};
 
 interface ItemsTableProps {
     items: SaleItem[];
@@ -101,11 +105,25 @@ const ItemsTable: React.FC<ItemsTableProps> = ({
                     columns={[
                         {
                             header: 'Drug Name',
-                            accessor: (item) => item.name || 'N/A',
+                            accessor: (item) => {
+                                // Try to get name from drug object first, then fallback to item.name
+                                return (
+                                    (item.drug && item.drug.name) ||
+                                    item.name ||
+                                    'N/A'
+                                );
+                            },
                         },
                         {
                             header: 'Brand',
-                            accessor: (item) => item.brand || '-',
+                            accessor: (item) => {
+                                // Try to get brand from drug object first, then fallback to item.brand
+                                return (
+                                    (item.drug && item.drug.brand) ||
+                                    item.brand ||
+                                    '-'
+                                );
+                            },
                         },
                         {
                             header: 'Quantity',

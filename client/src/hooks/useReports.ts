@@ -1,9 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as reportApi from '../api/report.api';
 import type { ReportFilters, ExportReportRequest } from '../types/report.types';
+import { useSafeNotify } from '../utils/useSafeNotify';
 
 export const useReports = (filters: ReportFilters) => {
     const queryClient = useQueryClient();
+    const notify = useSafeNotify();
 
     // Query for report data
     const {
@@ -24,6 +26,11 @@ export const useReports = (filters: ReportFilters) => {
             reportApi.generateReport(filters),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['reports'] });
+            notify.success('Report generated successfully');
+        },
+        onError: (error) => {
+            console.error('Error generating report:', error);
+            notify.error('Failed to generate report');
         },
     });
 
@@ -52,13 +59,13 @@ export const useReports = (filters: ReportFilters) => {
     };
 
     return {
-        reportData: Array.isArray(reportResponse?.data?.data)
-            ? reportResponse.data.data
+        reportData: Array.isArray(reportResponse?.data)
+            ? reportResponse.data
             : [],
-        reportSummary: reportResponse?.data?.summary || null,
-        totalRecords: reportResponse?.data?.totalRecords || 0,
-        currentPage: reportResponse?.data?.currentPage || 1,
-        totalPages: reportResponse?.data?.totalPages || 1,
+        reportSummary: reportResponse?.summary || null,
+        totalRecords: reportResponse?.totalRecords || 0,
+        currentPage: reportResponse?.currentPage || 1,
+        totalPages: reportResponse?.totalPages || 1,
         isLoading,
         isGenerating: generateReportMutation.isPending,
         isExporting: exportReportMutation.isPending,

@@ -26,6 +26,7 @@ import type {
     Sale,
     SaleSearchParams,
     SaleItem,
+    DrugDetails,
 } from '../types/sale.types';
 import { Input } from '../components/atoms/Input';
 
@@ -36,7 +37,7 @@ const SalesListPage: React.FC = () => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const [filters, setFilters] = useState<SaleSearchParams>({
         page: 1,
-        limit: 19, // Set limit to 19 for individual sales
+        limit: 10, // Set limit to 19 for individual sales
         groupByDate: true,
         sortBy: 'date',
         sortOrder: 'desc',
@@ -198,12 +199,41 @@ const SalesListPage: React.FC = () => {
             },
         },
         {
+            header: 'Customer',
+            accessor: (sale) => {
+                if (typeof sale.customer === 'object' && sale.customer) {
+                    const name = sale.customer.name || 'Walk-in Customer';
+                    const phone = sale.customer.phone
+                        ? ` (${sale.customer.phone})`
+                        : '';
+                    return `${name}${phone}`;
+                }
+                return 'Walk-in Customer';
+            },
+        },
+        {
             header: 'Items Sold',
             accessor: (sale) => {
                 if (!sale.items || !Array.isArray(sale.items))
                     return 'No items';
                 return sale.items
-                    .map((item: SaleItem) => item.name || 'Unknown Item')
+                    .map((item: SaleItem) => {
+                        // Access the drug object correctly and show brand if available
+                        if (item.drug && item.drug.name) {
+                            // Explicitly cast to DrugDetails for type safety
+                            const drugDetails = item.drug as DrugDetails;
+                            const brand = drugDetails.brand
+                                ? ` (${drugDetails.brand})`
+                                : '';
+                            return `${drugDetails.name}${brand} x${item.quantity}`;
+                        } else if (item.name) {
+                            const brand = item.brand ? ` (${item.brand})` : '';
+                            return `${item.name}${brand} x${item.quantity}`;
+                        } else if (item.drugId) {
+                            return `Drug #${item.drugId} x${item.quantity}`;
+                        }
+                        return 'Unknown Item';
+                    })
                     .join(', ');
             },
         },
@@ -242,7 +272,50 @@ const SalesListPage: React.FC = () => {
                 console.log(
                     `Preparing ${data.data.length} individual sales records`,
                 );
-                return data.data as Sale[];
+
+                // Process each sale to ensure all required fields are present
+                return (data.data as Sale[]).map((sale) => {
+                    return {
+                        ...sale,
+                        // Ensure items are properly structured with correct drug information
+                        items: Array.isArray(sale.items)
+                            ? sale.items.map(
+                                  (item) =>
+                                      ({
+                                          ...item,
+                                          // Preserve the drug object as is
+                                          drug: item.drug || undefined,
+                                          name:
+                                              (item.drug && item.drug.name) ||
+                                              item.name ||
+                                              'Unknown Item',
+                                          brand:
+                                              (item.drug && item.drug.brand) ||
+                                              item.brand ||
+                                              '-',
+                                          quantity: item.quantity || 0,
+                                          priceAtSale: item.priceAtSale || 0,
+                                      } as SaleItem),
+                              )
+                            : [],
+                        // Ensure customer data is properly structured if present
+                        customer: sale.customer
+                            ? {
+                                  id:
+                                      sale.customer.id ||
+                                      sale.customer._id ||
+                                      '',
+                                  _id:
+                                      sale.customer._id ||
+                                      sale.customer.id ||
+                                      '',
+                                  name:
+                                      sale.customer.name || 'Unknown Customer',
+                                  phone: sale.customer.phone || '',
+                              }
+                            : undefined,
+                    };
+                });
             }
         } catch (err) {
             console.error('Error processing individual sales data:', err);
@@ -315,8 +388,12 @@ const SalesListPage: React.FC = () => {
                     salesByDate[date].sales.push(sale);
                     salesByDate[date].totalAmount +=
                         Number(sale.totalAmount) || 0;
+                    // Count the actual number of items (quantities), not just the number of different drugs
                     salesByDate[date].totalItems += Array.isArray(sale.items)
-                        ? sale.items.length
+                        ? sale.items.reduce(
+                              (total, item) => total + (item.quantity || 0),
+                              0,
+                          )
                         : 0;
                     salesByDate[date].saleCount += 1;
                 });
