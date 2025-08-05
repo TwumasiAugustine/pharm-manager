@@ -7,13 +7,15 @@ export interface ReportFilters {
     format: 'table' | 'chart';
     category?: string;
     status?: string;
+    page?: number;
+    limit?: number;
 }
 
 export interface ReportSummaryData {
     totalRevenue: number;
     totalSales: number;
     totalItems: number;
-    profitMargin: number;
+    profitMargin: number | null;
     topSellingDrug: string;
     averageOrderValue: number;
     period: {
@@ -30,10 +32,11 @@ export interface ReportDataItem {
     quantity: number;
     unitPrice: number;
     totalPrice: number;
-    profit: number;
+    profit: number | null;
     customer?: string;
     batchNumber?: string;
     expiryDate?: string;
+    daysUntilExpiry?: number;
 }
 
 export interface ReportResponse {

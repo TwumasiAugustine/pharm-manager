@@ -36,6 +36,7 @@ export interface ReportDataItem {
     customer?: string;
     batchNumber?: string;
     expiryDate?: string;
+    daysUntilExpiry?: number;
 }
 
 export interface ReportResponse {

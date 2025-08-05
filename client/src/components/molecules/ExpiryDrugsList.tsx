@@ -188,7 +188,10 @@ export const ExpiryDrugsList: React.FC<ExpiryDrugsListProps> = ({
                             </div>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {[1, 2, 3, 4].map((j) => (
-                                    <div key={j} className="space-y-2">
+                                    <div
+                                        key={`skeleton-${i}-${j}`}
+                                        className="space-y-2"
+                                    >
                                         <div className="h-3 bg-gray-200 rounded w-2/3"></div>
                                         <div className="h-4 bg-gray-200 rounded w-full"></div>
                                     </div>
@@ -217,8 +220,11 @@ export const ExpiryDrugsList: React.FC<ExpiryDrugsListProps> = ({
 
     return (
         <div className="space-y-4">
-            {drugs.map((drug) => (
-                <DrugCard key={drug.id} drug={drug} />
+            {drugs.map((drug, index) => (
+                <DrugCard
+                    key={drug.id || drug._id || `drug-${index}`}
+                    drug={drug}
+                />
             ))}
         </div>
     );

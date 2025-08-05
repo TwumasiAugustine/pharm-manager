@@ -5,7 +5,7 @@ export const generateReport = async (
     filters: ReportFilters,
 ): Promise<ReportResponse> => {
     const res = await api.post('/reports/generate', filters);
-    return res.data;
+    return res.data.data; // Return the actual report data, not the API wrapper
 };
 
 export const exportReport = async (

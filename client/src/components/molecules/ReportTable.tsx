@@ -175,7 +175,9 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                 );
 
             case 'expiry': {
-                const daysLeft = item.expiryDate
+                const daysLeft = item.daysUntilExpiry !== undefined 
+                    ? item.daysUntilExpiry 
+                    : item.expiryDate
                     ? Math.ceil(
                           (new Date(item.expiryDate).getTime() - Date.now()) /
                               (1000 * 60 * 60 * 24),
@@ -212,6 +214,8 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                                         ? 'bg-red-100 text-red-800'
                                         : daysLeft <= 30
                                         ? 'bg-yellow-100 text-yellow-800'
+                                        : daysLeft <= 90
+                                        ? 'bg-orange-100 text-orange-800'
                                         : 'bg-green-100 text-green-800'
                                 }`}
                             >
@@ -227,6 +231,34 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                     </>
                 );
             }
+
+            case 'financial':
+                return (
+                    <>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                            {formatDate(item.date)}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                            Sale
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                            {item.drugName}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                            {formatCurrency(item.totalPrice)}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                            <span className="inline-flex items-center text-sm font-medium text-green-600">
+                                {item.profit !== null
+                                    ? formatCurrency(item.profit)
+                                    : 'N/A'}
+                            </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                            {formatCurrency(item.totalPrice)}
+                        </td>
+                    </>
+                );
 
             default:
                 return (

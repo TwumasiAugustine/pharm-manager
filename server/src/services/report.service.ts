@@ -16,9 +16,8 @@ export class ReportService {
      */
     async generateReport(filters: ReportFilters): Promise<ReportResponse> {
         try {
-            const { dateRange, reportType } = filters;
+            const { dateRange, reportType, page = 1, limit = 50 } = filters;
             let data: ReportDataItem[] = [];
-            let summary: ReportSummaryData;
 
             switch (reportType) {
                 case 'sales':
@@ -37,7 +36,19 @@ export class ReportService {
                     data = await this.generateSalesReport(dateRange);
             }
 
-            summary = await this.calculateReportSummary(data, reportType);
+            // Calculate total records before pagination
+            const totalRecords = data.length;
+            const totalPages = Math.ceil(totalRecords / limit);
+
+            // Calculate summary from full dataset before pagination
+            const summary = await this.calculateReportSummary(data, reportType);
+
+            // Apply pagination if page and limit are provided
+            if (page && limit) {
+                const startIndex = (page - 1) * limit;
+                const endIndex = startIndex + limit;
+                data = data.slice(startIndex, endIndex);
+            }
 
             // Get pharmacy information
             const pharmacyInfo = await getPharmacyInfo();
@@ -45,9 +56,9 @@ export class ReportService {
             return {
                 data,
                 summary,
-                totalRecords: data.length,
-                currentPage: 1,
-                totalPages: Math.ceil(data.length / 50), // Assuming 50 items per page
+                totalRecords,
+                currentPage: page,
+                totalPages,
                 pharmacyInfo: pharmacyInfo
                     ? {
                           name: pharmacyInfo.name,
@@ -118,7 +129,7 @@ export class ReportService {
      * Generate inventory report
      */
     private async generateInventoryReport(): Promise<ReportDataItem[]> {
-        const drugs = await Drug.find({ isActive: true });
+        const drugs = await Drug.find({});
 
         return drugs.map((drug: any) => ({
             id: drug._id.toString(),
@@ -139,27 +150,35 @@ export class ReportService {
      */
     private async generateExpiryReport(): Promise<ReportDataItem[]> {
         const now = new Date();
-        const threeMonthsFromNow = new Date(
-            now.getTime() + 90 * 24 * 60 * 60 * 1000,
+        const oneYearFromNow = new Date(
+            now.getTime() + 365 * 24 * 60 * 60 * 1000,
         );
 
-        const drugs = await Drug.find({
-            isActive: true,
-            expiryDate: { $lte: threeMonthsFromNow },
-        });
+        // Get all drugs and calculate their expiry status
+        const drugs = await Drug.find({});
 
-        return drugs.map((drug: any) => ({
-            id: drug._id.toString(),
-            date: drug.createdAt.toISOString(),
-            drugName: drug.name,
-            category: drug.category,
-            quantity: drug.quantity,
-            unitPrice: drug.price,
-            totalPrice: drug.quantity * drug.price,
-            profit: 0,
-            batchNumber: drug.batchNumber,
-            expiryDate: drug.expiryDate?.toISOString(),
-        }));
+        return drugs
+            .map((drug: any) => {
+                const expiryDate = new Date(drug.expiryDate);
+                const daysUntilExpiry = Math.ceil(
+                    (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+                );
+
+                return {
+                    id: drug._id.toString(),
+                    date: drug.createdAt.toISOString(),
+                    drugName: drug.name,
+                    category: drug.category,
+                    quantity: drug.quantity,
+                    unitPrice: drug.price,
+                    totalPrice: drug.quantity * drug.price,
+                    profit: 0,
+                    batchNumber: drug.batchNumber,
+                    expiryDate: drug.expiryDate?.toISOString(),
+                    daysUntilExpiry,
+                };
+            })
+            .sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry); // Sort by expiry date, closest first
     }
 
     /**
@@ -183,14 +202,19 @@ export class ReportService {
             (sum, item) => sum + item.totalPrice,
             0,
         );
-        const totalProfit = data.reduce((sum, item) => sum + item.profit, 0);
-        const totalSales = data.length;
+        const totalProfit = data.reduce(
+            (sum, item) => sum + (item.profit || 0),
+            0,
+        );
+        const totalSales = reportType === 'sales' ? data.length : 0;
         const totalItems = data.reduce((sum, item) => sum + item.quantity, 0);
         const profitMargin =
-            totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+            totalRevenue > 0 && totalProfit > 0
+                ? (totalProfit / totalRevenue) * 100
+                : null;
 
-        // Find top selling drug
-        const drugSales = data.reduce(
+        // Find top item based on report type
+        const itemCounts = data.reduce(
             (acc, item) => {
                 if (!acc[item.drugName]) {
                     acc[item.drugName] = 0;
@@ -201,20 +225,25 @@ export class ReportService {
             {} as Record<string, number>,
         );
 
-        const topSellingDrug =
-            Object.entries(drugSales).sort(
+        const topItem =
+            Object.entries(itemCounts).sort(
                 ([, a], [, b]) => (b as number) - (a as number),
             )[0]?.[0] || 'N/A';
 
         const averageOrderValue =
-            totalSales > 0 ? totalRevenue / totalSales : 0;
+            totalSales > 0
+                ? totalRevenue / totalSales
+                : totalRevenue / (data.length || 1);
 
         return {
             totalRevenue,
-            totalSales,
+            totalSales: reportType === 'sales' ? totalSales : data.length,
             totalItems,
             profitMargin,
-            topSellingDrug,
+            topSellingDrug:
+                reportType === 'sales'
+                    ? topItem
+                    : `Top ${reportType === 'inventory' ? 'Valued' : reportType === 'expiry' ? 'Expiring' : ''} Drug: ${topItem}`,
             averageOrderValue,
             period: {
                 start: data[0]?.date || '',
