@@ -312,6 +312,26 @@ export const ReportChart: React.FC<ReportChartProps> = ({
                     totalValue: number;
                 }>;
 
+                // If no data, show empty state message
+                if (!expiryData || expiryData.length === 0) {
+                    return (
+                        <div className="flex items-center justify-center h-96 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                            <div className="text-center">
+                                <div className="text-gray-400 text-lg mb-2">
+                                    📊
+                                </div>
+                                <p className="text-gray-500 text-sm">
+                                    No expiry data available for the selected
+                                    date range
+                                </p>
+                                <p className="text-gray-400 text-xs mt-1">
+                                    Try adjusting your filters or date range
+                                </p>
+                            </div>
+                        </div>
+                    );
+                }
+
                 return (
                     <div className="space-y-6">
                         {/* Expiry Overview Stats */}
@@ -319,94 +339,170 @@ export const ReportChart: React.FC<ReportChartProps> = ({
                             {expiryData.map((item) => (
                                 <div
                                     key={item.alertLevel}
-                                    className="bg-gray-50 rounded-lg p-4 text-center"
+                                    className="bg-white border border-gray-200 rounded-lg p-4 text-center shadow-sm hover:shadow-md transition-shadow"
                                 >
                                     <div
-                                        className={`w-4 h-4 rounded-full mx-auto mb-2 chart-indicator-${item.alertLevel.toLowerCase()}`}
+                                        className={`w-5 h-5 rounded-full mx-auto mb-2 chart-indicator-${item.alertLevel.toLowerCase()}`}
                                     />
                                     <p className="text-xs font-medium text-gray-600 mb-1">
                                         {item.alertLevel} Drugs
                                     </p>
-                                    <p className="text-lg font-bold text-gray-900">
+                                    <p className="text-xl font-bold text-gray-900">
                                         {item.count}
                                     </p>
                                     <p className="text-xs text-gray-500">
-                                        {formatCurrency(item.totalValue)}
+                                        {formatCurrency(item.totalValue)} value
+                                    </p>
+                                    <p className="text-xs font-medium text-gray-700 mt-1">
+                                        {(
+                                            (item.count /
+                                                expiryData.reduce(
+                                                    (sum, d) => sum + d.count,
+                                                    0,
+                                                )) *
+                                            100
+                                        ).toFixed(1)}
+                                        %
                                     </p>
                                 </div>
                             ))}
                         </div>
 
-                        {/* Enhanced Pie Chart */}
-                        <ResponsiveContainer width="100%" height={400}>
-                            <PieChart>
-                                <Pie
-                                    data={expiryData}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={false}
-                                    outerRadius={120}
-                                    fill="#8884d8"
-                                    dataKey="count"
-                                >
-                                    {expiryData.map((entry, index) => (
-                                        <Cell
-                                            key={`cell-${index}`}
-                                            fill={
-                                                COLORS[
-                                                    entry.alertLevel as keyof typeof COLORS
-                                                ]
-                                            }
-                                        />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    formatter={(value: number) => [
-                                        `${value} drugs`,
-                                        'Count',
-                                    ]}
-                                    labelFormatter={() => 'Expiry Status'}
-                                    contentStyle={{
-                                        backgroundColor: '#fff',
-                                        border: '1px solid #e5e7eb',
-                                        borderRadius: '6px',
-                                        boxShadow:
-                                            '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                                    }}
-                                />
-                                <Legend formatter={(value: string) => value} />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        {/* Enhanced Pie Chart with Better Labels */}
+                        <div className="bg-white border border-gray-200 rounded-lg p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                    Drug Expiry Distribution
+                                </h3>
+                                <span className="text-sm text-gray-500">
+                                    Total:{' '}
+                                    {expiryData.reduce(
+                                        (sum, item) => sum + item.count,
+                                        0,
+                                    )}{' '}
+                                    drugs
+                                </span>
+                            </div>
+                            <ResponsiveContainer width="100%" height={350}>
+                                <PieChart>
+                                    <Pie
+                                        data={expiryData}
+                                        cx="50%"
+                                        cy="50%"
+                                        labelLine={false}
+                                        label={false}
+                                        outerRadius={120}
+                                        fill="#8884d8"
+                                        dataKey="count"
+                                    >
+                                        {expiryData.map((entry, index) => (
+                                            <Cell
+                                                key={`cell-${index}`}
+                                                fill={
+                                                    COLORS[
+                                                        entry.alertLevel as keyof typeof COLORS
+                                                    ]
+                                                }
+                                            />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        formatter={(value: number) => [
+                                            `${value} drugs (${(
+                                                (value /
+                                                    expiryData.reduce(
+                                                        (sum, d) =>
+                                                            sum + d.count,
+                                                        0,
+                                                    )) *
+                                                100
+                                            ).toFixed(1)}%)`,
+                                            'Drug Count',
+                                        ]}
+                                        labelFormatter={(label: string) =>
+                                            `${label} Status`
+                                        }
+                                        contentStyle={{
+                                            backgroundColor: '#fff',
+                                            border: '1px solid #e5e7eb',
+                                            borderRadius: '8px',
+                                            boxShadow:
+                                                '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                                            fontSize: '14px',
+                                        }}
+                                    />
+                                    <Legend
+                                        formatter={(value: string) =>
+                                            `${value} (${
+                                                expiryData.find(
+                                                    (d) =>
+                                                        d.alertLevel === value,
+                                                )?.count || 0
+                                            } drugs)`
+                                        }
+                                        wrapperStyle={{
+                                            paddingTop: '20px',
+                                            fontSize: '14px',
+                                        }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
 
                         {/* Detailed Breakdown */}
-                        <div className="bg-gray-50 rounded-lg p-4">
-                            <h4 className="text-sm font-medium text-gray-900 mb-3">
-                                Expiry Status Breakdown
+                        <div className="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                                Detailed Expiry Analysis
                             </h4>
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 {expiryData.map((item) => (
                                     <div
                                         key={item.alertLevel}
-                                        className="flex items-center justify-between"
+                                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                                     >
                                         <div className="flex items-center">
                                             <div
-                                                className={`w-3 h-3 rounded-full mr-3 chart-indicator-${item.alertLevel.toLowerCase()}`}
+                                                className={`w-4 h-4 rounded-full mr-4 chart-indicator-${item.alertLevel.toLowerCase()}`}
                                             />
-                                            <span className="text-sm text-gray-700">
-                                                {item.alertLevel}
-                                            </span>
+                                            <div>
+                                                <span className="text-sm font-medium text-gray-900">
+                                                    {item.alertLevel} Status
+                                                </span>
+                                                <p className="text-xs text-gray-500">
+                                                    {item.alertLevel ===
+                                                    'Expired'
+                                                        ? 'Past expiry date'
+                                                        : item.alertLevel ===
+                                                          'Critical'
+                                                        ? '≤ 30 days remaining'
+                                                        : item.alertLevel ===
+                                                          'Warning'
+                                                        ? '31-90 days remaining'
+                                                        : '> 90 days remaining'}
+                                                </p>
+                                            </div>
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-sm font-medium text-gray-900">
+                                            <div className="text-sm font-bold text-gray-900">
                                                 {item.count} drugs
                                             </div>
                                             <div className="text-xs text-gray-500">
                                                 {formatCurrency(
                                                     item.totalValue,
                                                 )}{' '}
-                                                value at risk
+                                                at risk
+                                            </div>
+                                            <div className="text-xs font-medium text-blue-600">
+                                                {(
+                                                    (item.count /
+                                                        expiryData.reduce(
+                                                            (sum, d) =>
+                                                                sum + d.count,
+                                                            0,
+                                                        )) *
+                                                    100
+                                                ).toFixed(1)}
+                                                % of total
                                             </div>
                                         </div>
                                     </div>
@@ -414,53 +510,109 @@ export const ReportChart: React.FC<ReportChartProps> = ({
                             </div>
                         </div>
 
-                        {/* Alert Level Descriptions */}
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <h4 className="text-sm font-medium text-blue-900 mb-2">
-                                Alert Level Definitions
+                        {/* Summary Insights */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                            <h4 className="text-lg font-semibold text-blue-900 mb-3">
+                                📊 Key Insights
                             </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                                <div className="flex items-start">
-                                    <div className="w-2 h-2 rounded-full bg-red-500 mt-1.5 mr-2 flex-shrink-0"></div>
-                                    <div>
-                                        <span className="font-medium text-red-700">
-                                            Expired:
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-blue-700">
+                                            Total drugs analyzed:
                                         </span>
-                                        <span className="text-red-600 ml-1">
-                                            Past expiry date
+                                        <span className="font-medium text-blue-900">
+                                            {expiryData.reduce(
+                                                (sum, item) => sum + item.count,
+                                                0,
+                                            )}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-blue-700">
+                                            Total value at risk:
+                                        </span>
+                                        <span className="font-medium text-blue-900">
+                                            {formatCurrency(
+                                                expiryData.reduce(
+                                                    (sum, item) =>
+                                                        sum + item.totalValue,
+                                                    0,
+                                                ),
+                                            )}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-blue-700">
+                                            Critical attention needed:
+                                        </span>
+                                        <span className="font-medium text-red-600">
+                                            {expiryData.find(
+                                                (d) =>
+                                                    d.alertLevel === 'Expired',
+                                            )?.count || 0}{' '}
+                                            +{' '}
+                                            {expiryData.find(
+                                                (d) =>
+                                                    d.alertLevel === 'Critical',
+                                            )?.count || 0}{' '}
+                                            drugs
                                         </span>
                                     </div>
                                 </div>
-                                <div className="flex items-start">
-                                    <div className="w-2 h-2 rounded-full bg-amber-500 mt-1.5 mr-2 flex-shrink-0"></div>
-                                    <div>
-                                        <span className="font-medium text-amber-700">
-                                            Critical:
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-blue-700">
+                                            Most urgent category:
                                         </span>
-                                        <span className="text-amber-600 ml-1">
-                                            ≤ 30 days remaining
+                                        <span className="font-medium text-blue-900">
+                                            {(() => {
+                                                const urgentItems =
+                                                    expiryData.filter(
+                                                        (item) =>
+                                                            item.alertLevel ===
+                                                                'Expired' ||
+                                                            item.alertLevel ===
+                                                                'Critical',
+                                                    );
+                                                if (urgentItems.length === 0)
+                                                    return 'None';
+                                                const mostUrgent =
+                                                    urgentItems.reduce(
+                                                        (max, item) =>
+                                                            item.count >
+                                                            max.count
+                                                                ? item
+                                                                : max,
+                                                    );
+                                                return mostUrgent.alertLevel;
+                                            })()}
                                         </span>
                                     </div>
-                                </div>
-                                <div className="flex items-start">
-                                    <div className="w-2 h-2 rounded-full bg-orange-500 mt-1.5 mr-2 flex-shrink-0"></div>
-                                    <div>
-                                        <span className="font-medium text-orange-700">
-                                            Warning:
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-blue-700">
+                                            Risk percentage:
                                         </span>
-                                        <span className="text-orange-600 ml-1">
-                                            31-90 days remaining
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="flex items-start">
-                                    <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 mr-2 flex-shrink-0"></div>
-                                    <div>
-                                        <span className="font-medium text-green-700">
-                                            Normal:
-                                        </span>
-                                        <span className="text-green-600 ml-1">
-                                            &gt; 90 days remaining
+                                        <span className="font-medium text-blue-900">
+                                            {(
+                                                (((expiryData.find(
+                                                    (d) =>
+                                                        d.alertLevel ===
+                                                        'Expired',
+                                                )?.count || 0) +
+                                                    (expiryData.find(
+                                                        (d) =>
+                                                            d.alertLevel ===
+                                                            'Critical',
+                                                    )?.count || 0)) /
+                                                    expiryData.reduce(
+                                                        (sum, item) =>
+                                                            sum + item.count,
+                                                        0,
+                                                    )) *
+                                                100
+                                            ).toFixed(1)}
+                                            %
                                         </span>
                                     </div>
                                 </div>
