@@ -161,7 +161,8 @@ export class ReportService {
             .map((drug: any) => {
                 const expiryDate = new Date(drug.expiryDate);
                 const daysUntilExpiry = Math.ceil(
-                    (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+                    (expiryDate.getTime() - now.getTime()) /
+                        (1000 * 60 * 60 * 24),
                 );
 
                 return {

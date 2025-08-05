@@ -175,14 +175,16 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                 );
 
             case 'expiry': {
-                const daysLeft = item.daysUntilExpiry !== undefined 
-                    ? item.daysUntilExpiry 
-                    : item.expiryDate
-                    ? Math.ceil(
-                          (new Date(item.expiryDate).getTime() - Date.now()) /
-                              (1000 * 60 * 60 * 24),
-                      )
-                    : 0;
+                const daysLeft =
+                    item.daysUntilExpiry !== undefined
+                        ? item.daysUntilExpiry
+                        : item.expiryDate
+                        ? Math.ceil(
+                              (new Date(item.expiryDate).getTime() -
+                                  Date.now()) /
+                                  (1000 * 60 * 60 * 24),
+                          )
+                        : 0;
                 return (
                     <>
                         <td className="px-6 py-4">
