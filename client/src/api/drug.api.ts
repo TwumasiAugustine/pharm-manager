@@ -3,6 +3,7 @@ import type {
     CreateDrugRequest,
     DrugSearchParams,
     UpdateDrugRequest,
+    PackagePricing,
 } from '../types/drug.types';
 
 const drugApi = {
@@ -34,10 +35,25 @@ const drugApi = {
         // Extract the categories from the nested response structure
         return res.data.data.categories;
     },
+    async getDrugTypes() {
+        const res = await api.get('/drugs/types');
+        // Extract the types from the nested response structure
+        return res.data.data.types;
+    },
+    async getDosageForms() {
+        const res = await api.get('/drugs/dosage-forms');
+        // Extract the dosage forms from the nested response structure
+        return res.data.data.dosageForms;
+    },
     async getExpiringDrugs(days: number = 30) {
         const res = await api.get(`/drugs/expiring?days=${days}`);
         // Return the full expiring drugs response structure
         return res.data.data;
+    },
+    async calculatePackagePricing(id: string): Promise<PackagePricing> {
+        const res = await api.get(`/drugs/${id}/pricing`);
+        // Extract the pricing from the nested response structure
+        return res.data.data.pricing;
     },
 };
 

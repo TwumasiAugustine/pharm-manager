@@ -7,6 +7,10 @@ import { ICustomer } from './customer.model';
 export interface ISaleItem {
     drug: Types.ObjectId | IDrug;
     quantity: number;
+    packageType: 'individual' | 'pack' | 'carton';
+    unitsSold: number;
+    packsSold?: number;
+    cartonsSold?: number;
     priceAtSale: number; // Price of the drug at the time of sale
 }
 
@@ -34,6 +38,27 @@ const saleItemSchema = new Schema<ISaleItem>(
             type: Number,
             required: true,
             min: 1,
+        },
+        packageType: {
+            type: String,
+            enum: ['individual', 'pack', 'carton'],
+            default: 'individual',
+            required: true,
+        },
+        unitsSold: {
+            type: Number,
+            required: true,
+            min: 1,
+        },
+        packsSold: {
+            type: Number,
+            min: 0,
+            default: 0,
+        },
+        cartonsSold: {
+            type: Number,
+            min: 0,
+            default: 0,
         },
         priceAtSale: {
             type: Number,
@@ -85,5 +110,7 @@ const saleSchema = new Schema<ISale>(
 saleSchema.index({ soldBy: 1 });
 saleSchema.index({ customer: 1 });
 saleSchema.index({ createdAt: -1 });
+saleSchema.index({ 'items.packageType': 1 });
+saleSchema.index({ 'items.drug': 1 });
 
 export const Sale = model<ISale>('Sale', saleSchema);

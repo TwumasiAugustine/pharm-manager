@@ -3,10 +3,20 @@ export interface DrugDetails {
     _id?: string;
     id?: string;
     name: string;
+    generic: string;
     brand: string;
     category?: string;
+    type?: string;
+    dosageForm?: string;
     quantity?: number;
     price?: number;
+    packageInfo?: {
+        isPackaged: boolean;
+        unitsPerPack?: number;
+        packsPerCarton?: number;
+        packPrice?: number;
+        cartonPrice?: number;
+    };
     expiryDate?: string;
     batchNumber?: string;
     requiresPrescription?: boolean;
@@ -18,9 +28,14 @@ export interface DrugDetails {
 export interface SaleItem {
     drugId: string;
     name: string;
+    generic: string;
     brand: string;
     quantity: number;
     priceAtSale: number;
+    packageType?: 'individual' | 'pack' | 'carton';
+    unitsSold?: number;
+    packsSold?: number;
+    cartonsSold?: number;
     id?: string;
     _id?: string;
     drug?: DrugDetails; // Add the nested drug object
@@ -52,7 +67,11 @@ export interface Sale {
 
 // For creating a new sale
 export interface CreateSaleRequest {
-    items: { drugId: string; quantity: number }[];
+    items: { 
+        drugId: string; 
+        quantity: number;
+        packageType?: 'individual' | 'pack' | 'carton';
+    }[];
     totalAmount: number;
     paymentMethod: 'cash' | 'card' | 'mobile';
     customerId?: string;
@@ -64,6 +83,7 @@ export interface CreateSaleRequest {
 export interface SaleFormItem {
     drug: string; // drugId
     quantity: number;
+    packageType?: 'individual' | 'pack' | 'carton';
 }
 export interface SaleFormInput {
     items: SaleFormItem[];
@@ -102,5 +122,22 @@ export interface SalesListResponse {
         page: number;
         limit: number;
         totalPages: number;
+    };
+}
+
+// Package pricing information for sale calculations
+export interface SalePackagePricing {
+    individualPrice: number;
+    packPrice?: number;
+    cartonPrice?: number;
+    packSavings?: number;
+    cartonSavings?: number;
+    bestOption: {
+        type: 'individual' | 'pack' | 'carton';
+        totalCost: number;
+        savings: number;
+        units: number;
+        packs: number;
+        cartons: number;
     };
 }

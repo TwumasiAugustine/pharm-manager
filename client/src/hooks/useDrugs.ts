@@ -7,6 +7,7 @@ import type {
     DrugSearchParams,
     PaginatedDrugsResponse,
     UpdateDrugRequest,
+    PackagePricing,
 } from '../types/drug.types';
 import type {
     QueryResultWithPagination,
@@ -60,14 +61,19 @@ export const useDrugs = (
                       id: drug.id || drug._id || '',
                       _id: drug._id || '',
                       name: drug.name || '',
+                      generic: drug.generic || '',
                       brand: drug.brand || '',
                       category: drug.category || '',
+                      type: drug.type || '',
+                      dosageForm: drug.dosageForm || '',
                       price: drug.price ?? 0,
                       quantity: drug.quantity ?? 0,
+                      packageInfo: drug.packageInfo,
                       expiryDate: drug.expiryDate || '',
                       requiresPrescription: !!drug.requiresPrescription,
                       createdAt: drug.createdAt || '',
                       updatedAt: drug.updatedAt || '',
+                      batchNumber: drug.batchNumber || '',
                   }))
                 : [],
             totalCount: raw.totalCount ?? 0,
@@ -114,15 +120,18 @@ export const useDrug = (id: string) => {
                 id: raw.id || raw._id || '',
                 _id: raw._id || '',
                 name: raw.name || '',
+                generic: raw.generic || '',
                 brand: raw.brand || '',
                 category: raw.category || '',
+                type: raw.type || '',
+                dosageForm: raw.dosageForm || '',
                 price: raw.price ?? 0,
-                stock: raw.stock ?? 0,
+                quantity: raw.quantity ?? 0,
+                packageInfo: raw.packageInfo,
                 expiryDate: raw.expiryDate || '',
                 requiresPrescription: !!raw.requiresPrescription,
                 createdAt: raw.createdAt || '',
                 updatedAt: raw.updatedAt || '',
-                quantity: raw.quantity ?? 0,
                 batchNumber: raw.batchNumber || '',
             };
         },
@@ -147,14 +156,19 @@ export const useCreateDrug = () => {
                 id: raw.id || raw._id || '',
                 _id: raw._id || '',
                 name: raw.name || '',
+                generic: raw.generic || '',
                 brand: raw.brand || '',
                 category: raw.category || '',
+                type: raw.type || '',
+                dosageForm: raw.dosageForm || '',
                 price: raw.price ?? 0,
-                stock: raw.stock ?? 0,
+                quantity: raw.quantity ?? 0,
+                packageInfo: raw.packageInfo,
                 expiryDate: raw.expiryDate || '',
                 requiresPrescription: !!raw.requiresPrescription,
                 createdAt: raw.createdAt || '',
                 updatedAt: raw.updatedAt || '',
+                batchNumber: raw.batchNumber || '',
             };
         },
         onSuccess: () => {
@@ -184,14 +198,19 @@ export const useUpdateDrug = (id: string) => {
                 id: raw.id || raw._id || '',
                 _id: raw._id || '',
                 name: raw.name || '',
+                generic: raw.generic || '',
                 brand: raw.brand || '',
                 category: raw.category || '',
+                type: raw.type || '',
+                dosageForm: raw.dosageForm || '',
                 price: raw.price ?? 0,
-                stock: raw.stock ?? 0,
+                quantity: raw.quantity ?? 0,
+                packageInfo: raw.packageInfo,
                 expiryDate: raw.expiryDate || '',
                 requiresPrescription: !!raw.requiresPrescription,
                 createdAt: raw.createdAt || '',
                 updatedAt: raw.updatedAt || '',
+                batchNumber: raw.batchNumber || '',
             };
         },
         onSuccess: (updatedDrug) => {
@@ -253,6 +272,68 @@ export const useDrugCategories = () => {
 };
 
 /**
+ * Hook for fetching drug types
+ */
+export const useDrugTypes = () => {
+    return useQuery<string[], Error>({
+        queryKey: ['drugTypes'],
+        queryFn: async () => {
+            const raw = await drugApi.getDrugTypes();
+            // Accepts { types: string[] } or string[] directly
+            if (
+                raw &&
+                typeof raw === 'object' &&
+                'types' in raw &&
+                Array.isArray(raw.types)
+            ) {
+                return raw.types;
+            }
+            if (Array.isArray(raw)) return raw;
+            return [];
+        },
+        staleTime: 60 * 60 * 1000, // 1 hour
+    });
+};
+
+/**
+ * Hook for fetching dosage forms
+ */
+export const useDosageForms = () => {
+    return useQuery<string[], Error>({
+        queryKey: ['dosageForms'],
+        queryFn: async () => {
+            const raw = await drugApi.getDosageForms();
+            // Accepts { dosageForms: string[] } or string[] directly
+            if (
+                raw &&
+                typeof raw === 'object' &&
+                'dosageForms' in raw &&
+                Array.isArray(raw.dosageForms)
+            ) {
+                return raw.dosageForms;
+            }
+            if (Array.isArray(raw)) return raw;
+            return [];
+        },
+        staleTime: 60 * 60 * 1000, // 1 hour
+    });
+};
+
+/**
+ * Hook for calculating package pricing
+ */
+export const usePackagePricing = (id: string) => {
+    return useQuery<PackagePricing, Error>({
+        queryKey: ['packagePricing', id],
+        queryFn: async () => {
+            return await drugApi.calculatePackagePricing(id);
+        },
+        enabled: !!id,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+};
+
+/**
  * Hook for fetching drugs expiring soon
  */
 export const useExpiringDrugs = (days: number) => {
@@ -276,15 +357,18 @@ export const useExpiringDrugs = (days: number) => {
                 id: drug.id || drug._id || '',
                 _id: drug._id || '',
                 name: drug.name || '',
+                generic: drug.generic || '',
                 brand: drug.brand || '',
                 category: drug.category || '',
+                type: drug.type || '',
+                dosageForm: drug.dosageForm || '',
                 price: drug.price ?? 0,
-                stock: drug.stock ?? 0,
+                quantity: drug.quantity ?? 0,
+                packageInfo: drug.packageInfo,
                 expiryDate: drug.expiryDate || '',
                 requiresPrescription: !!drug.requiresPrescription,
                 createdAt: drug.createdAt || '',
                 updatedAt: drug.updatedAt || '',
-                quantity: drug.quantity ?? 0,
                 batchNumber: drug.batchNumber || '',
             }));
         },

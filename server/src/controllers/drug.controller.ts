@@ -140,8 +140,9 @@ export class DrugController {
         try {
             const { id } = req.params;
 
-            // Get drug data before deletion for audit log
-            const drugToDelete: any = await drugService.getDrugById(id);
+            // Get drug data for audit log before deletion
+            const drug: any = await drugService.getDrugById(id);
+
             await drugService.deleteDrug(id);
 
             // Log audit event for drug deletion
@@ -150,18 +151,18 @@ export class DrugController {
                     req.user!.id,
                     'DELETE',
                     'DRUG',
-                    `Deleted drug: ${drugToDelete.name} (${drugToDelete.brand})`,
+                    `Deleted drug: ${drug.name} (${drug.brand})`,
                     {
-                        resourceId: drugToDelete._id.toString(),
+                        resourceId: drug._id.toString(),
                         userRole: req.user!.role,
                         ipAddress: req.ip || req.connection.remoteAddress,
                         userAgent: req.get('User-Agent'),
                         oldValues: {
-                            name: drugToDelete.name,
-                            brand: drugToDelete.brand,
-                            quantity: drugToDelete.quantity,
-                            price: drugToDelete.price,
-                            expiryDate: drugToDelete.expiryDate,
+                            name: drug.name,
+                            brand: drug.brand,
+                            quantity: drug.quantity,
+                            price: drug.price,
+                            expiryDate: drug.expiryDate,
                         },
                     },
                 );
@@ -189,6 +190,8 @@ export class DrugController {
                 limit: req.query.limit ? Number(req.query.limit) : undefined,
                 search: req.query.search as string | undefined,
                 category: req.query.category as string | undefined,
+                type: req.query.type as string | undefined,
+                dosageForm: req.query.dosageForm as string | undefined,
                 requiresPrescription: req.query.requiresPrescription
                     ? req.query.requiresPrescription === 'true'
                     : undefined,
@@ -199,6 +202,9 @@ export class DrugController {
                     : undefined,
                 expiryAfter: req.query.expiryAfter
                     ? (req.query.expiryAfter as string)
+                    : undefined,
+                isPackaged: req.query.isPackaged
+                    ? req.query.isPackaged === 'true'
                     : undefined,
             };
 
@@ -227,6 +233,73 @@ export class DrugController {
                 successResponse(
                     { categories },
                     'Drug categories retrieved successfully',
+                ),
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Get list of unique drug types
+     */
+    async getDrugTypes(
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> {
+        try {
+            const types = await drugService.getDrugTypes();
+
+            res.status(200).json(
+                successResponse(
+                    { types },
+                    'Drug types retrieved successfully',
+                ),
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Get list of unique dosage forms
+     */
+    async getDosageForms(
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> {
+        try {
+            const dosageForms = await drugService.getDosageForms();
+
+            res.status(200).json(
+                successResponse(
+                    { dosageForms },
+                    'Dosage forms retrieved successfully',
+                ),
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Calculate package pricing for a drug
+     */
+    async calculatePackagePricing(
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> {
+        try {
+            const { id } = req.params;
+            const pricing = await drugService.calculatePackagePricing(id);
+
+            res.status(200).json(
+                successResponse(
+                    { pricing },
+                    'Package pricing calculated successfully',
                 ),
             );
         } catch (error) {

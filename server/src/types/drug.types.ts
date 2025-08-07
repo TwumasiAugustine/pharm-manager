@@ -7,10 +7,20 @@
  */
 export interface ICreateDrugRequest {
     name: string;
+    generic: string;
     brand: string;
     category: string;
+    type: string;
+    dosageForm: string;
     quantity: number;
     price: number;
+    packageInfo?: {
+        isPackaged: boolean;
+        unitsPerPack?: number;
+        packsPerCarton?: number;
+        packPrice?: number;
+        cartonPrice?: number;
+    };
     expiryDate: Date | string;
     batchNumber: string;
     requiresPrescription: boolean;
@@ -29,10 +39,20 @@ export interface IUpdateDrugRequest extends Partial<ICreateDrugRequest> {}
 export interface IDrugResponse {
     id: string;
     name: string;
+    generic: string;
     brand: string;
     category: string;
+    type: string;
+    dosageForm: string;
     quantity: number;
     price: number;
+    packageInfo?: {
+        isPackaged: boolean;
+        unitsPerPack?: number;
+        packsPerCarton?: number;
+        packPrice?: number;
+        cartonPrice?: number;
+    };
     expiryDate: Date | string;
     batchNumber: string;
     requiresPrescription: boolean;
@@ -61,11 +81,14 @@ export interface IDrugSearchParams {
     limit?: number;
     search?: string;
     category?: string;
+    type?: string;
+    dosageForm?: string;
     requiresPrescription?: boolean;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
     expiryBefore?: Date | string;
     expiryAfter?: Date | string;
+    isPackaged?: boolean;
 }
 
 /**
@@ -78,4 +101,15 @@ export interface IDrugAvailabilityResponse {
     quantity: number;
     requestedQuantity: number;
     isExpired: boolean;
+}
+
+/**
+ * Interface for package pricing calculation
+ */
+export interface IPackagePricing {
+    individualPrice: number;
+    packPrice?: number;
+    cartonPrice?: number;
+    packSavings?: number;
+    cartonSavings?: number;
 }

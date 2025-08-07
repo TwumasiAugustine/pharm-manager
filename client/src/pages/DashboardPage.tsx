@@ -5,6 +5,7 @@ import { OverviewCards } from '../components/molecules/OverviewCards';
 import { SalesTrendsChart } from '../components/molecules/SalesTrendsChart';
 import { TopSellingDrugsChart } from '../components/molecules/TopSellingDrugsChart';
 import { LowStockDrugs } from '../components/molecules/LowStockDrugs';
+import { EnhancedAnalytics } from '../components/organisms/EnhancedAnalytics';
 import { useDashboardAnalytics } from '../hooks/useDashboard';
 import type { DashboardFilters } from '../types/dashboard.types';
 
@@ -14,6 +15,7 @@ const DashboardPage: React.FC = () => {
         startDate: '',
         endDate: '',
     });
+    const [showEnhancedAnalytics, setShowEnhancedAnalytics] = React.useState(false);
 
     const {
         data: dashboardData,
@@ -33,11 +35,19 @@ const DashboardPage: React.FC = () => {
                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                         Dashboard
                     </h1>
-                    <div className="w-full sm:w-auto">
-                        <DashboardFilter
-                            filters={filters}
-                            onFiltersChange={handleFilterChange}
-                        />
+                    <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                        <button
+                            onClick={() => setShowEnhancedAnalytics(!showEnhancedAnalytics)}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        >
+                            {showEnhancedAnalytics ? 'Show Basic Dashboard' : 'Show Enhanced Analytics'}
+                        </button>
+                        <div className="w-full sm:w-auto">
+                            <DashboardFilter
+                                filters={filters}
+                                onFiltersChange={handleFilterChange}
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -51,37 +61,43 @@ const DashboardPage: React.FC = () => {
                     </div>
                 )}
 
-                {/* Overview Cards */}
-                <OverviewCards
-                    overview={
-                        dashboardData?.overview || {
-                            totalRevenue: 0,
-                            totalSales: 0,
-                            totalCustomers: 0,
-                            totalDrugs: 0,
-                            lowStockCount: 0,
-                        }
-                    }
-                    isLoading={isLoading}
-                />
+                {showEnhancedAnalytics ? (
+                    <EnhancedAnalytics />
+                ) : (
+                    <>
+                        {/* Overview Cards */}
+                        <OverviewCards
+                            overview={
+                                dashboardData?.overview || {
+                                    totalRevenue: 0,
+                                    totalSales: 0,
+                                    totalCustomers: 0,
+                                    totalDrugs: 0,
+                                    lowStockCount: 0,
+                                }
+                            }
+                            isLoading={isLoading}
+                        />
 
-                {/* Charts Section - Responsive Grid */}
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
-                    <SalesTrendsChart
-                        data={dashboardData?.charts?.salesByPeriod || []}
-                        isLoading={isLoading}
-                    />
-                    <TopSellingDrugsChart
-                        data={dashboardData?.charts?.topSellingDrugs || []}
-                        isLoading={isLoading}
-                    />
-                </div>
+                        {/* Charts Section - Responsive Grid */}
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+                            <SalesTrendsChart
+                                data={dashboardData?.charts?.salesByPeriod || []}
+                                isLoading={isLoading}
+                            />
+                            <TopSellingDrugsChart
+                                data={dashboardData?.charts?.topSellingDrugs || []}
+                                isLoading={isLoading}
+                            />
+                        </div>
 
-                {/* Low Stock Drugs */}
-                <LowStockDrugs
-                    data={dashboardData?.charts?.lowStockDrugs || []}
-                    isLoading={isLoading}
-                />
+                        {/* Low Stock Drugs */}
+                        <LowStockDrugs
+                            data={dashboardData?.charts?.lowStockDrugs || []}
+                            isLoading={isLoading}
+                        />
+                    </>
+                )}
             </div>
         </DashboardLayout>
     );

@@ -4,6 +4,7 @@ import {
     IDrugSearchParams,
     IUpdateDrugRequest,
     IPaginatedDrugsResponse,
+    IPackagePricing,
 } from '../types/drug.types';
 import { NotFoundError, BadRequestError } from '../utils/errors';
 
@@ -26,6 +27,15 @@ export class DrugService {
             throw new BadRequestError(
                 `Drug with batch number ${drugData.batchNumber} already exists`,
             );
+        }
+
+        // Validate package information
+        if (drugData.packageInfo?.isPackaged) {
+            if (!drugData.packageInfo.unitsPerPack || !drugData.packageInfo.packPrice) {
+                throw new BadRequestError(
+                    'Pack information (units per pack and pack price) is required when drug is packaged',
+                );
+            }
         }
 
         // Create and return the new drug
@@ -81,6 +91,15 @@ export class DrugService {
             }
         }
 
+        // Validate package information if being updated
+        if (updateData.packageInfo?.isPackaged) {
+            if (!updateData.packageInfo.unitsPerPack || !updateData.packageInfo.packPrice) {
+                throw new BadRequestError(
+                    'Pack information (units per pack and pack price) is required when drug is packaged',
+                );
+            }
+        }
+
         // Update and return the drug
         const updatedDrug = await Drug.findByIdAndUpdate(id, updateData, {
             new: true,
@@ -115,11 +134,14 @@ export class DrugService {
             limit = 10,
             search = '',
             category,
+            type,
+            dosageForm,
             requiresPrescription,
             sortBy = 'name',
             sortOrder = 'asc',
             expiryBefore,
             expiryAfter,
+            isPackaged,
         } = params;
 
         // Build query
@@ -129,8 +151,10 @@ export class DrugService {
         if (search) {
             query.$or = [
                 { name: { $regex: search, $options: 'i' } },
+                { generic: { $regex: search, $options: 'i' } },
                 { brand: { $regex: search, $options: 'i' } },
                 { category: { $regex: search, $options: 'i' } },
+                { type: { $regex: search, $options: 'i' } },
                 { batchNumber: { $regex: search, $options: 'i' } },
             ];
         }
@@ -140,9 +164,24 @@ export class DrugService {
             query.category = category;
         }
 
+        // Type filter
+        if (type) {
+            query.type = type;
+        }
+
+        // Dosage form filter
+        if (dosageForm) {
+            query.dosageForm = dosageForm;
+        }
+
         // Prescription requirement filter
         if (requiresPrescription !== undefined) {
             query.requiresPrescription = requiresPrescription;
+        }
+
+        // Package filter
+        if (isPackaged !== undefined) {
+            query['packageInfo.isPackaged'] = isPackaged;
         }
 
         // Expiry date filters
@@ -193,6 +232,24 @@ export class DrugService {
     }
 
     /**
+     * Get list of unique drug types
+     * @returns Array of drug type names
+     */
+    async getDrugTypes(): Promise<string[]> {
+        const types = await Drug.distinct('type');
+        return types;
+    }
+
+    /**
+     * Get list of unique dosage forms
+     * @returns Array of dosage form names
+     */
+    async getDosageForms(): Promise<string[]> {
+        const dosageForms = await Drug.distinct('dosageForm');
+        return dosageForms;
+    }
+
+    /**
      * Check if drugs are about to expire
      * @param days Number of days to check
      * @returns List of drugs expiring in the specified days
@@ -213,19 +270,54 @@ export class DrugService {
     }
 
     /**
+     * Calculate package pricing for a drug
+     * @param drugId The drug ID
+     * @returns Package pricing information
+     */
+    async calculatePackagePricing(drugId: string): Promise<IPackagePricing> {
+        const drug = await this.getDrugById(drugId);
+        
+        const result: IPackagePricing = {
+            individualPrice: drug.price,
+        };
+
+        if (drug.packageInfo?.isPackaged) {
+            if (drug.packageInfo.packPrice) {
+                result.packPrice = drug.packageInfo.packPrice;
+                const individualTotal = drug.price * (drug.packageInfo.unitsPerPack || 1);
+                result.packSavings = individualTotal - drug.packageInfo.packPrice;
+            }
+
+            if (drug.packageInfo.cartonPrice && drug.packageInfo.packsPerCarton) {
+                result.cartonPrice = drug.packageInfo.cartonPrice;
+                const packTotal = (drug.packageInfo.packPrice || 0) * drug.packageInfo.packsPerCarton;
+                result.cartonSavings = packTotal - drug.packageInfo.cartonPrice;
+            }
+        }
+
+        return result;
+    }
+
+    /**
      * Helper method to map Drug document to response object
      */
     private mapDrugToResponse(drug: IDrug): any {
         return {
             id: drug._id,
             name: drug.name,
+            generic: drug.generic,
             brand: drug.brand,
             category: drug.category,
+            type: drug.type,
+            dosageForm: drug.dosageForm,
             quantity: drug.quantity,
             price: drug.price,
+            packageInfo: drug.packageInfo,
             expiryDate: drug.expiryDate,
             batchNumber: drug.batchNumber,
             requiresPrescription: drug.requiresPrescription,
+            supplier: drug.supplier,
+            location: drug.location,
             createdAt: drug.createdAt,
             updatedAt: drug.updatedAt,
         };

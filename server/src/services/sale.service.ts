@@ -10,6 +10,10 @@ import { CustomerService } from './customer.service';
 type MappedSaleItem = {
     drug: any;
     quantity: number;
+    packageType: 'individual' | 'pack' | 'carton';
+    unitsSold: number;
+    packsSold?: number;
+    cartonsSold?: number;
     priceAtSale: number;
     [key: string]: any;
 };
@@ -36,12 +40,63 @@ export class SaleService {
     }
 
     /**
+     * Calculate package-based pricing and quantities
+     */
+    private calculatePackageSale(
+        drug: any,
+        requestedQuantity: number,
+        packageType: 'individual' | 'pack' | 'carton'
+    ) {
+        const result = {
+            unitsToDeduct: requestedQuantity,
+            packsSold: 0,
+            cartonsSold: 0,
+            totalPrice: 0,
+            unitPrice: drug.price,
+        };
+
+        if (packageType === 'individual') {
+            result.totalPrice = requestedQuantity * drug.price;
+        } else if (packageType === 'pack' && drug.packageInfo?.isPackaged) {
+            const { unitsPerPack, packPrice } = drug.packageInfo;
+            if (!unitsPerPack || !packPrice) {
+                throw new BadRequestError('Pack information not available for this drug');
+            }
+            
+            const packsNeeded = Math.ceil(requestedQuantity / unitsPerPack);
+            result.packsSold = packsNeeded;
+            result.unitsToDeduct = packsNeeded * unitsPerPack;
+            result.totalPrice = packsNeeded * packPrice;
+            result.unitPrice = packPrice / unitsPerPack;
+        } else if (packageType === 'carton' && drug.packageInfo?.isPackaged) {
+            const { unitsPerPack, packsPerCarton, cartonPrice } = drug.packageInfo;
+            if (!unitsPerPack || !packsPerCarton || !cartonPrice) {
+                throw new BadRequestError('Carton information not available for this drug');
+            }
+            
+            const unitsPerCarton = unitsPerPack * packsPerCarton;
+            const cartonsNeeded = Math.ceil(requestedQuantity / unitsPerCarton);
+            result.cartonsSold = cartonsNeeded;
+            result.packsSold = cartonsNeeded * packsPerCarton;
+            result.unitsToDeduct = cartonsNeeded * unitsPerCarton;
+            result.totalPrice = cartonsNeeded * cartonPrice;
+            result.unitPrice = cartonPrice / unitsPerCarton;
+        }
+
+        return result;
+    }
+
+    /**
      * Create a new sale, update drug stock, and return the created sale
      * @param data - Sale data including items, payment info, and customer details
      * @returns The newly created sale object
      */
     async createSale(data: {
-        items: { drugId: string; quantity: number }[];
+        items: { 
+            drugId: string; 
+            quantity: number;
+            packageType?: 'individual' | 'pack' | 'carton';
+        }[];
         totalAmount: number;
         paymentMethod: 'cash' | 'card' | 'mobile';
         transactionId?: string;
@@ -68,21 +123,37 @@ export class SaleService {
                             ).session(session!);
                             if (!drug)
                                 throw new NotFoundError('Drug not found');
-                            if (drug.quantity < item.quantity)
-                                throw new BadRequestError('Insufficient stock');
-                            drug.quantity -= item.quantity;
+
+                            const packageType = item.packageType || 'individual';
+                            const packageCalculation = this.calculatePackageSale(
+                                drug, 
+                                item.quantity, 
+                                packageType
+                            );
+
+                            if (drug.quantity < packageCalculation.unitsToDeduct)
+                                throw new BadRequestError(`Insufficient stock. Available: ${drug.quantity}, Required: ${packageCalculation.unitsToDeduct}`);
+
+                            // Update drug stock
+                            drug.quantity -= packageCalculation.unitsToDeduct;
                             await drug.save({ session: session! });
-                            calculatedTotal += drug.price * item.quantity;
+
+                            calculatedTotal += packageCalculation.totalPrice;
+
                             return {
                                 drug: drug._id,
                                 quantity: item.quantity,
-                                priceAtSale: drug.price,
+                                packageType,
+                                unitsSold: packageCalculation.unitsToDeduct,
+                                packsSold: packageCalculation.packsSold,
+                                cartonsSold: packageCalculation.cartonsSold,
+                                priceAtSale: packageCalculation.unitPrice,
                             };
                         }),
                     );
 
                     if (Math.abs(calculatedTotal - data.totalAmount) > 0.01)
-                        throw new BadRequestError('Total mismatch');
+                        throw new BadRequestError(`Total mismatch. Calculated: ${calculatedTotal}, Provided: ${data.totalAmount}`);
 
                     const sale = await Sale.create(
                         [
@@ -101,60 +172,47 @@ export class SaleService {
                         { session: session! },
                     );
 
-                    // Update customer purchases if customerId provided - within the same transaction
-                    if (data.customerId) {
-                        // Update the customer document within the transaction
-                        await Customer.findByIdAndUpdate(
-                            data.customerId,
-                            { $addToSet: { purchases: sale[0]._id } },
-                            { session: session! },
-                        );
-                    }
-
-                    // Store the created sale for return
                     createdSale = sale[0];
                 },
                 {
-                    // Transaction options for better reliability
-                    readConcern: { level: 'majority' },
-                    writeConcern: { w: 'majority' },
-                    maxTimeMS: 30000, // 30 second timeout
+                    retryWrites: true,
+                    retryReads: true,
                 },
             );
 
-            return createdSale;
-        } catch (err: any) {
-            console.error('Transaction error:', err);
-
-            // If transaction failed due to replica set issues, try fallback
-            if (
-                err.message?.includes('Transaction') ||
-                err.message?.includes('replica set') ||
-                err.code === 20 || // Transaction number error
-                err.codeName === 'ConflictingOperations'
-            ) {
-                console.warn(
-                    'Falling back to non-transactional approach due to:',
-                    err.message,
-                );
-                return await this.createSaleWithoutTransaction(data);
+            return this.mapSaleToResponse(createdSale);
+        } catch (error) {
+            // If transaction fails, try without transaction
+            if (session) {
+                try {
+                    await session.endSession();
+                } catch (sessionError) {
+                    console.error('Error ending session:', sessionError);
+                }
             }
 
-            throw err;
+            console.warn('Transaction failed, falling back to non-transactional approach:', error);
+            return this.createSaleWithoutTransaction(data);
         } finally {
-            // Always end the session if it was created
             if (session) {
-                await session.endSession();
+                try {
+                    await session.endSession();
+                } catch (sessionError) {
+                    console.error('Error ending session:', sessionError);
+                }
             }
         }
     }
 
     /**
-     * Fallback method for creating sales without transactions
-     * Used when MongoDB is not in replica set mode
+     * Create a sale without transactions (fallback method)
      */
     private async createSaleWithoutTransaction(data: {
-        items: { drugId: string; quantity: number }[];
+        items: { 
+            drugId: string; 
+            quantity: number;
+            packageType?: 'individual' | 'pack' | 'carton';
+        }[];
         totalAmount: number;
         paymentMethod: 'cash' | 'card' | 'mobile';
         transactionId?: string;
@@ -162,63 +220,60 @@ export class SaleService {
         userId: string;
         customerId?: string;
     }) {
-        try {
-            let calculatedTotal = 0;
-            const saleItems = await Promise.all(
-                data.items.map(async (item) => {
-                    const drug = await Drug.findById(item.drugId);
-                    if (!drug) throw new NotFoundError('Drug not found');
-                    if (drug.quantity < item.quantity)
-                        throw new BadRequestError('Insufficient stock');
-                    drug.quantity -= item.quantity;
-                    await drug.save();
-                    calculatedTotal += drug.price * item.quantity;
-                    return {
-                        drug: drug._id,
-                        quantity: item.quantity,
-                        priceAtSale: drug.price,
-                    };
-                }),
-            );
+        let calculatedTotal = 0;
+        const saleItems = await Promise.all(
+            data.items.map(async (item) => {
+                const drug = await Drug.findById(item.drugId);
+                if (!drug) throw new NotFoundError('Drug not found');
 
-            if (Math.abs(calculatedTotal - data.totalAmount) > 0.01)
-                throw new BadRequestError('Total mismatch');
+                const packageType = item.packageType || 'individual';
+                const packageCalculation = this.calculatePackageSale(
+                    drug, 
+                    item.quantity, 
+                    packageType
+                );
 
-            const sale = await Sale.create({
-                items: saleItems,
-                totalAmount: calculatedTotal,
-                soldBy: new Types.ObjectId(data.userId),
-                customer: data.customerId
-                    ? new Types.ObjectId(data.customerId)
-                    : undefined,
-                paymentMethod: data.paymentMethod,
-                transactionId: data.transactionId,
-                notes: data.notes,
-            });
+                if (drug.quantity < packageCalculation.unitsToDeduct)
+                    throw new BadRequestError(`Insufficient stock. Available: ${drug.quantity}, Required: ${packageCalculation.unitsToDeduct}`);
 
-            // Update customer purchases if customerId provided
-            if (data.customerId) {
-                await Customer.findByIdAndUpdate(data.customerId, {
-                    $addToSet: { purchases: sale._id },
-                });
-            }
+                // Update drug stock
+                drug.quantity -= packageCalculation.unitsToDeduct;
+                await drug.save();
 
-            return sale;
-        } catch (err) {
-            // In case of error, we should ideally rollback the drug quantities
-            // but without transactions, this becomes complex
-            console.error(
-                'Sale creation failed without transaction support:',
-                err,
-            );
-            throw err;
-        }
+                calculatedTotal += packageCalculation.totalPrice;
+
+                return {
+                    drug: drug._id,
+                    quantity: item.quantity,
+                    packageType,
+                    unitsSold: packageCalculation.unitsToDeduct,
+                    packsSold: packageCalculation.packsSold,
+                    cartonsSold: packageCalculation.cartonsSold,
+                    priceAtSale: packageCalculation.unitPrice,
+                };
+            }),
+        );
+
+        if (Math.abs(calculatedTotal - data.totalAmount) > 0.01)
+            throw new BadRequestError(`Total mismatch. Calculated: ${calculatedTotal}, Provided: ${data.totalAmount}`);
+
+        const sale = await Sale.create({
+            items: saleItems,
+            totalAmount: calculatedTotal,
+            soldBy: new Types.ObjectId(data.userId),
+            customer: data.customerId
+                ? new Types.ObjectId(data.customerId)
+                : undefined,
+            paymentMethod: data.paymentMethod,
+            transactionId: data.transactionId,
+            notes: data.notes,
+        });
+
+        return this.mapSaleToResponse(sale);
     }
 
     /**
-     * Get paginated sales list with optional date filtering
-     * @param params - Parameters for filtering and pagination
-     * @returns Paginated and grouped sales data
+     * Get sales with pagination and optional date filtering
      */
     async getSales({
         page = 1,
@@ -240,83 +295,46 @@ export class SaleService {
             totalPages: number;
         };
     }> {
+        const skip = (page - 1) * limit;
         const query: any = {};
 
-        // Date filtering
+        // Add date filtering if provided
         if (startDate || endDate) {
             query.createdAt = {};
-            if (startDate) query.createdAt.$gte = new Date(startDate);
-            if (endDate) query.createdAt.$lte = new Date(endDate);
-        } else {
-            // Default to showing today's sales if no date range is specified
-            const today = new Date();
-            const startOfToday = new Date(
-                today.getFullYear(),
-                today.getMonth(),
-                today.getDate(),
-            );
-            query.createdAt = { $gte: startOfToday };
+            if (startDate) {
+                query.createdAt.$gte = new Date(startDate);
+            }
+            if (endDate) {
+                query.createdAt.$lte = new Date(endDate);
+            }
         }
 
-        const sales = await Sale.find(query)
-            .populate('items.drug')
-            .populate('soldBy', 'name')
-            .populate('customer', 'name phone')
-            .sort({ createdAt: -1 })
-            .skip((page - 1) * limit)
-            .limit(limit);
+        const [sales, total] = await Promise.all([
+            Sale.find(query)
+                .populate('items.drug')
+                .populate('soldBy', 'name email')
+                .populate('customer', 'name phone')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+            Sale.countDocuments(query),
+        ]);
 
-        const total = await Sale.countDocuments(query);
-
-        // Map _id to id for each sale and nested objects
-        const mappedSales = sales.map((sale) => {
-            const saleObj = sale.toObject();
-            return {
-                ...saleObj,
-                id: (saleObj._id as Types.ObjectId).toString(),
-                items: saleObj.items.map((item: any) => ({
-                    ...item,
-                    drug:
-                        item.drug && typeof item.drug === 'object'
-                            ? {
-                                  ...item.drug,
-                                  id: item.drug._id?.toString() || '',
-                              }
-                            : item.drug,
-                })),
-                soldBy:
-                    saleObj.soldBy && typeof saleObj.soldBy === 'object'
-                        ? {
-                              ...(saleObj.soldBy as any),
-                              id: (saleObj.soldBy as any)._id?.toString() || '',
-                          }
-                        : saleObj.soldBy,
-                customer:
-                    saleObj.customer && typeof saleObj.customer === 'object'
-                        ? {
-                              ...(saleObj.customer as any),
-                              id:
-                                  (saleObj.customer as any)._id?.toString() ||
-                                  '',
-                          }
-                        : saleObj.customer,
-            };
-        });
+        const mappedSales = sales.map((sale) => this.mapSaleToResponse(sale));
 
         // Group sales by date
-        const groupedSales = mappedSales.reduce<Record<string, MappedSale[]>>(
-            (acc, sale) => {
-                const date = new Date(sale.createdAt).toDateString();
-                if (!acc[date]) acc[date] = [];
-                acc[date].push(sale);
-                return acc;
-            },
-            {},
-        );
+        const groupedData: Record<string, MappedSale[]> = {};
+        mappedSales.forEach((sale) => {
+            const date = sale.createdAt.toISOString().split('T')[0];
+            if (!groupedData[date]) {
+                groupedData[date] = [];
+            }
+            groupedData[date].push(sale);
+        });
 
         return {
             data: mappedSales,
-            groupedData: groupedSales,
+            groupedData,
             pagination: {
                 total,
                 page,
@@ -327,48 +345,59 @@ export class SaleService {
     }
 
     /**
-     * Get sale by ID with populated references
-     * @param id - The ID of the sale to retrieve
-     * @returns The sale with populated drug, customer, and soldBy fields
-     * @throws NotFoundError if the sale doesn't exist
+     * Get a sale by ID
      */
     async getSaleById(id: string): Promise<MappedSale> {
         const sale = await Sale.findById(id)
             .populate('items.drug')
-            .populate('soldBy', 'name')
+            .populate('soldBy', 'name email')
             .populate('customer', 'name phone');
-        if (!sale) throw new NotFoundError('Sale not found');
 
-        // Map _id to id for sale and nested objects
-        const saleObj = sale.toObject();
-        const mappedSale = {
-            ...saleObj,
-            id: (saleObj._id as Types.ObjectId).toString(),
-            items: saleObj.items.map((item: any) => ({
-                ...item,
-                drug:
-                    item.drug && typeof item.drug === 'object'
-                        ? {
-                              ...item.drug,
-                              id: item.drug._id?.toString() || '',
-                          }
-                        : item.drug,
+        if (!sale) {
+            throw new NotFoundError('Sale not found');
+        }
+
+        return this.mapSaleToResponse(sale);
+    }
+
+    /**
+     * Map sale document to response object
+     */
+    private mapSaleToResponse(sale: any): MappedSale {
+        return {
+            id: sale._id.toString(),
+            items: sale.items.map((item: any) => ({
+                id: item._id?.toString(),
+                drugId: item.drug._id?.toString() || item.drug.toString(),
+                name: item.drug.name || 'Unknown Drug',
+                generic: item.drug.generic || '',
+                brand: item.drug.brand || '',
+                quantity: item.quantity,
+                packageType: item.packageType || 'individual',
+                unitsSold: item.unitsSold || item.quantity,
+                packsSold: item.packsSold || 0,
+                cartonsSold: item.cartonsSold || 0,
+                priceAtSale: item.priceAtSale,
+                drug: item.drug,
             })),
-            soldBy:
-                saleObj.soldBy && typeof saleObj.soldBy === 'object'
-                    ? {
-                          ...(saleObj.soldBy as any),
-                          id: (saleObj.soldBy as any)._id?.toString() || '',
-                      }
-                    : saleObj.soldBy,
-            customer:
-                saleObj.customer && typeof saleObj.customer === 'object'
-                    ? {
-                          ...(saleObj.customer as any),
-                          id: (saleObj.customer as any)._id?.toString() || '',
-                      }
-                    : saleObj.customer,
+            soldBy: {
+                id: sale.soldBy._id?.toString() || sale.soldBy.toString(),
+                name: sale.soldBy.name || 'Unknown User',
+                email: sale.soldBy.email || '',
+            },
+            customer: sale.customer
+                ? {
+                      id: sale.customer._id?.toString() || sale.customer.toString(),
+                      name: sale.customer.name || 'Unknown Customer',
+                      phone: sale.customer.phone || '',
+                  }
+                : undefined,
+            totalAmount: sale.totalAmount,
+            paymentMethod: sale.paymentMethod,
+            transactionId: sale.transactionId,
+            notes: sale.notes,
+            createdAt: sale.createdAt,
+            updatedAt: sale.updatedAt,
         };
-        return mappedSale;
     }
 }
