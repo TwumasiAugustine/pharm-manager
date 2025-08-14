@@ -1,4 +1,4 @@
-import Drug, { IDrug } from '../models/drug.model';
+import { Drug, IDrug } from '../models/drug.model';
 import {
     ICreateDrugRequest,
     IDrugSearchParams,
@@ -215,17 +215,29 @@ export class DrugService {
     /**
      * Helper method to map Drug document to response object
      */
+    /**
+     * Map Drug document to response object with all relevant fields
+     */
     private mapDrugToResponse(drug: IDrug): any {
         return {
             id: drug._id,
             name: drug.name,
             brand: drug.brand,
             category: drug.category,
+            dosageForm: drug.dosageForm,
+            ableToSell: drug.ableToSell,
+            drugsInCarton: drug.drugsInCarton,
+            unitsPerCarton: drug.unitsPerCarton,
+            packsPerCarton: drug.packsPerCarton,
             quantity: drug.quantity,
-            price: drug.price,
+            pricePerUnit: drug.pricePerUnit,
+            pricePerPack: drug.pricePerPack,
+            pricePerCarton: drug.pricePerCarton,
             expiryDate: drug.expiryDate,
             batchNumber: drug.batchNumber,
             requiresPrescription: drug.requiresPrescription,
+            supplier: drug.supplier,
+            location: drug.location,
             createdAt: drug.createdAt,
             updatedAt: drug.updatedAt,
         };

@@ -36,7 +36,7 @@ export const useDrugs = (
 
     const queryKey = ['drugs', queryParams];
 
-    const query = useQuery<any, Error>({
+    const query = useQuery({
         queryKey,
         queryFn: () => drugApi.getDrugs(queryParams),
         staleTime: 5 * 60 * 1000, // 5 minutes
@@ -56,16 +56,29 @@ export const useDrugs = (
         }
         return {
             drugs: Array.isArray(raw.drugs)
-                ? raw.drugs.map((drug: any) => ({
+                ? raw.drugs.map((drug: Drug) => ({
                       id: drug.id || drug._id || '',
                       _id: drug._id || '',
                       name: drug.name || '',
                       brand: drug.brand || '',
                       category: drug.category || '',
-                      price: drug.price ?? 0,
+                      dosageForm: drug.dosageForm || '',
+                      ableToSell:
+                          typeof drug.ableToSell === 'boolean'
+                              ? drug.ableToSell
+                              : true,
+                      drugsInCarton: drug.drugsInCarton ?? 0,
+                      unitsPerCarton: drug.unitsPerCarton ?? 0,
+                      packsPerCarton: drug.packsPerCarton ?? 0,
                       quantity: drug.quantity ?? 0,
+                      pricePerUnit: drug.pricePerUnit ?? 0,
+                      pricePerPack: drug.pricePerPack ?? 0,
+                      pricePerCarton: drug.pricePerCarton ?? 0,
                       expiryDate: drug.expiryDate || '',
+                      batchNumber: drug.batchNumber || '',
                       requiresPrescription: !!drug.requiresPrescription,
+                      supplier: drug.supplier || '',
+                      location: drug.location || '',
                       createdAt: drug.createdAt || '',
                       updatedAt: drug.updatedAt || '',
                   }))
@@ -96,7 +109,7 @@ export const useDrugs = (
         data: mappedData,
         pagination,
         setSearchQuery,
-    } as QueryResultWithPagination<PaginatedDrugsResponse, Error>;
+    };
 };
 
 /**
@@ -116,14 +129,23 @@ export const useDrug = (id: string) => {
                 name: raw.name || '',
                 brand: raw.brand || '',
                 category: raw.category || '',
-                price: raw.price ?? 0,
-                stock: raw.stock ?? 0,
+                dosageForm: raw.dosageForm || '',
+                ableToSell:
+                    typeof raw.ableToSell === 'boolean' ? raw.ableToSell : true,
+                drugsInCarton: raw.drugsInCarton ?? 0,
+                unitsPerCarton: raw.unitsPerCarton ?? 0,
+                packsPerCarton: raw.packsPerCarton ?? 0,
+                quantity: raw.quantity ?? 0,
+                pricePerUnit: raw.pricePerUnit ?? 0,
+                pricePerPack: raw.pricePerPack ?? 0,
+                pricePerCarton: raw.pricePerCarton ?? 0,
                 expiryDate: raw.expiryDate || '',
+                batchNumber: raw.batchNumber || '',
                 requiresPrescription: !!raw.requiresPrescription,
+                supplier: raw.supplier || '',
+                location: raw.location || '',
                 createdAt: raw.createdAt || '',
                 updatedAt: raw.updatedAt || '',
-                quantity: raw.quantity ?? 0,
-                batchNumber: raw.batchNumber || '',
             };
         },
         enabled: !!id,
@@ -149,10 +171,21 @@ export const useCreateDrug = () => {
                 name: raw.name || '',
                 brand: raw.brand || '',
                 category: raw.category || '',
-                price: raw.price ?? 0,
-                stock: raw.stock ?? 0,
+                dosageForm: raw.dosageForm || '',
+                ableToSell:
+                    typeof raw.ableToSell === 'boolean' ? raw.ableToSell : true,
+                drugsInCarton: raw.drugsInCarton ?? 0,
+                unitsPerCarton: raw.unitsPerCarton ?? 0,
+                packsPerCarton: raw.packsPerCarton ?? 0,
+                quantity: raw.quantity ?? 0,
+                pricePerUnit: raw.pricePerUnit ?? 0,
+                pricePerPack: raw.pricePerPack ?? 0,
+                pricePerCarton: raw.pricePerCarton ?? 0,
                 expiryDate: raw.expiryDate || '',
+                batchNumber: raw.batchNumber || '',
                 requiresPrescription: !!raw.requiresPrescription,
+                supplier: raw.supplier || '',
+                location: raw.location || '',
                 createdAt: raw.createdAt || '',
                 updatedAt: raw.updatedAt || '',
             };
@@ -186,10 +219,21 @@ export const useUpdateDrug = (id: string) => {
                 name: raw.name || '',
                 brand: raw.brand || '',
                 category: raw.category || '',
-                price: raw.price ?? 0,
-                stock: raw.stock ?? 0,
+                dosageForm: raw.dosageForm || '',
+                ableToSell:
+                    typeof raw.ableToSell === 'boolean' ? raw.ableToSell : true,
+                drugsInCarton: raw.drugsInCarton ?? 0,
+                unitsPerCarton: raw.unitsPerCarton ?? 0,
+                packsPerCarton: raw.packsPerCarton ?? 0,
+                quantity: raw.quantity ?? 0,
+                pricePerUnit: raw.pricePerUnit ?? 0,
+                pricePerPack: raw.pricePerPack ?? 0,
+                pricePerCarton: raw.pricePerCarton ?? 0,
                 expiryDate: raw.expiryDate || '',
+                batchNumber: raw.batchNumber || '',
                 requiresPrescription: !!raw.requiresPrescription,
+                supplier: raw.supplier || '',
+                location: raw.location || '',
                 createdAt: raw.createdAt || '',
                 updatedAt: raw.updatedAt || '',
             };
@@ -261,7 +305,7 @@ export const useExpiringDrugs = (days: number) => {
         queryFn: async () => {
             const raw = await drugApi.getExpiringDrugs(days);
             // Accepts { drugs: Drug[] } or Drug[] directly
-            let drugsArr: any[] = [];
+            let drugsArr: Drug[] = [];
             if (
                 raw &&
                 typeof raw === 'object' &&
@@ -272,21 +316,34 @@ export const useExpiringDrugs = (days: number) => {
             } else if (Array.isArray(raw)) {
                 drugsArr = raw;
             }
-            return drugsArr.map((drug: any) => ({
-                id: drug.id || drug._id || '',
-                _id: drug._id || '',
-                name: drug.name || '',
-                brand: drug.brand || '',
-                category: drug.category || '',
-                price: drug.price ?? 0,
-                stock: drug.stock ?? 0,
-                expiryDate: drug.expiryDate || '',
-                requiresPrescription: !!drug.requiresPrescription,
-                createdAt: drug.createdAt || '',
-                updatedAt: drug.updatedAt || '',
-                quantity: drug.quantity ?? 0,
-                batchNumber: drug.batchNumber || '',
-            }));
+            return drugsArr.map(
+                (drug: Drug): Drug => ({
+                    id: drug.id || drug._id || '',
+                    _id: drug._id || '',
+                    name: drug.name || '',
+                    brand: drug.brand || '',
+                    category: drug.category || '',
+                    dosageForm: drug.dosageForm || '',
+                    ableToSell:
+                        typeof drug.ableToSell === 'boolean'
+                            ? drug.ableToSell
+                            : true,
+                    drugsInCarton: drug.drugsInCarton ?? 0,
+                    unitsPerCarton: drug.unitsPerCarton ?? 0,
+                    packsPerCarton: drug.packsPerCarton ?? 0,
+                    quantity: drug.quantity ?? 0,
+                    pricePerUnit: drug.pricePerUnit ?? 0,
+                    pricePerPack: drug.pricePerPack ?? 0,
+                    pricePerCarton: drug.pricePerCarton ?? 0,
+                    expiryDate: drug.expiryDate || '',
+                    batchNumber: drug.batchNumber || '',
+                    requiresPrescription: !!drug.requiresPrescription,
+                    supplier: drug.supplier || '',
+                    location: drug.location || '',
+                    createdAt: drug.createdAt || '',
+                    updatedAt: drug.updatedAt || '',
+                }),
+            );
         },
     });
 };

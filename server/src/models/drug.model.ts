@@ -1,14 +1,18 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-/**
- * Interface representing a drug in the database
- */
 export interface IDrug extends Document {
     name: string;
     brand: string;
     category: string;
+    dosageForm: string;
+    ableToSell: boolean;
+    drugsInCarton: number;
+    unitsPerCarton: number;
+    packsPerCarton: number;
     quantity: number;
-    price: number;
+    pricePerUnit: number;
+    pricePerPack: number;
+    pricePerCarton: number;
     expiryDate: Date;
     batchNumber: string;
     requiresPrescription: boolean;
@@ -18,72 +22,133 @@ export interface IDrug extends Document {
     updatedAt: Date;
 }
 
-/**
- * Mongoose schema for the Drug model
- */
 const drugSchema = new Schema<IDrug>(
     {
         name: {
-            type: String,
+            type: Schema.Types.String,
             required: [true, 'Drug name is required'],
             trim: true,
         },
         brand: {
-            type: String,
+            type: Schema.Types.String,
             required: [true, 'Brand name is required'],
             trim: true,
         },
         category: {
-            type: String,
+            type: Schema.Types.String,
             required: [true, 'Category is required'],
             trim: true,
         },
-        quantity: {
-            type: Number,
-            required: [true, 'Quantity is required'],
-            min: [0, 'Quantity cannot be negative'],
+        dosageForm: {
+            type: Schema.Types.String,
+            required: [true, 'Dosage form is required'],
+            trim: true,
+            // enum: ['tablet', 'capsule', 'syrup', 'injection'], // Uncomment and extend as needed
         },
-        price: {
-            type: Number,
-            required: [true, 'Price is required'],
-            min: [0, 'Price cannot be negative'],
+        ableToSell: {
+            type: Schema.Types.Boolean,
+            default: true,
+        },
+        drugsInCarton: {
+            type: Schema.Types.Number,
+            default: 0,
+            min: 0,
+        },
+        unitsPerCarton: {
+            type: Schema.Types.Number,
+            required: [true, 'Units per carton is required'],
+            min: 1,
+        },
+        packsPerCarton: {
+            type: Schema.Types.Number,
+            required: [true, 'Packs per carton is required'],
+            min: 1,
+        },
+        quantity: {
+            type: Schema.Types.Number,
+            default: 0,
+            min: 0,
+        },
+        pricePerUnit: {
+            type: Schema.Types.Number,
+            required: [true, 'Price per unit is required'],
+            min: 0,
+        },
+        pricePerPack: {
+            type: Schema.Types.Number,
+            default: 0,
+            min: 0,
+        },
+        pricePerCarton: {
+            type: Schema.Types.Number,
+            default: 0,
+            min: 0,
         },
         expiryDate: {
-            type: Date,
-            required: [true, 'Expiry date is required'],
+            type: Schema.Types.Date,
+            required: true,
         },
         batchNumber: {
-            type: String,
-            required: [true, 'Batch number is required'],
+            type: Schema.Types.String,
+            required: true,
             trim: true,
         },
         requiresPrescription: {
-            type: Boolean,
+            type: Schema.Types.Boolean,
             default: false,
         },
         supplier: {
-            type: String,
+            type: Schema.Types.String,
             trim: true,
         },
         location: {
-            type: String,
+            type: Schema.Types.String,
             trim: true,
         },
     },
     {
         timestamps: true,
-        versionKey: false,
-    },
+        toJSON: {
+            virtuals: true,
+            versionKey: false,
+            transform: (_, ret) => {
+                ret.id = ret._id;
+                delete ret._id;
+            },
+        },
+        toObject: {
+            virtuals: true,
+            versionKey: false,
+            transform: (_, ret) => {
+                ret.id = ret._id;
+                delete ret._id;
+            },
+        },
+    }
 );
 
-// Create indexes for better search performance
+drugSchema.pre<IDrug>('save', function (next) {
+    this.quantity = this.drugsInCarton * this.unitsPerCarton;
+
+    // Only calculate prices if not set
+    if (!this.pricePerPack && this.pricePerUnit && this.unitsPerCarton && this.packsPerCarton) {
+        this.pricePerPack = this.pricePerUnit * (this.unitsPerCarton / this.packsPerCarton);
+    }
+    if (!this.pricePerCarton && this.pricePerUnit && this.unitsPerCarton) {
+        this.pricePerCarton = this.pricePerUnit * this.unitsPerCarton;
+    }
+    if (!this.pricePerUnit && this.pricePerCarton && this.unitsPerCarton) {
+        this.pricePerUnit = this.pricePerCarton / this.unitsPerCarton;
+    }
+    if (!this.pricePerUnit && this.pricePerPack && this.unitsPerCarton && this.packsPerCarton) {
+        this.pricePerUnit = this.pricePerPack / (this.unitsPerCarton / this.packsPerCarton);
+    }
+
+    next();
+});
+
 drugSchema.index({ name: 'text', brand: 'text', category: 'text' });
 drugSchema.index({ batchNumber: 1 });
 drugSchema.index({ expiryDate: 1 });
 
-/**
- * Drug model for MongoDB interaction
- */
-const Drug = mongoose.model<IDrug>('Drug', drugSchema);
-
-export default Drug;
+export const Drug = mongoose.model<IDrug>('Drug', drugSchema);

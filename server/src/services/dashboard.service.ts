@@ -1,5 +1,5 @@
 import { Sale } from '../models/sale.model';
-import Drug from '../models/drug.model';
+import { Drug } from '../models/drug.model';
 import Customer from '../models/customer.model';
 import { Types } from 'mongoose';
 
@@ -220,7 +220,12 @@ export class DashboardService {
             brand: drug.brand,
             category: drug.category,
             quantity: drug.quantity,
-            price: drug.price,
+            pricePerUnit: drug.pricePerUnit,
+            pricePerPack: drug.pricePerPack,
+            pricePerCarton: drug.pricePerCarton,
+            expiryDate: drug.expiryDate,
+            batchNumber: drug.batchNumber,
+            requiresPrescription: drug.requiresPrescription,
         }));
     }
 

@@ -7,15 +7,24 @@
  */
 export interface Drug {
     id: string;
-    _id?: string; // Add optional _id property for MongoDB compatibility
+    _id?: string;
     name: string;
     brand: string;
     category: string;
+    dosageForm: string;
+    ableToSell: boolean;
+    drugsInCarton: number;
+    unitsPerCarton: number;
+    packsPerCarton: number;
     quantity: number;
-    price: number;
+    pricePerUnit: number;
+    pricePerPack: number;
+    pricePerCarton: number;
     expiryDate: string;
     batchNumber: string;
     requiresPrescription: boolean;
+    supplier?: string;
+    location?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -27,11 +36,19 @@ export interface CreateDrugRequest {
     name: string;
     brand: string;
     category: string;
-    quantity: number;
-    price: number;
+    dosageForm: string;
+    ableToSell: boolean;
+    drugsInCarton: number;
+    unitsPerCarton: number;
+    packsPerCarton: number;
+    pricePerUnit: number;
+    pricePerPack?: number;
+    pricePerCarton?: number;
     expiryDate: string;
     batchNumber: string;
     requiresPrescription: boolean;
+    supplier?: string;
+    location?: string;
 }
 
 /**

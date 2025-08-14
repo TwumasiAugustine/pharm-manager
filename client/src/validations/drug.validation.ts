@@ -28,7 +28,6 @@ export const drugSchema = z.object({
         }),
     expiryDate: z.string().refine(
         (date) => {
-            // Check if date is valid and in the future
             const parsedDate = new Date(date);
             return !isNaN(parsedDate.getTime()) && parsedDate > new Date();
         },
@@ -39,6 +38,50 @@ export const drugSchema = z.object({
         .min(3, 'Batch number must be at least 3 characters')
         .max(50, 'Batch number must be less than 50 characters'),
     requiresPrescription: z.boolean().default(false),
+    // Advanced fields
+    dosageForm: z
+        .string()
+        .min(2, 'Dosage form must be at least 2 characters')
+        .max(50, 'Dosage form must be less than 50 characters'),
+    ableToSell: z.boolean().default(true),
+    drugsInCarton: z
+        .number()
+        .int()
+        .min(0, 'Drugs in carton cannot be negative')
+        .optional(),
+    unitsPerCarton: z
+        .number()
+        .int()
+        .min(1, 'Units per carton must be at least 1'),
+    packsPerCarton: z
+        .number()
+        .int()
+        .min(1, 'Packs per carton must be at least 1'),
+    // Pricing fields
+    pricePerUnit: z
+        .number()
+        .min(0, 'Price per unit cannot be negative')
+        .optional(),
+    pricePerPack: z
+        .number()
+        .min(0, 'Price per pack cannot be negative')
+        .optional(),
+    pricePerCarton: z
+        .number()
+        .min(0, 'Price per carton cannot be negative')
+        .optional(),
+    costPrice: z.number().min(0.01, 'Cost price must be at least 0.01'),
+    supplier: z
+        .string()
+        .min(2, 'Supplier must be at least 2 characters')
+        .max(100, 'Supplier must be less than 100 characters')
+        .optional(),
+    location: z
+        .string()
+        .min(2, 'Location must be at least 2 characters')
+        .max(100, 'Location must be less than 100 characters')
+        .optional(),
+
 });
 
 /**
