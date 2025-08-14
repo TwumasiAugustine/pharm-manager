@@ -6,11 +6,15 @@ import type { DrugFormValues } from '../../validations/drug.validation';
 interface DrugPricingFieldsProps {
     register: UseFormRegister<DrugFormValues>;
     errors: FieldErrors<DrugFormValues>;
+    onManualPricePerPack?: () => void;
+    onManualPricePerCarton?: () => void;
 }
 
 export const DrugPricingFields: React.FC<DrugPricingFieldsProps> = ({
     register,
     errors,
+    onManualPricePerPack,
+    onManualPricePerCarton,
 }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Price Per Unit */}
@@ -67,6 +71,12 @@ export const DrugPricingFields: React.FC<DrugPricingFieldsProps> = ({
                         errors.pricePerPack ? 'border-red-500 pr-10' : ''
                     }`}
                     aria-invalid={!!errors.pricePerPack}
+                    onChange={(e) => {
+                        register('pricePerPack', {
+                            valueAsNumber: true,
+                        }).onChange?.(e);
+                        if (onManualPricePerPack) onManualPricePerPack();
+                    }}
                 />
             </div>
             {errors.pricePerPack && (
@@ -98,6 +108,12 @@ export const DrugPricingFields: React.FC<DrugPricingFieldsProps> = ({
                         errors.pricePerCarton ? 'border-red-500 pr-10' : ''
                     }`}
                     aria-invalid={!!errors.pricePerCarton}
+                    onChange={(e) => {
+                        register('pricePerCarton', {
+                            valueAsNumber: true,
+                        }).onChange?.(e);
+                        if (onManualPricePerCarton) onManualPricePerCarton();
+                    }}
                 />
             </div>
             {errors.pricePerCarton && (

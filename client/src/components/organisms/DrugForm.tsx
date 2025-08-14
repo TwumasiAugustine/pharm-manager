@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { drugSchema } from '../../validations/drug.validation';
 import type { DrugFormValues } from '../../validations/drug.validation';
 import type { Drug } from '../../types/drug.types';
+import { FaQuestionCircle } from 'react-icons/fa';
 import { useDrugCategories } from '../../hooks/useDrugs';
 import { DrugBasicFields } from './DrugBasicFields';
 import { DrugCategoryField } from './DrugCategoryField';
@@ -35,6 +36,9 @@ export const DrugForm = ({
     // Get drug categories for dropdown
     const { data: categories, isLoading: loadingCategories } =
         useDrugCategories();
+
+    // State for showing instructions
+    const [showInstructions, setShowInstructions] = useState(false);
 
     // State for category search
     const [categorySearchTerm, setCategorySearchTerm] = useState('');
@@ -71,6 +75,7 @@ export const DrugForm = ({
                       unitsPerCarton: ensuredInitialData.unitsPerCarton,
                       packsPerCarton: ensuredInitialData.packsPerCarton,
                       quantity: ensuredInitialData.quantity,
+                      costPrice: ensuredInitialData.costPrice ?? 0,
                       pricePerUnit: ensuredInitialData.pricePerUnit,
                       pricePerPack: ensuredInitialData.pricePerPack,
                       pricePerCarton: ensuredInitialData.pricePerCarton,
@@ -83,29 +88,10 @@ export const DrugForm = ({
                       supplier: ensuredInitialData.supplier || '',
                       location: ensuredInitialData.location || '',
                   }
-                : {
-                      name: '',
-                      brand: '',
-                      category: '',
-                      dosageForm: '',
-                      ableToSell: true,
-                      drugsInCarton: 0,
-                      unitsPerCarton: 0,
-                      packsPerCarton: 0,
-                      quantity: 0,
-                      pricePerUnit: 0,
-                      pricePerPack: 0,
-                      pricePerCarton: 0,
-                      expiryDate: '',
-                      batchNumber: '',
-                      requiresPrescription: false,
-                      supplier: '',
-                      location: '',
-                  },
+                : undefined,
         [ensuredInitialData],
     );
 
-    // Set up form with validation
     const {
         register,
         handleSubmit,
@@ -134,6 +120,7 @@ export const DrugForm = ({
                 unitsPerCarton: ensuredInitialData.unitsPerCarton ?? 0,
                 packsPerCarton: ensuredInitialData.packsPerCarton ?? 0,
                 quantity: ensuredInitialData.quantity ?? 0,
+                costPrice: ensuredInitialData.costPrice ?? 0,
                 pricePerUnit: ensuredInitialData.pricePerUnit ?? 0,
                 pricePerPack: ensuredInitialData.pricePerPack ?? 0,
                 pricePerCarton: ensuredInitialData.pricePerCarton ?? 0,
@@ -209,11 +196,7 @@ export const DrugForm = ({
     };
 
     return (
-        <form
-            // @ts-expect-error - Working around type issue with handleSubmit
-            onSubmit={handleSubmit(onFormSubmit)}
-            className="space-y-8"
-        >
+        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
                     <FormSection title="Basic Information">
@@ -239,7 +222,6 @@ export const DrugForm = ({
                     </FormSection>
                 </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
                     <FormSection title="Advanced Details">
@@ -251,6 +233,79 @@ export const DrugForm = ({
                 </div>
                 <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
                     <FormSection title="Pricing">
+                        {/* Instructions toggle button */}
+                        <div className="mb-6 flex items-center">
+                            <button
+                                type="button"
+                                className="flex items-center text-blue-600 hover:text-blue-800 focus:outline-none mr-2"
+                                onClick={() => setShowInstructions((v) => !v)}
+                                aria-label="Show instructions"
+                            >
+                                <FaQuestionCircle className="h-5 w-5 mr-1" />
+                                <span className="underline">
+                                    How to use Advanced Details & Pricing
+                                </span>
+                            </button>
+                        </div>
+                        {showInstructions && (
+                            <div className="mb-6">
+                                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md text-blue-900 text-sm">
+                                    <strong>
+                                        How to use Advanced Details & Pricing:
+                                    </strong>
+                                    <ul className="list-disc pl-5 mt-2 space-y-1">
+                                        <li>
+                                            <strong>Advanced Details:</strong>{' '}
+                                            Enter drug-specific information such
+                                            as dosage form, prescription
+                                            requirements, and packaging (units
+                                            per pack, packs per carton, etc).
+                                            These details affect how the drug is
+                                            managed in inventory and dispensed
+                                            at the point of sale.
+                                        </li>
+                                        <li>
+                                            <strong>Pricing:</strong> Enter the
+                                            selling prices for the drug (per
+                                            unit, pack, and carton). If you only
+                                            provide the unit price, the system
+                                            will automatically calculate the
+                                            pack and carton prices based on the
+                                            packaging configuration you set
+                                            above.
+                                        </li>
+                                        <li>
+                                            <strong>
+                                                Calculation Example:
+                                            </strong>{' '}
+                                            If a carton contains 10 packs and
+                                            each pack contains 20 units, and you
+                                            set the unit price to GH₵100, then:
+                                            <ul className="list-disc pl-5 mt-1">
+                                                <li>
+                                                    Pack price = 20 × GH₵100 =
+                                                    GH₵2,000
+                                                </li>
+                                                <li>
+                                                    Carton price = 10 × GH₵2,000
+                                                    = GH₵20,000
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <strong>Tip:</strong> Always ensure
+                                            the{' '}
+                                            <span className="font-semibold">
+                                                Cost Price
+                                            </span>{' '}
+                                            (entered below) is less than the
+                                            selling prices for proper profit
+                                            calculation and to avoid loss.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
                         <DrugPricingFields
                             register={register}
                             errors={errors}
@@ -264,7 +319,6 @@ export const DrugForm = ({
                     <DrugMetaFields register={register} errors={errors} />
                 </FormSection>
             </div>
-
             {/* Submit Button */}
             <div className="flex justify-end mt-8">
                 <button

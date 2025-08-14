@@ -18,6 +18,7 @@ export interface IDrug extends Document {
     requiresPrescription: boolean;
     supplier?: string;
     location?: string;
+    costPrice: number;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -63,6 +64,11 @@ const drugSchema = new Schema<IDrug>(
             type: Schema.Types.Number,
             required: [true, 'Packs per carton is required'],
             min: 1,
+        },
+        costPrice: {
+            type: Schema.Types.Number,
+            required: [true, 'Cost price per unit is required'],
+            min: [0.01, 'Cost price must be greater than 0'],
         },
         quantity: {
             type: Schema.Types.Number,
@@ -124,15 +130,48 @@ const drugSchema = new Schema<IDrug>(
                 delete ret._id;
             },
         },
-    }
+    },
 );
 
+// Pre-save hook for auto-calculation
+drugSchema.pre('save', function (next) {
+    // @ts-ignore
+    const doc = this;
+    // Auto-calculate pricePerPack and pricePerCarton if only pricePerUnit is provided
+    if (
+        doc.pricePerUnit &&
+        (!doc.pricePerPack || doc.pricePerPack === 0) &&
+        doc.unitsPerCarton
+    ) {
+        doc.pricePerPack = doc.pricePerUnit * doc.unitsPerCarton;
+    }
+    if (
+        doc.pricePerPack &&
+        (!doc.pricePerCarton || doc.pricePerCarton === 0) &&
+        doc.packsPerCarton
+    ) {
+        doc.pricePerCarton = doc.pricePerPack * doc.packsPerCarton;
+    }
+    // Auto-calculate quantity based on carton and unit data
+    if (doc.drugsInCarton && doc.unitsPerCarton && doc.packsPerCarton) {
+        doc.quantity =
+            doc.drugsInCarton * doc.unitsPerCarton * doc.packsPerCarton;
+    }
+    // Ensure costPrice is per unit (already enforced by schema)
+    next();
+});
 drugSchema.pre<IDrug>('save', function (next) {
     this.quantity = this.drugsInCarton * this.unitsPerCarton;
 
     // Only calculate prices if not set
-    if (!this.pricePerPack && this.pricePerUnit && this.unitsPerCarton && this.packsPerCarton) {
-        this.pricePerPack = this.pricePerUnit * (this.unitsPerCarton / this.packsPerCarton);
+    if (
+        !this.pricePerPack &&
+        this.pricePerUnit &&
+        this.unitsPerCarton &&
+        this.packsPerCarton
+    ) {
+        this.pricePerPack =
+            this.pricePerUnit * (this.unitsPerCarton / this.packsPerCarton);
     }
     if (!this.pricePerCarton && this.pricePerUnit && this.unitsPerCarton) {
         this.pricePerCarton = this.pricePerUnit * this.unitsPerCarton;
@@ -140,8 +179,14 @@ drugSchema.pre<IDrug>('save', function (next) {
     if (!this.pricePerUnit && this.pricePerCarton && this.unitsPerCarton) {
         this.pricePerUnit = this.pricePerCarton / this.unitsPerCarton;
     }
-    if (!this.pricePerUnit && this.pricePerPack && this.unitsPerCarton && this.packsPerCarton) {
-        this.pricePerUnit = this.pricePerPack / (this.unitsPerCarton / this.packsPerCarton);
+    if (
+        !this.pricePerUnit &&
+        this.pricePerPack &&
+        this.unitsPerCarton &&
+        this.packsPerCarton
+    ) {
+        this.pricePerUnit =
+            this.pricePerPack / (this.unitsPerCarton / this.packsPerCarton);
     }
 
     next();

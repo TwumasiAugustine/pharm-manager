@@ -28,6 +28,13 @@ export class DrugService {
             );
         }
 
+        // Validate costPrice
+        if (typeof drugData.costPrice !== 'number' || drugData.costPrice <= 0) {
+            throw new BadRequestError(
+                'Cost price must be a number greater than 0',
+            );
+        }
+
         // Create and return the new drug
         const drug = await Drug.create(drugData);
         return drug;
@@ -79,6 +86,19 @@ export class DrugService {
                     `Drug with batch number ${updateData.batchNumber} already exists`,
                 );
             }
+        }
+
+        // Validate costPrice if present
+        if (updateData.costPrice !== undefined && updateData.costPrice <= 0) {
+            throw new BadRequestError('Cost price must be greater than 0');
+        }
+
+        // Backward compatibility: assign default costPrice if missing
+        if (
+            updateData.costPrice === undefined &&
+            (drug as any).costPrice === undefined
+        ) {
+            updateData.costPrice = 0.01;
         }
 
         // Update and return the drug
@@ -233,6 +253,7 @@ export class DrugService {
             pricePerUnit: drug.pricePerUnit,
             pricePerPack: drug.pricePerPack,
             pricePerCarton: drug.pricePerCarton,
+            costPrice: drug.costPrice,
             expiryDate: drug.expiryDate,
             batchNumber: drug.batchNumber,
             requiresPrescription: drug.requiresPrescription,

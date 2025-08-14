@@ -41,6 +41,8 @@ export interface ICreateDrugRequest {
     supplier?: string;
     /** Storage location */
     location?: string;
+    /** Cost price per unit */
+    costPrice: number;
 }
 
 /**
@@ -67,6 +69,8 @@ export interface IDrugResponse {
     dosageForm: string;
     /** Whether the drug is available for sale */
     ableToSell: boolean;
+    /** Cost price per unit */
+    costPrice: number;
     /** Number of drugs in a carton */
     drugsInCarton: number;
     /** Number of units per carton */

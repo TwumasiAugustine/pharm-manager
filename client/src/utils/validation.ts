@@ -1,5 +1,27 @@
 import { z } from 'zod';
 import { UserRole } from '../types/auth.types';
+export const drugCreateSchema = z.object({
+    name: z.string().min(2).max(100),
+    brand: z.string().min(2).max(100),
+    category: z.string().min(2).max(50),
+    dosageForm: z.string().min(2).max(50),
+    ableToSell: z.boolean(),
+    drugsInCarton: z.number().int().min(0),
+    unitsPerCarton: z.number().int().min(1),
+    packsPerCarton: z.number().int().min(1),
+    quantity: z.number().int().min(0),
+    pricePerUnit: z.number().min(0),
+    pricePerPack: z.number().min(0),
+    pricePerCarton: z.number().min(0),
+    expiryDate: z.union([z.string(), z.date()]),
+    batchNumber: z.string().min(3).max(50),
+    requiresPrescription: z.boolean(),
+    supplier: z.string().min(2).max(100).optional(),
+    location: z.string().min(2).max(100).optional(),
+    costPrice: z.number().min(0.01),
+});
+
+export const drugUpdateSchema = drugCreateSchema.partial();
 
 export const loginSchema = z.object({
     email: z.string().email('Please enter a valid email address'),

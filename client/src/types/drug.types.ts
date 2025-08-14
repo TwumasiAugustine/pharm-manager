@@ -25,6 +25,7 @@ export interface Drug {
     requiresPrescription: boolean;
     supplier?: string;
     location?: string;
+    costPrice: number;
     createdAt: string;
     updatedAt: string;
 }
@@ -49,6 +50,7 @@ export interface CreateDrugRequest {
     requiresPrescription: boolean;
     supplier?: string;
     location?: string;
+    costPrice: number;
 }
 
 /**
