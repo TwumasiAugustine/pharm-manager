@@ -73,6 +73,18 @@ export class SaleService {
                             ).session(session!);
                             if (!drug)
                                 throw new NotFoundError('Drug not found');
+                            // Prevent sale if required fields are missing
+                            if (
+                                drug.pricePerUnit == null ||
+                                drug.costPrice == null ||
+                                drug.packsPerCarton == null ||
+                                drug.unitsPerCarton == null ||
+                                !drug.dosageForm
+                            ) {
+                                throw new BadRequestError(
+                                    `Drug "${drug.name}" is missing required fields and cannot be sold.`
+                                );
+                            }
                             let price = 0;
                             let cost = 0;
                             let stockToDeduct = item.quantity;
@@ -218,6 +230,18 @@ export class SaleService {
                 data.items.map(async (item) => {
                     const drug = await Drug.findById(item.drugId);
                     if (!drug) throw new NotFoundError('Drug not found');
+                    // Prevent sale if required fields are missing
+                    if (
+                        drug.pricePerUnit == null ||
+                        drug.costPrice == null ||
+                        drug.packsPerCarton == null ||
+                        drug.unitsPerCarton == null ||
+                        !drug.dosageForm
+                    ) {
+                        throw new BadRequestError(
+                            `Drug "${drug.name}" is missing required fields and cannot be sold.`
+                        );
+                    }
                     let price = 0;
                     let cost = 0;
                     if (item.saleType === 'unit') {
