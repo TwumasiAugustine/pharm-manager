@@ -175,39 +175,90 @@ export const DrugList: React.FC = () => {
                             data={drugs.drugs || []}
                             columns={
                                 [
-                                    {
-                                        header: 'Name',
-                                        accessor: 'name' as keyof Drug,
-                                    },
-                                    {
-                                        header: 'Brand',
-                                        accessor: 'brand' as keyof Drug,
-                                    },
+                                    { header: 'ID', accessor: 'id' },
+                                    { header: 'Name', accessor: 'name' },
+                                    { header: 'Brand', accessor: 'brand' },
                                     {
                                         header: 'Category',
-                                        accessor: 'category' as keyof Drug,
+                                        accessor: 'category',
+                                    },
+                                    {
+                                        header: 'Dosage Form',
+                                        accessor: 'dosageForm',
+                                    },
+                                    {
+                                        header: 'Able To Sell',
+                                        accessor: 'ableToSell',
+                                    },
+                                    {
+                                        header: 'Drugs In Carton',
+                                        accessor: 'drugsInCarton',
+                                    },
+                                    {
+                                        header: 'Units Per Carton',
+                                        accessor: 'unitsPerCarton',
+                                    },
+                                    {
+                                        header: 'Packs Per Carton',
+                                        accessor: 'packsPerCarton',
                                     },
                                     {
                                         header: 'Quantity',
-                                        accessor: 'quantity' as keyof Drug,
-                                        cell: (value: number) =>
-                                            Number(value).toLocaleString(),
+                                        accessor: 'quantity',
                                     },
                                     {
-                                        header: 'Price',
-                                        accessor: 'price' as keyof Drug,
-                                        cell: (value: number) =>
-                                            formatGHSDisplayAmount(
-                                                Number(value),
-                                            ),
+                                        header: 'Price Per Unit',
+                                        accessor: 'pricePerUnit',
+                                    },
+                                    {
+                                        header: 'Price Per Pack',
+                                        accessor: 'pricePerPack',
+                                    },
+                                    {
+                                        header: 'Price Per Carton',
+                                        accessor: 'pricePerCarton',
+                                    },
+                                    {
+                                        header: 'Cost Price',
+                                        accessor: 'costPrice',
                                     },
                                     {
                                         header: 'Expiry Date',
-                                        accessor: 'expiryDate' as keyof Drug,
+                                        accessor: 'expiryDate',
                                         cell: (value: string) =>
-                                            new Date(
-                                                value,
-                                            ).toLocaleDateString(),
+                                            value
+                                                ? new Date(
+                                                      value,
+                                                  ).toLocaleDateString()
+                                                : '',
+                                    },
+                                    {
+                                        header: 'Batch Number',
+                                        accessor: 'batchNumber',
+                                    },
+                                    {
+                                        header: 'Requires Prescription',
+                                        accessor: 'requiresPrescription',
+                                    },
+                                    {
+                                        header: 'Created At',
+                                        accessor: 'createdAt',
+                                        cell: (value: string) =>
+                                            value
+                                                ? new Date(
+                                                      value,
+                                                  ).toLocaleDateString()
+                                                : '',
+                                    },
+                                    {
+                                        header: 'Updated At',
+                                        accessor: 'updatedAt',
+                                        cell: (value: string) =>
+                                            value
+                                                ? new Date(
+                                                      value,
+                                                  ).toLocaleDateString()
+                                                : '',
                                     },
                                 ] as TableColumn<Drug>[]
                             }

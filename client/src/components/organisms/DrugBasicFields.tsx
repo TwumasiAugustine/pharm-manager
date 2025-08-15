@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaPills, FaTrademark } from 'react-icons/fa';
 import type { UseFormRegister, FieldErrors } from 'react-hook-form';
 import type { DrugFormValues } from '../../validations/drug.validation';
@@ -7,14 +7,20 @@ import { DRUG_NAMES, BRANDS } from '../../data/drugs';
 interface DrugBasicFieldsProps {
     register: UseFormRegister<DrugFormValues>;
     errors: FieldErrors<DrugFormValues>;
+    valueName?: string;
+    valueBrand?: string;
+    setValue?: (field: keyof DrugFormValues, value: any, options?: any) => void;
 }
 
 export const DrugBasicFields: React.FC<DrugBasicFieldsProps> = ({
     register,
     errors,
+    valueName = '',
+    valueBrand = '',
+    setValue,
 }) => {
     // Drug Name Autocomplete
-    const [nameSearch, setNameSearch] = useState('');
+    const [nameSearch, setNameSearch] = useState(valueName || '');
     const [showNameResults, setShowNameResults] = useState(false);
     const filteredNames = nameSearch
         ? DRUG_NAMES.filter((n) =>
@@ -23,7 +29,14 @@ export const DrugBasicFields: React.FC<DrugBasicFieldsProps> = ({
         : DRUG_NAMES;
 
     // Brand Autocomplete
-    const [brandSearch, setBrandSearch] = useState('');
+    const [brandSearch, setBrandSearch] = useState(valueBrand || '');
+    // Keep local state in sync with form value (for edit mode)
+    useEffect(() => {
+        setNameSearch(valueName);
+    }, [valueName]);
+    useEffect(() => {
+        setBrandSearch(valueBrand);
+    }, [valueBrand]);
     const [showBrandResults, setShowBrandResults] = useState(false);
     const filteredBrands = brandSearch
         ? BRANDS.filter((b) =>
@@ -58,8 +71,10 @@ export const DrugBasicFields: React.FC<DrugBasicFieldsProps> = ({
                         onChange={(e) => {
                             setNameSearch(e.target.value);
                             setShowNameResults(true);
-                            // Update form value
-                            register('name').onChange(e);
+                            if (setValue)
+                                setValue('name', e.target.value, {
+                                    shouldValidate: true,
+                                });
                         }}
                         onFocus={() => setShowNameResults(true)}
                         onBlur={() =>
@@ -74,9 +89,10 @@ export const DrugBasicFields: React.FC<DrugBasicFieldsProps> = ({
                                     className="px-3 py-2 text-gray-500 cursor-pointer"
                                     onMouseDown={() => {
                                         setNameSearch(nameSearch);
-                                        register('name').onChange({
-                                            target: { value: nameSearch },
-                                        });
+                                        if (setValue)
+                                            setValue('name', nameSearch, {
+                                                shouldValidate: true,
+                                            });
                                     }}
                                 >
                                     Add "{nameSearch}"
@@ -92,9 +108,10 @@ export const DrugBasicFields: React.FC<DrugBasicFieldsProps> = ({
                                         }`}
                                         onMouseDown={() => {
                                             setNameSearch(n);
-                                            register('name').onChange({
-                                                target: { value: n },
-                                            });
+                                            if (setValue)
+                                                setValue('name', n, {
+                                                    shouldValidate: true,
+                                                });
                                         }}
                                     >
                                         {n}
@@ -135,8 +152,10 @@ export const DrugBasicFields: React.FC<DrugBasicFieldsProps> = ({
                         onChange={(e) => {
                             setBrandSearch(e.target.value);
                             setShowBrandResults(true);
-                            // Update form value
-                            register('brand').onChange(e);
+                            if (setValue)
+                                setValue('brand', e.target.value, {
+                                    shouldValidate: true,
+                                });
                         }}
                         onFocus={() => setShowBrandResults(true)}
                         onBlur={() =>
@@ -151,9 +170,10 @@ export const DrugBasicFields: React.FC<DrugBasicFieldsProps> = ({
                                     className="px-3 py-2 text-gray-500 cursor-pointer"
                                     onMouseDown={() => {
                                         setBrandSearch(brandSearch);
-                                        register('brand').onChange({
-                                            target: { value: brandSearch },
-                                        });
+                                        if (setValue)
+                                            setValue('brand', brandSearch, {
+                                                shouldValidate: true,
+                                            });
                                     }}
                                 >
                                     Add "{brandSearch}"
@@ -169,9 +189,10 @@ export const DrugBasicFields: React.FC<DrugBasicFieldsProps> = ({
                                         }`}
                                         onMouseDown={() => {
                                             setBrandSearch(b);
-                                            register('brand').onChange({
-                                                target: { value: b },
-                                            });
+                                            if (setValue)
+                                                setValue('brand', b, {
+                                                    shouldValidate: true,
+                                                });
                                         }}
                                     >
                                         {b}

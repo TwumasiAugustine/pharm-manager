@@ -98,6 +98,7 @@ export const DrugForm = ({
         formState: { errors },
         reset,
         setValue,
+        watch,
     } = useForm<DrugFormValues>({
         // @ts-expect-error - The zodResolver types are mismatched but it works correctly at runtime
         resolver: zodResolver(drugSchema),
@@ -133,8 +134,14 @@ export const DrugForm = ({
                 supplier: ensuredInitialData.supplier || '',
                 location: ensuredInitialData.location || '',
             });
+            setValue('name', ensuredInitialData.name || '', {
+                shouldValidate: true,
+            });
+            setValue('brand', ensuredInitialData.brand || '', {
+                shouldValidate: true,
+            });
         }
-    }, [ensuredInitialData, reset]);
+    }, [ensuredInitialData, reset, setValue]);
 
     // Initialize category search with existing value if editing
     useEffect(() => {
@@ -200,7 +207,13 @@ export const DrugForm = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
                     <FormSection title="Basic Information">
-                        <DrugBasicFields register={register} errors={errors} />
+                        <DrugBasicFields
+                            register={register}
+                            errors={errors}
+                            setValue={setValue}
+                            valueName={watch('name')}
+                            valueBrand={watch('brand')}
+                        />
                     </FormSection>
                 </div>
                 <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
@@ -228,6 +241,7 @@ export const DrugForm = ({
                         <DrugAdvancedFields
                             register={register}
                             errors={errors}
+                            setValue={setValue}
                         />
                     </FormSection>
                 </div>
