@@ -1,4 +1,4 @@
-import Drug from '../models/drug.model';
+import { Drug } from '../models/drug.model';
 import { ExpiryNotification } from '../models/expiry.model';
 import type {
     IExpiryAlert,
@@ -6,7 +6,6 @@ import type {
     IExpiryStats,
     IExpiryNotification,
 } from '../types/expiry.types';
-import { Types } from 'mongoose';
 
 export class ExpiryService {
     /**
@@ -63,8 +62,18 @@ export class ExpiryService {
                 expiryDate: drug.expiryDate,
                 daysUntilExpiry,
                 quantity: drug.quantity,
-                price: drug.price,
+                price: drug.pricePerUnit,
+                costPrice: drug.costPrice,
+                pricePerUnit: drug.pricePerUnit,
+                pricePerPack: drug.pricePerPack,
+                pricePerCarton: drug.pricePerCarton,
                 batchNumber: drug.batchNumber,
+                drugsInCarton: drug.drugsInCarton,
+                unitsPerCarton: drug.unitsPerCarton,
+                packsPerCarton: drug.packsPerCarton,
+                requiresPrescription: drug.requiresPrescription,
+                supplier: drug.supplier,
+                location: drug.location,
                 alertLevel,
                 isAcknowledged: false,
                 createdAt: drug.createdAt,
@@ -125,7 +134,7 @@ export class ExpiryService {
                 (drug.expiryDate.getTime() - today.getTime()) /
                     (1000 * 60 * 60 * 24),
             );
-            const drugValue = drug.quantity * drug.price;
+            const drugValue = drug.quantity * drug.pricePerUnit;
             totalValue += drugValue;
 
             if (daysUntilExpiry < 0) {

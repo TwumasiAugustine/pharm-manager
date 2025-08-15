@@ -1,4 +1,5 @@
-import Drug from '../models/drug.model';
+import { Drug as DrugModel } from '../models/drug.model';
+import type { IDrugResponse } from '../types/drug.types';
 import { Sale } from '../models/sale.model';
 import Customer from '../models/customer.model';
 import { getPharmacyInfo } from './pharmacy.service';
@@ -129,19 +130,25 @@ export class ReportService {
      * Generate inventory report
      */
     private async generateInventoryReport(): Promise<ReportDataItem[]> {
-        const drugs = await Drug.find({});
-
-        return drugs.map((drug: any) => ({
-            id: drug._id.toString(),
-            date: drug.createdAt.toISOString(),
+        const drugs: IDrugResponse[] = await DrugModel.find({});
+        return drugs.map((drug) => ({
+            id: drug.id || drug._id?.toString() || '',
+            date:
+                typeof drug.createdAt === 'string'
+                    ? drug.createdAt
+                    : drug.createdAt?.toISOString() || '',
             drugName: drug.name,
             category: drug.category,
             quantity: drug.quantity,
-            unitPrice: drug.price,
-            totalPrice: drug.quantity * drug.price,
-            profit: 0, // Cannot calculate profit without cost price in schema
+            unitPrice: drug.pricePerUnit,
+            totalPrice: drug.quantity * drug.pricePerUnit,
+            costPrice: drug.costPrice,
+            profit: 0, // Cannot calculate profit for inventory
             batchNumber: drug.batchNumber,
-            expiryDate: drug.expiryDate.toISOString(),
+            expiryDate:
+                typeof drug.expiryDate === 'string'
+                    ? drug.expiryDate
+                    : drug.expiryDate?.toISOString() || '',
         }));
     }
 
@@ -150,36 +157,38 @@ export class ReportService {
      */
     private async generateExpiryReport(): Promise<ReportDataItem[]> {
         const now = new Date();
-        const oneYearFromNow = new Date(
-            now.getTime() + 365 * 24 * 60 * 60 * 1000,
-        );
-
-        // Get all drugs and calculate their expiry status
-        const drugs = await Drug.find({});
-
+        const drugs: IDrugResponse[] = await DrugModel.find({});
         return drugs
-            .map((drug: any) => {
-                const expiryDate = new Date(drug.expiryDate);
+            .map((drug) => {
+                const expiryDateObj = new Date(drug.expiryDate);
                 const daysUntilExpiry = Math.ceil(
-                    (expiryDate.getTime() - now.getTime()) /
+                    (expiryDateObj.getTime() - now.getTime()) /
                         (1000 * 60 * 60 * 24),
                 );
-
                 return {
-                    id: drug._id.toString(),
-                    date: drug.createdAt.toISOString(),
+                    id: drug.id || drug._id?.toString() || '',
+                    date:
+                        typeof drug.createdAt === 'string'
+                            ? drug.createdAt
+                            : drug.createdAt?.toISOString() || '',
                     drugName: drug.name,
                     category: drug.category,
                     quantity: drug.quantity,
-                    unitPrice: drug.price,
-                    totalPrice: drug.quantity * drug.price,
+                    unitPrice: drug.pricePerUnit,
+                    totalPrice: drug.quantity * drug.pricePerUnit,
+                    costPrice: drug.costPrice,
                     profit: 0,
                     batchNumber: drug.batchNumber,
-                    expiryDate: drug.expiryDate?.toISOString(),
+                    expiryDate:
+                        typeof drug.expiryDate === 'string'
+                            ? drug.expiryDate
+                            : drug.expiryDate?.toISOString() || '',
                     daysUntilExpiry,
                 };
             })
-            .sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry); // Sort by expiry date, closest first
+            .sort(
+                (a, b) => (a.daysUntilExpiry || 0) - (b.daysUntilExpiry || 0),
+            );
     }
 
     /**
@@ -207,13 +216,25 @@ export class ReportService {
             (sum, item) => sum + (item.profit || 0),
             0,
         );
+        // Calculate totalCost using costPrice from drug model if available, else fallback to revenue-profit
+        let totalCost = 0;
+        for (const item of data) {
+            // Try to get costPrice from the drug model if available
+            if ((item as any).costPrice) {
+                totalCost += (item as any).costPrice * item.quantity;
+            } else if (
+                typeof item.totalPrice === 'number' &&
+                typeof item.profit === 'number'
+            ) {
+                totalCost += item.totalPrice - (item.profit || 0);
+            }
+        }
         const totalSales = reportType === 'sales' ? data.length : 0;
         const totalItems = data.reduce((sum, item) => sum + item.quantity, 0);
         const profitMargin =
             totalRevenue > 0 && totalProfit > 0
                 ? (totalProfit / totalRevenue) * 100
                 : null;
-
         // Find top item based on report type
         const itemCounts = data.reduce(
             (acc, item) => {
@@ -225,19 +246,18 @@ export class ReportService {
             },
             {} as Record<string, number>,
         );
-
         const topItem =
             Object.entries(itemCounts).sort(
                 ([, a], [, b]) => (b as number) - (a as number),
             )[0]?.[0] || 'N/A';
-
         const averageOrderValue =
             totalSales > 0
                 ? totalRevenue / totalSales
                 : totalRevenue / (data.length || 1);
-
         return {
             totalRevenue,
+            totalCost,
+            totalProfit,
             totalSales: reportType === 'sales' ? totalSales : data.length,
             totalItems,
             profitMargin,
@@ -321,6 +341,8 @@ export class ReportService {
             // Add summary information
             csvContent += '"SUMMARY"\n';
             csvContent += `"Total Revenue","GH₵${summary.totalRevenue.toLocaleString()}"\n`;
+            csvContent += `"Total Cost","GH₵${summary.totalCost?.toLocaleString() || '0.00'}"\n`;
+            csvContent += `"Total Profit","GH₵${summary.totalProfit?.toLocaleString() || '0.00'}"\n`;
             csvContent += `"Total Sales","${summary.totalSales}"\n`;
             csvContent += `"Total Items","${summary.totalItems}"\n`;
             csvContent += `"Profit Margin","${summary.profitMargin ? summary.profitMargin.toFixed(1) + '%' : 'N/A'}"\n`;

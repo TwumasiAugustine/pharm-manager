@@ -13,6 +13,8 @@ export interface ReportFilters {
 
 export interface ReportSummaryData {
     totalRevenue: number;
+    totalCost: number;
+    totalProfit: number;
     totalSales: number;
     totalItems: number;
     profitMargin: number | null;
