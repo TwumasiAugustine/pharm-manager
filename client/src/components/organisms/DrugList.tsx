@@ -260,6 +260,12 @@ export const DrugList: React.FC = () => {
                                                   ).toLocaleDateString()
                                                 : '',
                                     },
+                                    {
+                                        header: 'Able To Sell',
+                                        accessor: 'ableToSell',
+                                        cell: (value: boolean) =>
+                                            value ? 'Yes' : 'No',
+                                    },
                                 ] as TableColumn<Drug>[]
                             }
                             actions={

@@ -5,6 +5,7 @@ export interface CreateSaleRequest {
     items: {
         drugId: string;
         quantity: number;
+        saleType: 'unit' | 'pack' | 'carton'; // New: type of sale
     }[];
     totalAmount: number;
     paymentMethod: 'cash' | 'card' | 'mobile';
@@ -20,6 +21,8 @@ export interface SaleItemResponse {
     brand: string;
     quantity: number;
     priceAtSale: number;
+    saleType: 'unit' | 'pack' | 'carton'; // New
+    profit: number; // New
 }
 
 // Interface for a full sale response
@@ -27,6 +30,7 @@ export interface SaleResponse {
     id: string;
     items: SaleItemResponse[];
     totalAmount: number;
+    totalProfit: number; // New
     soldBy: {
         id: string;
         name: string;

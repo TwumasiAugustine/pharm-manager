@@ -37,7 +37,7 @@ export class SaleController {
             });
 
             res.status(201).json(successResponse(sale, 'Sale created', 201));
-        } catch (err) {
+        } catch (err: any) {
             next(err);
         }
     }
@@ -52,7 +52,7 @@ export class SaleController {
                 endDate: endDate as string,
             });
             res.json(successResponse(result));
-        } catch (err) {
+        } catch (err: any) {
             next(err);
         }
     }
@@ -61,7 +61,7 @@ export class SaleController {
         try {
             const sale = await saleService.getSaleById(req.params.id);
             res.json(successResponse(sale));
-        } catch (err) {
+        } catch (err: any) {
             next(err);
         }
     }

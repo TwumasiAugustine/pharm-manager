@@ -21,6 +21,8 @@ export interface SaleItem {
     brand: string;
     quantity: number;
     priceAtSale: number;
+    saleType: 'unit' | 'pack' | 'carton'; // New
+    profit: number; // New
     id?: string;
     _id?: string;
     drug?: DrugDetails; // Add the nested drug object
@@ -32,6 +34,7 @@ export interface Sale {
     _id?: string;
     items: SaleItem[];
     totalAmount: number;
+    totalProfit: number; // New
     soldBy: {
         id?: string;
         _id?: string;
@@ -52,7 +55,11 @@ export interface Sale {
 
 // For creating a new sale
 export interface CreateSaleRequest {
-    items: { drugId: string; quantity: number }[];
+    items: {
+        drugId: string;
+        quantity: number;
+        saleType: 'unit' | 'pack' | 'carton';
+    }[];
     totalAmount: number;
     paymentMethod: 'cash' | 'card' | 'mobile';
     customerId?: string;
@@ -64,6 +71,7 @@ export interface CreateSaleRequest {
 export interface SaleFormItem {
     drug: string; // drugId
     quantity: number;
+    saleType: 'unit' | 'pack' | 'carton';
 }
 export interface SaleFormInput {
     items: SaleFormItem[];

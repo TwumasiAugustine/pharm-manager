@@ -1,5 +1,5 @@
 import { Sale, ISale } from '../models/sale.model';
-import Drug from '../models/drug.model';
+import{ Drug }from '../models/drug.model';
 import Customer from '../models/customer.model';
 import { Types } from 'mongoose';
 import mongoose from 'mongoose';
@@ -41,7 +41,11 @@ export class SaleService {
      * @returns The newly created sale object
      */
     async createSale(data: {
-        items: { drugId: string; quantity: number }[];
+        items: {
+            drugId: string;
+            quantity: number;
+            saleType: 'unit' | 'pack' | 'carton';
+        }[];
         totalAmount: number;
         paymentMethod: 'cash' | 'card' | 'mobile';
         transactionId?: string;
@@ -61,6 +65,7 @@ export class SaleService {
             await session.withTransaction(
                 async () => {
                     let calculatedTotal = 0;
+                    let calculatedProfit = 0;
                     const saleItems = await Promise.all(
                         data.items.map(async (item) => {
                             const drug = await Drug.findById(
@@ -68,15 +73,54 @@ export class SaleService {
                             ).session(session!);
                             if (!drug)
                                 throw new NotFoundError('Drug not found');
-                            if (drug.quantity < item.quantity)
-                                throw new BadRequestError('Insufficient stock');
-                            drug.quantity -= item.quantity;
+                            let price = 0;
+                            let cost = 0;
+                            let stockToDeduct = item.quantity;
+                            if (item.saleType === 'unit') {
+                                price = drug.pricePerUnit;
+                                cost = drug.costPrice;
+                                if (drug.quantity < item.quantity)
+                                    throw new BadRequestError(
+                                        'Insufficient unit stock',
+                                    );
+                                drug.quantity -= item.quantity;
+                            } else if (item.saleType === 'pack') {
+                                price = drug.pricePerPack;
+                                cost = drug.costPrice * drug.unitsPerCarton;
+                                const packUnits =
+                                    drug.unitsPerCarton * item.quantity;
+                                if (drug.quantity < packUnits)
+                                    throw new BadRequestError(
+                                        'Insufficient pack stock',
+                                    );
+                                drug.quantity -= packUnits;
+                            } else if (item.saleType === 'carton') {
+                                price = drug.pricePerCarton;
+                                cost =
+                                    drug.costPrice *
+                                    drug.unitsPerCarton *
+                                    drug.packsPerCarton;
+                                const cartonUnits =
+                                    drug.unitsPerCarton *
+                                    drug.packsPerCarton *
+                                    item.quantity;
+                                if (drug.quantity < cartonUnits)
+                                    throw new BadRequestError(
+                                        'Insufficient carton stock',
+                                    );
+                                drug.quantity -= cartonUnits;
+                            }
                             await drug.save({ session: session! });
-                            calculatedTotal += drug.price * item.quantity;
+                            const itemTotal = price * item.quantity;
+                            const itemProfit = (price - cost) * item.quantity;
+                            calculatedTotal += itemTotal;
+                            calculatedProfit += itemProfit;
                             return {
                                 drug: drug._id,
                                 quantity: item.quantity,
-                                priceAtSale: drug.price,
+                                priceAtSale: price,
+                                saleType: item.saleType,
+                                profit: itemProfit,
                             };
                         }),
                     );
@@ -89,6 +133,7 @@ export class SaleService {
                             {
                                 items: saleItems,
                                 totalAmount: calculatedTotal,
+                                totalProfit: calculatedProfit,
                                 soldBy: new Types.ObjectId(data.userId),
                                 customer: data.customerId
                                     ? new Types.ObjectId(data.customerId)
@@ -154,7 +199,11 @@ export class SaleService {
      * Used when MongoDB is not in replica set mode
      */
     private async createSaleWithoutTransaction(data: {
-        items: { drugId: string; quantity: number }[];
+        items: {
+            drugId: string;
+            quantity: number;
+            saleType: 'unit' | 'pack' | 'carton';
+        }[];
         totalAmount: number;
         paymentMethod: 'cash' | 'card' | 'mobile';
         transactionId?: string;
@@ -164,19 +213,57 @@ export class SaleService {
     }) {
         try {
             let calculatedTotal = 0;
+            let calculatedProfit = 0;
             const saleItems = await Promise.all(
                 data.items.map(async (item) => {
                     const drug = await Drug.findById(item.drugId);
                     if (!drug) throw new NotFoundError('Drug not found');
-                    if (drug.quantity < item.quantity)
-                        throw new BadRequestError('Insufficient stock');
-                    drug.quantity -= item.quantity;
+                    let price = 0;
+                    let cost = 0;
+                    if (item.saleType === 'unit') {
+                        price = drug.pricePerUnit;
+                        cost = drug.costPrice;
+                        if (drug.quantity < item.quantity)
+                            throw new BadRequestError(
+                                'Insufficient unit stock',
+                            );
+                        drug.quantity -= item.quantity;
+                    } else if (item.saleType === 'pack') {
+                        price = drug.pricePerPack;
+                        cost = drug.costPrice * drug.unitsPerCarton;
+                        const packUnits = drug.unitsPerCarton * item.quantity;
+                        if (drug.quantity < packUnits)
+                            throw new BadRequestError(
+                                'Insufficient pack stock',
+                            );
+                        drug.quantity -= packUnits;
+                    } else if (item.saleType === 'carton') {
+                        price = drug.pricePerCarton;
+                        cost =
+                            drug.costPrice *
+                            drug.unitsPerCarton *
+                            drug.packsPerCarton;
+                        const cartonUnits =
+                            drug.unitsPerCarton *
+                            drug.packsPerCarton *
+                            item.quantity;
+                        if (drug.quantity < cartonUnits)
+                            throw new BadRequestError(
+                                'Insufficient carton stock',
+                            );
+                        drug.quantity -= cartonUnits;
+                    }
                     await drug.save();
-                    calculatedTotal += drug.price * item.quantity;
+                    const itemTotal = price * item.quantity;
+                    const itemProfit = (price - cost) * item.quantity;
+                    calculatedTotal += itemTotal;
+                    calculatedProfit += itemProfit;
                     return {
                         drug: drug._id,
                         quantity: item.quantity,
-                        priceAtSale: drug.price,
+                        priceAtSale: price,
+                        saleType: item.saleType,
+                        profit: itemProfit,
                     };
                 }),
             );
@@ -187,6 +274,7 @@ export class SaleService {
             const sale = await Sale.create({
                 items: saleItems,
                 totalAmount: calculatedTotal,
+                totalProfit: calculatedProfit,
                 soldBy: new Types.ObjectId(data.userId),
                 customer: data.customerId
                     ? new Types.ObjectId(data.customerId)

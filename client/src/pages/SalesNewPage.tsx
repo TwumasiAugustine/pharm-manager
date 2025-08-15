@@ -12,11 +12,12 @@ import {
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useCreateSale } from '../hooks/useSales';
 import { useDrugs } from '../hooks/useDrugs';
+import type { Drug } from '../types/drug.types';
 import { getErrorMessage } from '../utils/error';
 import { SearchBar } from '../components/molecules/SearchBar';
 import { useDebounce } from '../hooks/useDebounce';
 import { CustomerSelect } from '../components/molecules/CustomerSelect';
-import { FaShoppingCart,  FaPills, FaUser } from 'react-icons/fa';
+import { FaShoppingCart, FaPills, FaUser } from 'react-icons/fa';
 
 const SalesNewPage: React.FC = () => {
     const navigate = useNavigate();
@@ -59,13 +60,22 @@ const SalesNewPage: React.FC = () => {
     }, [fields, replace]);
     const mutation = useCreateSale();
     const onSubmit = (values: SaleFormInput) => {
-        // Calculate totalAmount from selected drugs and quantities
+        // Calculate totalAmount from selected drugs and quantities, respecting saleType
         const selectedDrugs = values.items.map((item) => {
-            const drug = drugs.find((d) => d.id === item.drug);
+            const drug = drugs.find((d: Drug) => d.id === item.drug);
+            let price = 0;
+            if (drug) {
+                if (item.saleType === 'unit') price = drug.pricePerUnit || 0;
+                else if (item.saleType === 'pack')
+                    price = drug.pricePerPack || 0;
+                else if (item.saleType === 'carton')
+                    price = drug.pricePerCarton || 0;
+            }
             return {
-                price: drug ? drug.price : 0,
+                price,
                 quantity: item.quantity,
                 drugId: item.drug,
+                saleType: item.saleType,
             };
         });
         const totalAmount = selectedDrugs.reduce(
@@ -73,9 +83,10 @@ const SalesNewPage: React.FC = () => {
             0,
         );
         const payload = {
-            items: selectedDrugs.map(({ drugId, quantity }) => ({
+            items: selectedDrugs.map(({ drugId, quantity, saleType }) => ({
                 drugId,
                 quantity,
+                saleType,
             })),
             totalAmount,
             paymentMethod: values.paymentMethod,
@@ -172,6 +183,7 @@ const SalesNewPage: React.FC = () => {
                                                         append({
                                                             drug: drug.id,
                                                             quantity: 1,
+                                                            saleType: 'unit',
                                                         });
                                                         setSearchTerm('');
                                                     }}
@@ -198,7 +210,33 @@ const SalesNewPage: React.FC = () => {
                         </div>
                         {/* Sale Items - show only selected drugs with quantity and remove */}
                         {fields.map((field, idx) => {
-                            const drug = drugs.find((d) => d.id === field.drug);
+                            const drug = drugs.find(
+                                (d: Drug) => d.id === field.drug,
+                            );
+                            // Calculate price and profit for this item
+                            let price = 0;
+                            let cost = 0;
+                            let profit = 0;
+                            const quantity = field.quantity || 1;
+                            const saleType = field.saleType || 'unit';
+                            if (drug) {
+                                if (saleType === 'unit') {
+                                    price = drug.pricePerUnit || 0;
+                                    cost = drug.costPrice || 0;
+                                } else if (saleType === 'pack') {
+                                    price = drug.pricePerPack || 0;
+                                    cost =
+                                        (drug.costPrice || 0) *
+                                        (drug.unitsPerCarton || 1);
+                                } else if (saleType === 'carton') {
+                                    price = drug.pricePerCarton || 0;
+                                    cost =
+                                        (drug.costPrice || 0) *
+                                        (drug.unitsPerCarton || 1) *
+                                        (drug.packsPerCarton || 1);
+                                }
+                                profit = (price - cost) * quantity;
+                            }
                             return (
                                 <div
                                     key={field.id}
@@ -248,6 +286,34 @@ const SalesNewPage: React.FC = () => {
                                             </span>
                                         )}
                                     </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">
+                                            Sale Type
+                                        </label>
+                                        <select
+                                            {...register(
+                                                `items.${idx}.saleType` as const,
+                                            )}
+                                            className="w-24 border rounded p-1"
+                                            defaultValue={
+                                                field.saleType || 'unit'
+                                            }
+                                        >
+                                            <option value="unit">Unit</option>
+                                            <option value="pack">Pack</option>
+                                            <option value="carton">
+                                                Carton
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">
+                                            Profit
+                                        </label>
+                                        <div className="p-2 border rounded bg-gray-50 min-w-[60px] text-right">
+                                            {profit.toFixed(2)}
+                                        </div>
+                                    </div>
                                     <Button
                                         type="button"
                                         variant="danger"
@@ -263,7 +329,45 @@ const SalesNewPage: React.FC = () => {
                             );
                         })}
                         {/* No Add Item button - drugs are only added via search */}
-                        <div className="flex justify-end">
+                        {/* Total profit display */}
+                        <div className="flex justify-end items-center gap-4 mt-2">
+                            <div className="text-green-700 font-semibold">
+                                Total Profit:{' '}
+                                {fields
+                                    .reduce((sum, field) => {
+                                        const drug = drugs.find(
+                                            (d: Drug) => d.id === field.drug,
+                                        );
+                                        let price = 0;
+                                        let cost = 0;
+                                        const quantity = field.quantity || 1;
+                                        const saleType =
+                                            field.saleType || 'unit';
+                                        if (drug) {
+                                            if (saleType === 'unit') {
+                                                price = drug.pricePerUnit || 0;
+                                                cost = drug.costPrice || 0;
+                                            } else if (saleType === 'pack') {
+                                                price = drug.pricePerPack || 0;
+                                                cost =
+                                                    (drug.costPrice || 0) *
+                                                    (drug.unitsPerCarton || 1);
+                                            } else if (saleType === 'carton') {
+                                                price =
+                                                    drug.pricePerCarton || 0;
+                                                cost =
+                                                    (drug.costPrice || 0) *
+                                                    (drug.unitsPerCarton || 1) *
+                                                    (drug.packsPerCarton || 1);
+                                            }
+                                            return (
+                                                sum + (price - cost) * quantity
+                                            );
+                                        }
+                                        return sum;
+                                    }, 0)
+                                    .toFixed(2)}
+                            </div>
                             <Button
                                 type="submit"
                                 isLoading={mutation.isPending}
