@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import type { SubmitHandler } from 'react-hook-form';
@@ -100,8 +101,7 @@ export const DrugForm = ({
         setValue,
         watch,
     } = useForm<DrugFormValues>({
-        // @ts-expect-error - The zodResolver types are mismatched but it works correctly at runtime
-        resolver: zodResolver(drugSchema),
+        resolver: zodResolver(drugSchema) as any, // Type assertion to avoid SubmitHandler type error
         defaultValues,
     });
 

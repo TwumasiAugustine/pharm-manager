@@ -82,6 +82,7 @@ export interface PaginatedDrugsResponse {
     page: number;
     limit: number;
     totalPages: number;
+    totalItems: number; // Total number of items across all pages
 }
 
 /**

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { FaPills, FaTrademark } from 'react-icons/fa';
 import type { UseFormRegister, FieldErrors } from 'react-hook-form';

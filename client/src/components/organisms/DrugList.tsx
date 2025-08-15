@@ -6,7 +6,6 @@ import type { TableColumn, TableAction } from '../molecules/Table';
 import { Pagination } from '../molecules/Pagination';
 import { SearchBar } from '../molecules/SearchBar';
 import type { Drug } from '../../types/drug.types';
-import { formatGHSDisplayAmount } from '../../utils/currency';
 
 /**
  * DrugList component to display and manage the list of drugs.
@@ -189,6 +188,8 @@ export const DrugList: React.FC = () => {
                                     {
                                         header: 'Able To Sell',
                                         accessor: 'ableToSell',
+                                        cell: (value: boolean) =>
+                                            value ? 'Yes' : 'No',
                                     },
                                     {
                                         header: 'Drugs In Carton',
@@ -260,12 +261,6 @@ export const DrugList: React.FC = () => {
                                                   ).toLocaleDateString()
                                                 : '',
                                     },
-                                    {
-                                        header: 'Able To Sell',
-                                        accessor: 'ableToSell',
-                                        cell: (value: boolean) =>
-                                            value ? 'Yes' : 'No',
-                                    },
                                 ] as TableColumn<Drug>[]
                             }
                             actions={
@@ -298,7 +293,7 @@ export const DrugList: React.FC = () => {
                             totalPages={pagination?.totalPages || 1}
                             onPageChange={handlePageChange}
                             showInfo={true}
-                            totalItems={pagination?.total || 0}
+                            totalItems={pagination?.totalItems || 0}
                             itemsPerPage={pagination?.limit || 10}
                             size="md"
                         />

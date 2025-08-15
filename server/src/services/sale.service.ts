@@ -1,5 +1,5 @@
 import { Sale, ISale } from '../models/sale.model';
-import{ Drug }from '../models/drug.model';
+import { Drug } from '../models/drug.model';
 import Customer from '../models/customer.model';
 import { Types } from 'mongoose';
 import mongoose from 'mongoose';
@@ -82,7 +82,7 @@ export class SaleService {
                                 !drug.dosageForm
                             ) {
                                 throw new BadRequestError(
-                                    `Drug "${drug.name}" is missing required fields and cannot be sold.`
+                                    `Drug "${drug.name}" is missing required fields and cannot be sold.`,
                                 );
                             }
                             let price = 0;
@@ -239,7 +239,7 @@ export class SaleService {
                         !drug.dosageForm
                     ) {
                         throw new BadRequestError(
-                            `Drug "${drug.name}" is missing required fields and cannot be sold.`
+                            `Drug "${drug.name}" is missing required fields and cannot be sold.`,
                         );
                     }
                     let price = 0;

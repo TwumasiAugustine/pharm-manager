@@ -120,9 +120,50 @@ const Receipt: React.FC<ReceiptProps> = ({ sale, drugs, pharmacyInfo }) => {
                                         d.id === item.drugId ||
                                         d._id === item.drugId,
                                 );
-                            const price = drug?.price || item.priceAtSale || 0;
-                            // Use drug properties if available
-                            const displayName = drug?.name || item.name;
+
+                            // Determine price based on saleType and available fields
+                            let price = item.priceAtSale || 0;
+                            if (drug) {
+                                if (
+                                    'pricePerUnit' in drug &&
+                                    item.saleType === 'unit'
+                                ) {
+                                    price = drug.pricePerUnit;
+                                } else if (
+                                    'pricePerPack' in drug &&
+                                    item.saleType === 'pack'
+                                ) {
+                                    price =
+                                        drug.pricePerPack ??
+                                        item.priceAtSale ??
+                                        0;
+                                } else if (
+                                    'pricePerCarton' in drug &&
+                                    item.saleType === 'carton'
+                                ) {
+                                    price =
+                                        drug.pricePerCarton ??
+                                        item.priceAtSale ??
+                                        0;
+                                } else if (
+                                    'price' in drug &&
+                                    typeof drug.price === 'number'
+                                ) {
+                                    price = drug.price;
+                                }
+                            }
+
+                            // Dosage form: DrugDetails may not have it, so fallback to empty string
+                            const displayDosageForm =
+                                'dosageForm' in (drug || {}) &&
+                                (drug as Drug).dosageForm
+                                    ? (drug as Drug).dosageForm
+                                    : '';
+                            const displayName = displayDosageForm
+                                ? `${
+                                      drug?.name || item.name
+                                  } (${displayDosageForm})`
+                                : drug?.name || item.name;
                             const displayBrand =
                                 drug?.brand || item.brand || 'N/A';
 

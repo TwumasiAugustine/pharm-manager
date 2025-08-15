@@ -49,6 +49,7 @@ export const useDrugs = (
             return {
                 drugs: [],
                 totalCount: 0,
+                totalItems: 0,
                 page,
                 limit,
                 totalPages: 0,
@@ -87,6 +88,7 @@ export const useDrugs = (
             totalCount: raw.totalCount ?? 0,
             page: raw.page ?? page,
             limit: raw.limit ?? limit,
+            totalItems: raw.totalItems ?? 0,
             totalPages: raw.totalPages ?? 0,
         };
     }, [query.data, page, limit]);
@@ -103,6 +105,7 @@ export const useDrugs = (
         limit,
         setLimit,
         totalPages,
+        totalItems: mappedData.totalItems,
     };
 
     return {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Type definition for the pagination control object
 export interface PaginationControls {
     page: number;
@@ -5,6 +6,7 @@ export interface PaginationControls {
     limit: number;
     setLimit: (limit: number) => void;
     totalPages: number;
+    totalItems: number;
 }
 
 // Type definition for the enhanced useQuery result with pagination
