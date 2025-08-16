@@ -33,6 +33,7 @@ import ReportsPage from './pages/ReportsPage';
 import AuditLogsPage from './pages/AuditLogsPage';
 import UserActivityPage from './pages/UserActivityPage';
 import CronManagementPage from './pages/CronManagementPage';
+import UserManagementPage from './pages/UserManagementPage';
 
 // Components
 import { ProtectedRoute } from './components/molecules/ProtectedRoute';
@@ -121,6 +122,10 @@ const router = createBrowserRouter([
             {
                 path: '/cron-management',
                 element: <CronManagementPage />,
+            },
+            {
+                path: '/users',
+                element: <UserManagementPage />,
             },
         ],
     },

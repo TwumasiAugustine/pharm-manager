@@ -6,6 +6,7 @@ import type { User } from '../types/auth.types';
 import {
     FaSignOutAlt,
     FaUser,
+    FaUsers,
     FaTachometerAlt,
     FaPills,
     FaShoppingCart,
@@ -53,6 +54,14 @@ const navItems = [
         match: (pathname: string) =>
             pathname === '/customers' || /^\/customers\/[^/]+$/.test(pathname),
         adminOnly: false,
+    },
+    {
+        to: '/users',
+        icon: <FaUsers className="mr-3" />,
+        label: 'Users',
+        match: (pathname: string) =>
+            pathname === '/users' || /^\/users\/[^/]+$/.test(pathname),
+        adminOnly: true,
     },
     {
         to: '/expiry',
@@ -130,6 +139,7 @@ function Sidebar({
                         Pharmacy App
                     </h1>
                     <button
+                        type="button"
                         className="md:hidden text-gray-600 text-2xl"
                         onClick={onClose}
                         aria-label="Close sidebar"
@@ -161,9 +171,8 @@ function Sidebar({
         </>
     );
 }
-
-// Topbar component
-function Topbar({
+// TopBar component
+function TopBar({
     user,
     onLogout,
     onMenuClick,
@@ -185,17 +194,12 @@ function Topbar({
     )
         title = 'Sale Details';
     else if (location.pathname === '/customers') title = 'Customer Management';
+    else if (location.pathname === '/users') title = 'User Management';
     else if (
         /^\/customers\/[^/]+$/.test(location.pathname) &&
         location.pathname !== '/customers'
     )
         title = 'Customer Details';
-    else if (
-        !/^\/(dashboard|drugs|sales|sales\/new|sales\/[^/]+|customers|customers\/[^/]+)$/.test(
-            location.pathname,
-        )
-    )
-        title = 'Dashboard';
 
     return (
         <header className="bg-white shadow-sm z-10">
@@ -203,6 +207,7 @@ function Topbar({
                 <div className="flex items-center">
                     {/* Hamburger menu for mobile */}
                     <button
+                        type="button"
                         className="md:hidden mr-4 text-2xl text-gray-700"
                         onClick={onMenuClick}
                         aria-label="Open sidebar"
@@ -219,6 +224,7 @@ function Topbar({
                         </span>
                     </div>
                     <button
+                        type="button"
                         onClick={onLogout}
                         className="flex items-center text-red-600 hover:text-red-800"
                     >
@@ -230,6 +236,7 @@ function Topbar({
         </header>
     );
 }
+
 
 interface DashboardLayoutProps {
     children: ReactNode;
@@ -255,12 +262,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col overflow-hidden">
-                <Topbar
+                <TopBar
                     user={user}
                     onLogout={handleLogout}
                     onMenuClick={() => setSidebarOpen(true)}
                 />
-                <main className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-100">
+                <main className="flex-1 overflow-y-auto p-4">
                     {children}
                 </main>
             </div>

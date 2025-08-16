@@ -1,0 +1,47 @@
+import { Router } from 'express';
+
+import { UserController } from '../controllers/user.controller';
+import { authenticate } from '../middlewares/auth.middleware';
+import { authorize } from '../middlewares/authorize.middleware';
+import { UserRole } from '../types/user.types';
+import { validate } from '../middlewares/validation.middleware';
+import {
+    createUserSchema,
+    updateUserSchema,
+} from '../validations/user.validation';
+
+const router = Router();
+const controller = new UserController();
+
+// Get all users (admin only)
+router.get('/', authenticate, authorize([UserRole.ADMIN]), (req, res, next) =>
+    controller.getUsers(req, res, next),
+);
+
+// Create a new user (admin only)
+router.post(
+    '/',
+    authenticate,
+    authorize([UserRole.ADMIN]),
+    validate(createUserSchema),
+    (req, res, next) => controller.createUser(req, res, next),
+);
+
+// Update a user (admin only)
+router.put(
+    '/:id',
+    authenticate,
+    authorize([UserRole.ADMIN]),
+    validate(updateUserSchema),
+    (req, res, next) => controller.updateUser(req, res, next),
+);
+
+// Delete a user (admin only)
+router.delete(
+    '/:id',
+    authenticate,
+    authorize([UserRole.ADMIN]),
+    (req, res, next) => controller.deleteUser(req, res, next),
+);
+
+export default router;

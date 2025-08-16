@@ -1,17 +1,84 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
+import { UserService } from '../services/user.service';
+import { successResponse } from '../utils/response';
+
 import User from '../models/user.model';
 
+/**
+ * Standalone handler to check if the current admin is in first setup mode.
+ * Returns { isFirstSetup: boolean }
+ */
 export const checkAdminFirstSetup = async (req: Request, res: Response) => {
     try {
-        const user = await User.findById(req.user?.id);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+        // req.user is set by authenticate middleware
+        if (!req.user || req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Forbidden: Only admin can check first setup status',
+            });
         }
-
-        res.status(200).json({ isFirstSetup: user.isFirstSetup });
+        const user = await User.findById(req.user.id);
+        res.json({
+            success: true,
+            isFirstSetup: !!user?.isFirstSetup,
+        });
     } catch (error) {
         res.status(500).json({
+            success: false,
             message: 'Failed to check admin first setup status',
         });
     }
 };
+
+export class UserController {
+    private userService: UserService;
+    constructor() {
+        this.userService = new UserService();
+    }
+
+    async getUsers(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { page = 1, limit = 10, search = '' } = req.query;
+            const result = await this.userService.getUsers({
+                page: Number(page),
+                limit: Number(limit),
+                search: String(search),
+            });
+            res.json(successResponse(result, 'Users retrieved successfully'));
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async createUser(req: Request, res: Response, next: NextFunction) {
+        try {
+            const user = await this.userService.createUser(req.body);
+            res.status(201).json(
+                successResponse(user, 'User created successfully'),
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async updateUser(req: Request, res: Response, next: NextFunction) {
+        try {
+            const user = await this.userService.updateUser(
+                req.params.id,
+                req.body,
+            );
+            res.json(successResponse(user, 'User updated successfully'));
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async deleteUser(req: Request, res: Response, next: NextFunction) {
+        try {
+            await this.userService.deleteUser(req.params.id);
+            res.json(successResponse(null, 'User deleted successfully'));
+        } catch (error) {
+            next(error);
+        }
+    }
+}
