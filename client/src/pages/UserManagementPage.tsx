@@ -12,7 +12,7 @@ import {
     useUpdateUser,
     useDeleteUser,
 } from '../hooks/useUsers';
-import { useNotify } from '../hooks/useNotify';
+import { useSafeNotify } from '../utils/useSafeNotify';
 import type { IUser } from '../types/user.types';
 import { UserRole } from '../types/user.types';
 
@@ -20,7 +20,7 @@ const UserManagementPage: React.FC = () => {
     const [showForm, setShowForm] = useState(false);
     const [showActionsDropdown, setShowActionsDropdown] = useState(false);
     const actionsDropdownRef = useRef<HTMLDivElement>(null);
-    const notify = useNotify();
+    const notify = useSafeNotify();
     const [formData, setFormData] = useState<Partial<IUser>>({
         name: '',
         email: '',

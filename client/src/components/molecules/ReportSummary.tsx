@@ -124,7 +124,10 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
                             Average Order Value
                         </p>
                         <p className="text-lg font-medium text-gray-900">
-                            GH₵{summary.averageOrderValue.toLocaleString()}
+                            GH₵
+                            {summary.averageOrderValue != null
+                                ? summary.averageOrderValue.toLocaleString()
+                                : '0.00'}
                         </p>
                     </div>
                 </div>
