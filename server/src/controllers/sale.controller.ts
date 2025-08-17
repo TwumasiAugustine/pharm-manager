@@ -1,3 +1,6 @@
+import PharmacyInfo from '../models/pharmacy-info.model';
+import { UnauthorizedError, BadRequestError } from '../utils/errors';
+import { Sale } from '../models/sale.model';
 import { Request, Response, NextFunction } from 'express';
 import { SaleService } from '../services/sale.service';
 import { successResponse } from '../utils/response';
@@ -9,9 +12,21 @@ export class SaleController {
     async createSale(req: Request, res: Response, next: NextFunction) {
         try {
             const userId = req.user!.id;
+            // Check if short code feature is enabled
+            const pharmacyInfo = await PharmacyInfo.findOne();
+            let shortCode: string | undefined = undefined;
+            if (pharmacyInfo?.requireSaleShortCode) {
+                // Generate a 6-digit short code
+                shortCode = Math.random()
+                    .toString(36)
+                    .substring(2, 8)
+                    .toUpperCase();
+            }
             const sale: any = await saleService.createSale({
                 ...req.body,
                 userId,
+                shortCode,
+                finalized: !shortCode, // If no code, mark as finalized
             });
 
             // Log audit event for sale creation
@@ -41,6 +56,49 @@ export class SaleController {
             next(err);
         }
     }
+
+    // Get sale by short code (for cashier)
+    async getSaleByShortCode(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { code } = req.params;
+            const sale = await Sale.findOne({ shortCode: code });
+            if (!sale) throw new BadRequestError('Invalid or expired code');
+            res.json(successResponse(sale));
+        } catch (err: any) {
+            next(err);
+        }
+    }
+
+    // Cashier: Finalize/print sale using short code
+    async finalizeSaleByShortCode(
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ) {
+        try {
+            if (!req.user) throw new UnauthorizedError('Not authenticated');
+            if (
+                !req.user.permissions ||
+                !req.user.permissions.includes('FINALIZE_SALE')
+            ) {
+                throw new UnauthorizedError('No permission to finalize sale');
+            }
+            const { code } = req.body;
+            const sale = await Sale.findOneAndUpdate(
+                { shortCode: code, finalized: false },
+                { finalized: true },
+                { new: true },
+            );
+            if (!sale)
+                throw new BadRequestError('Invalid or already finalized code');
+            res.json(
+                successResponse(sale, 'Sale finalized and ready for printing'),
+            );
+        } catch (err: any) {
+            next(err);
+        }
+    }
+    // ...existing code...
 
     async getSales(req: Request, res: Response, next: NextFunction) {
         try {

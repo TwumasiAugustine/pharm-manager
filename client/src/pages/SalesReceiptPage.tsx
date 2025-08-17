@@ -10,6 +10,8 @@ import {
 } from '../components/molecules/Alert';
 import { getErrorMessage } from '../utils/error';
 import { useSale } from '../hooks/useSales';
+import saleApi from '../api/sale.api';
+import { useAuthStore } from '../store/auth.store';
 import { useDrugs } from '../hooks/useDrugs';
 import { usePharmacyInfo } from '../hooks/usePharmacy';
 import { useSafeNotify } from '../utils/useSafeNotify';
@@ -20,7 +22,13 @@ const SalesReceiptPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const notify = useSafeNotify();
-
+    const { user } = useAuthStore();
+    const [shortCodeInput, setShortCodeInput] = React.useState('');
+    const [finalizing, setFinalizing] = React.useState(false);
+    const [finalizeError, setFinalizeError] = React.useState<string | null>(
+        null,
+    );
+    // sale will be loaded below, so finalized state is derived from sale
     const {
         data: sale,
         isLoading: saleLoading,
@@ -38,6 +46,8 @@ const SalesReceiptPage: React.FC = () => {
         isLoading: pharmacyInfoLoading,
         error: pharmacyInfoError,
     } = usePharmacyInfo();
+
+    // No need for finalized state, use enhancedSale.finalized directly
 
     // Use useMemo to prevent re-creation on every render
     const drugs = React.useMemo(
@@ -144,6 +154,12 @@ const SalesReceiptPage: React.FC = () => {
 
     if (!enhancedSale) return null;
 
+    // Show finalize/print UI if not finalized, user has FINALIZE_SALE permission, and shortCode exists
+    const canFinalize =
+        !enhancedSale.finalized &&
+        user?.permissions?.includes('FINALIZE_SALE') &&
+        enhancedSale.shortCode;
+
     return (
         <DashboardLayout>
             <div className="flex flex-col items-center py-8 bg-gray-50">
@@ -152,15 +168,64 @@ const SalesReceiptPage: React.FC = () => {
                     drugs={drugs}
                     pharmacyInfo={pharmacyInfo?.pharmacyInfo}
                 />
-                <div className="mt-6 flex gap-4 print:hidden">
-                    <Button onClick={handlePrint}>Print Receipt</Button>
-                    <Button
-                        variant="secondary"
-                        onClick={() => navigate('/sales')}
-                    >
-                        Back to Sales
-                    </Button>
-                </div>
+                {canFinalize ? (
+                    <div className="mt-6 p-4 bg-blue-50 border border-blue-300 rounded text-center w-full max-w-md">
+                        <div className="text-lg font-bold text-blue-800 mb-2">
+                            Enter Sale Short Code to Finalize & Print
+                        </div>
+                        <input
+                            type="text"
+                            value={shortCodeInput}
+                            onChange={(e) =>
+                                setShortCodeInput(e.target.value.toUpperCase())
+                            }
+                            className="border rounded px-3 py-2 w-full text-center font-mono text-xl mb-2"
+                            placeholder="Enter short code"
+                            maxLength={8}
+                            disabled={finalizing}
+                        />
+                        {finalizeError && (
+                            <div className="text-red-600 text-sm mb-2">
+                                {finalizeError}
+                            </div>
+                        )}
+                        <Button
+                            onClick={async () => {
+                                setFinalizing(true);
+                                setFinalizeError(null);
+                                try {
+                                    await saleApi.finalizeSaleByShortCode(
+                                        shortCodeInput,
+                                    );
+                                    notify.success(
+                                        'Sale finalized! You can now print the receipt.',
+                                    );
+                                } catch (e) {
+                                    setFinalizeError(
+                                        (e as any)?.response?.data?.message ||
+                                            'Invalid or expired code',
+                                    );
+                                } finally {
+                                    setFinalizing(false);
+                                }
+                            }}
+                            isLoading={finalizing}
+                            className="w-full mt-2"
+                        >
+                            Finalize & Print
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="mt-6 flex gap-4 print:hidden">
+                        <Button onClick={handlePrint}>Print Receipt</Button>
+                        <Button
+                            variant="secondary"
+                            onClick={() => navigate('/sales')}
+                        >
+                            Back to Sales
+                        </Button>
+                    </div>
+                )}
             </div>
         </DashboardLayout>
     );

@@ -10,6 +10,8 @@ import {
     updateUserSchema,
 } from '../validations/user.validation';
 
+import { assignPermissions } from '../controllers/user.controller';
+
 const router = Router();
 const controller = new UserController();
 
@@ -17,6 +19,8 @@ const controller = new UserController();
 router.get('/', authenticate, authorize([UserRole.ADMIN]), (req, res, next) =>
     controller.getUsers(req, res, next),
 );
+// Admin: Assign permissions to user
+router.post('/assign-permissions', authenticate, assignPermissions);
 
 // Create a new user (admin only)
 router.post(

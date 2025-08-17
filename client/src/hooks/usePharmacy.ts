@@ -34,6 +34,7 @@ export const usePharmacyInfo = () => {
                         registrationNumber: '',
                         taxId: '',
                         operatingHours: '',
+                        requireSaleShortCode: false,
                     },
                     isConfigured: false,
                 };

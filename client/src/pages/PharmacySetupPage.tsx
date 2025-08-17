@@ -9,6 +9,9 @@ import { useAuthStore } from '../store/auth.store';
 import { UserRole } from '../types/auth.types';
 import DashboardLayout from '../layouts/DashboardLayout';
 
+import { pharmacyApi } from '../api/pharmacy.api';
+import { useQueryClient } from '@tanstack/react-query';
+
 const PharmacySetupPage: React.FC = () => {
     const navigate = useNavigate();
     const { user } = useAuthStore();
@@ -17,6 +20,34 @@ const PharmacySetupPage: React.FC = () => {
     const [defaultValues, setDefaultValues] = useState<PharmacyInfo | null>(
         null,
     );
+    const [requireShortCode, setRequireShortCode] = useState(false);
+    const [toggleLoading, setToggleLoading] = useState(false);
+    const queryClient = useQueryClient();
+
+    // Fetch current toggle state on mount
+    useEffect(() => {
+        if (pharmacyData?.pharmacyInfo?.requireSaleShortCode !== undefined) {
+            setRequireShortCode(
+                !!pharmacyData.pharmacyInfo.requireSaleShortCode,
+            );
+        }
+    }, [pharmacyData]);
+
+    const handleToggleShortCode = async () => {
+        setToggleLoading(true);
+        try {
+            const res = await pharmacyApi.toggleSaleShortCode(
+                !requireShortCode,
+            );
+            setRequireShortCode(res.requireSaleShortCode);
+            // Refetch pharmacy info so UI stays in sync
+            await queryClient.invalidateQueries({ queryKey: ['pharmacyInfo'] });
+        } catch (e) {
+            alert('Failed to update sale short code setting');
+        } finally {
+            setToggleLoading(false);
+        }
+    };
 
     // Check if user is an admin
     useEffect(() => {
@@ -28,10 +59,6 @@ const PharmacySetupPage: React.FC = () => {
     // Set form default values when pharmacy data is loaded
     useEffect(() => {
         if (pharmacyData?.pharmacyInfo) {
-            console.log(
-                'Setting pharmacy info from React Query:',
-                pharmacyData.pharmacyInfo,
-            );
             setDefaultValues(pharmacyData.pharmacyInfo);
         }
     }, [pharmacyData]);
@@ -46,9 +73,7 @@ const PharmacySetupPage: React.FC = () => {
     // Reset form when defaultValues change
     useEffect(() => {
         if (defaultValues) {
-            // Force reset with the new values
             reset(defaultValues);
-            console.log('Form reset with values:', defaultValues);
         }
     }, [defaultValues, reset]);
 
@@ -131,6 +156,38 @@ const PharmacySetupPage: React.FC = () => {
                                 onSubmit={handleSubmit(onSubmit)}
                             >
                                 <div className="space-y-8 divide-y divide-gray-200">
+                                    {/* Sale Short Code Feature Toggle (Admin Only) */}
+                                    {user?.role === UserRole.ADMIN && (
+                                        <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
+                                            <div>
+                                                <div className="font-semibold text-blue-900">
+                                                    Require Sale Short Code for
+                                                    Finalizing/Printing Sales
+                                                </div>
+                                                <div className="text-xs text-blue-700 mt-1">
+                                                    When enabled, a short code
+                                                    will be generated for each
+                                                    sale. Cashiers must enter
+                                                    this code to finalize and
+                                                    print the receipt.
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className={`ml-4 px-4 py-2 rounded ${
+                                                    requireShortCode
+                                                        ? 'bg-blue-600 text-white'
+                                                        : 'bg-gray-200 text-gray-700'
+                                                } font-semibold focus:outline-none`}
+                                                onClick={handleToggleShortCode}
+                                                disabled={toggleLoading}
+                                            >
+                                                {requireShortCode
+                                                    ? 'Enabled'
+                                                    : 'Disabled'}
+                                            </button>
+                                        </div>
+                                    )}
                                     <div>
                                         <h3 className="text-lg font-medium leading-6 text-gray-900">
                                             Pharmacy Information

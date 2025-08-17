@@ -14,4 +14,5 @@ export interface IUser {
     refreshToken?: string;
     createdAt?: string;
     updatedAt?: string;
+    permissions?: string[];
 }

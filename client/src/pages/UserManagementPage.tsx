@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { FaUsers, FaUserPlus } from 'react-icons/fa';
@@ -14,12 +14,11 @@ import {
 } from '../hooks/useUsers';
 import { useSafeNotify } from '../utils/useSafeNotify';
 import type { IUser } from '../types/user.types';
+import { userApi } from '../api/user.api';
 import { UserRole } from '../types/user.types';
 
 const UserManagementPage: React.FC = () => {
     const [showForm, setShowForm] = useState(false);
-    const [showActionsDropdown, setShowActionsDropdown] = useState(false);
-    const actionsDropdownRef = useRef<HTMLDivElement>(null);
     const notify = useSafeNotify();
     const [formData, setFormData] = useState<Partial<IUser>>({
         name: '',
@@ -39,24 +38,6 @@ const UserManagementPage: React.FC = () => {
     const createUser = useCreateUser();
     const updateUser = useUpdateUser();
     const deleteUser = useDeleteUser();
-
-    // Close actions dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                actionsDropdownRef.current &&
-                !actionsDropdownRef.current.contains(event.target as Node)
-            ) {
-                setShowActionsDropdown(false);
-            }
-        };
-        if (showActionsDropdown) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [showActionsDropdown]);
 
     const handleSearch = (query: string) => setSearchTerm(query);
     const handleEdit = (user: IUser) => {
@@ -105,6 +86,35 @@ const UserManagementPage: React.FC = () => {
         }
     };
 
+    // Permission assignment state
+    const [permissionUserId, setPermissionUserId] = useState<string | null>(
+        null,
+    );
+    const [permissions, setPermissions] = useState<string[]>([]);
+    const [assigning, setAssigning] = useState(false);
+
+    const handlePermissionChange = (perm: string) => {
+        setPermissions((prev) =>
+            prev.includes(perm)
+                ? prev.filter((p) => p !== perm)
+                : [...prev, perm],
+        );
+    };
+
+    const handleAssignPermissions = async () => {
+        if (!permissionUserId) return;
+        setAssigning(true);
+        try {
+            await userApi.assignPermissions(permissionUserId, permissions);
+            notify.success('Permissions updated');
+            setPermissionUserId(null);
+        } catch {
+            notify.error('Failed to update permissions');
+        } finally {
+            setAssigning(false);
+        }
+    };
+
     return (
         <DashboardLayout>
             <div className="space-y-6">
@@ -140,7 +150,7 @@ const UserManagementPage: React.FC = () => {
                             setEditUserId(null);
                         }}
                         editUserId={editUserId}
-                        isLoading={createUser.isLoading || updateUser.isLoading}
+                        isLoading={createUser.isPending || updateUser.isPending}
                     />
                 )}
                 <UserFilters searchTerm={searchTerm} onSearch={handleSearch} />
@@ -150,6 +160,51 @@ const UserManagementPage: React.FC = () => {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                 />
+
+                {/* Permission Assignment Modal */}
+                {permissionUserId && (
+                    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                            <h2 className="text-lg font-bold mb-4">
+                                Assign Permissions
+                            </h2>
+                            <div className="space-y-2 mb-4">
+                                <label className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={permissions.includes(
+                                            'FINALIZE_SALE',
+                                        )}
+                                        onChange={() =>
+                                            handlePermissionChange(
+                                                'FINALIZE_SALE',
+                                            )
+                                        }
+                                        className="mr-2"
+                                    />
+                                    Can finalize/print sales (FINALIZE_SALE)
+                                </label>
+                                {/* Add more permissions here as needed */}
+                            </div>
+                            <div className="flex gap-2 justify-end">
+                                <Button
+                                    onClick={() => setPermissionUserId(null)}
+                                    color="secondary"
+                                    disabled={assigning}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleAssignPermissions}
+                                    color="primary"
+                                    isLoading={assigning}
+                                >
+                                    Save
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </DashboardLayout>
     );

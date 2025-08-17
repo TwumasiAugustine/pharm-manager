@@ -34,7 +34,7 @@ export interface Sale {
     _id?: string;
     items: SaleItem[];
     totalAmount: number;
-    totalProfit: number; // New
+    totalProfit: number;
     soldBy: {
         id?: string;
         _id?: string;
@@ -50,7 +50,9 @@ export interface Sale {
     transactionId?: string;
     notes?: string;
     createdAt: string;
-    date?: string; // for grouping
+    date?: string;
+    finalized?: boolean;
+    shortCode?: string;
 }
 
 // For creating a new sale

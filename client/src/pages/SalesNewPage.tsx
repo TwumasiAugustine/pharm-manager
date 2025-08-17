@@ -11,6 +11,7 @@ import {
 } from '../components/molecules/Alert';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useCreateSale } from '../hooks/useSales';
+import { usePharmacyInfo } from '../hooks/usePharmacy';
 import { useDrugs } from '../hooks/useDrugs';
 import type { Drug } from '../types/drug.types';
 import { getErrorMessage } from '../utils/error';
@@ -59,6 +60,8 @@ const SalesNewPage: React.FC = () => {
         }
     }, [fields, replace]);
     const mutation = useCreateSale();
+    const { data: pharmacyData } = usePharmacyInfo();
+    const [shortCode, setShortCode] = useState<string | null>(null);
     const onSubmit = (values: SaleFormInput) => {
         // Calculate totalAmount from selected drugs and quantities, respecting saleType
         const selectedDrugs = values.items.map((item) => {
@@ -96,13 +99,36 @@ const SalesNewPage: React.FC = () => {
         };
         mutation.mutate(payload, {
             onSuccess: (sale) => {
-                navigate(`/sales/${sale._id}`);
+                if (
+                    pharmacyData?.pharmacyInfo?.requireSaleShortCode &&
+                    sale.shortCode
+                ) {
+                    setShortCode(sale.shortCode);
+                } else {
+                    navigate(`/sales/${sale._id}`);
+                }
             },
         });
     };
     return (
         <DashboardLayout>
             <div className="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
+                {/* Show short code if generated */}
+                {shortCode && (
+                    <div className="mb-6 p-4 bg-blue-50 border border-blue-300 rounded text-center">
+                        <div className="text-lg font-bold text-blue-800">
+                            Sale Short Code
+                        </div>
+                        <div className="text-3xl font-mono text-blue-900 my-2">
+                            {shortCode}
+                        </div>
+                        <div className="text-sm text-blue-700 mb-2">
+                            Give this code to the cashier to finalize and print
+                            the receipt.
+                        </div>
+                        <Button onClick={() => navigate('/sales')}>Done</Button>
+                    </div>
+                )}
                 <h2 className="text-2xl font-semibold mb-6 flex items-center">
                     <FaShoppingCart className="mr-2 text-green-500" />
                     New Sale

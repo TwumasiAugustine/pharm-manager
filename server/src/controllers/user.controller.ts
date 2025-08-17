@@ -1,3 +1,26 @@
+// Admin: Assign permissions to a user
+import User from '../models/user.model';
+export const assignPermissions = async (req: Request, res: Response) => {
+    if (!req.user || req.user.role !== 'admin') {
+        return res
+            .status(403)
+            .json({
+                success: false,
+                message: 'Only admin can assign permissions',
+            });
+    }
+    const { userId, permissions } = req.body;
+    const user = await User.findByIdAndUpdate(
+        userId,
+        { permissions },
+        { new: true },
+    );
+    if (!user)
+        return res
+            .status(404)
+            .json({ success: false, message: 'User not found' });
+    res.json({ success: true, user });
+};
 import { Request, Response, NextFunction } from 'express';
 import { UserService } from '../services/user.service';
 import { successResponse } from '../utils/response';

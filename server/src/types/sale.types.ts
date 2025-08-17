@@ -43,6 +43,8 @@ export interface SaleResponse {
     paymentMethod: 'cash' | 'card' | 'mobile';
     transactionId?: string;
     notes?: string;
+    shortCode?: string;
+    finalized?: boolean;
     createdAt: string;
 }
 

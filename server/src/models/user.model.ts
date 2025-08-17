@@ -35,6 +35,10 @@ const userSchema = new Schema<IUser>(
             type: Boolean,
             default: true,
         },
+        permissions: {
+            type: [String],
+            default: [],
+        },
     },
     {
         timestamps: true,

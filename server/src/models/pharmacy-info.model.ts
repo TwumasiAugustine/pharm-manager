@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IPharmacyInfo extends Document {
     name: string;
+    requireSaleShortCode?: boolean; // Admin-controlled feature toggle
     address: {
         street: string;
         city: string;
@@ -41,6 +42,7 @@ const PharmacyInfoSchema: Schema = new Schema(
         taxId: { type: String, required: true },
         operatingHours: { type: String, required: true },
         slogan: { type: String, required: true },
+        requireSaleShortCode: { type: Boolean, default: false },
     },
     {
         timestamps: true,

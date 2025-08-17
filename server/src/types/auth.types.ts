@@ -14,6 +14,7 @@ export interface IUser {
     refreshToken?: string;
     createdAt: Date;
     updatedAt: Date;
+    permissions?: string[];
     comparePassword(enteredPassword: string): Promise<boolean>;
 }
 

@@ -22,6 +22,8 @@ export interface ISale extends Document {
     paymentMethod: 'cash' | 'card' | 'mobile';
     transactionId?: string; // For card or mobile payments
     notes?: string; // Optional notes about the sale
+    shortCode?: string; // Short code for cashier to finalize/print
+    finalized?: boolean; // Whether the sale has been finalized/printed
     createdAt: Date;
     updatedAt: Date;
 }
@@ -91,6 +93,14 @@ const saleSchema = new Schema<ISale>(
         },
         notes: {
             type: String,
+        },
+        shortCode: {
+            type: String,
+            index: true,
+        },
+        finalized: {
+            type: Boolean,
+            default: false,
         },
     },
     {

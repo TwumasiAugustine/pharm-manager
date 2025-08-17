@@ -8,6 +8,11 @@ import { createSaleSchema } from '../validations/sale.validation';
 
 const router = Router();
 const saleController = new SaleController();
+// Get sale by short code (for cashier)
+router.get('/shortcode/:code', authenticate, saleController.getSaleByShortCode);
+
+// Finalize/print sale by short code (for cashier)
+router.post('/finalize', authenticate, saleController.finalizeSaleByShortCode);
 
 // Create a new sale
 router.post(

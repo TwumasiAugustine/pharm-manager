@@ -1,3 +1,24 @@
+import PharmacyInfo from '../models/pharmacy-info.model';
+import { UnauthorizedError } from '../utils/errors';
+// Admin: Toggle requireSaleShortCode feature
+export const toggleSaleShortCodeFeature = async (
+    req: Request,
+    res: Response,
+) => {
+    if (!req.user || req.user.role !== 'admin') {
+        throw new UnauthorizedError('Only admin can toggle this feature');
+    }
+    const { enabled } = req.body;
+    const info = await PharmacyInfo.findOneAndUpdate(
+        {},
+        { requireSaleShortCode: !!enabled },
+        { new: true, upsert: true },
+    );
+    res.json({
+        success: true,
+        requireSaleShortCode: info.requireSaleShortCode,
+    });
+};
 import { Request, Response } from 'express';
 import {
     getPharmacyInfo,

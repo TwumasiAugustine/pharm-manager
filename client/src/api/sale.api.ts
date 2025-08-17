@@ -22,6 +22,18 @@ const saleApi = {
         const res = await api.post('/sales', data);
         return res.data.data;
     },
+
+    // Get sale by short code
+    async getSaleByShortCode(code: string) {
+        const res = await api.get(`/sales/shortcode/${code}`);
+        return res.data.data;
+    },
+
+    // Finalize sale by short code
+    async finalizeSaleByShortCode(code: string) {
+        const res = await api.post('/sales/finalize', { code });
+        return res.data.data;
+    },
 };
 
 export default saleApi;

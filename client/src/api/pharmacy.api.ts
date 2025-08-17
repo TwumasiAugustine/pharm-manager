@@ -18,6 +18,7 @@ export interface PharmacyInfo {
     taxId: string;
     operatingHours: string;
     slogan: string;
+    requireSaleShortCode?: boolean;
     _id?: string;
     __v?: number;
     createdAt?: string;
@@ -34,6 +35,19 @@ export interface PharmacyConfigResponse {
 }
 
 export const pharmacyApi = {
+    // Toggle sale short code feature (admin only)
+    toggleSaleShortCode: async (
+        enabled: boolean,
+    ): Promise<{
+        requireSaleShortCode: boolean;
+        pharmacyInfo?: PharmacyInfo;
+    }> => {
+        const response = await api.post('/pharmacy/toggle-sale-shortcode', {
+            enabled,
+        });
+        // If backend returns updated pharmacyInfo, return it; else just the flag
+        return response.data;
+    },
     getPharmacyInfo: async (): Promise<{
         pharmacyInfo: PharmacyInfo;
         isConfigured: boolean;
