@@ -1,7 +1,11 @@
 import User from '../models/user.model';
 import { NotFoundError, ConflictError, BadRequestError } from '../utils/errors';
-import { IUser, UserRole } from '../types/user.types';
+import { IUser } from '../types/user.types';
 import bcrypt from 'bcryptjs';
+
+function normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
+}
 
 export class UserService {
     async getUsers({
@@ -41,10 +45,19 @@ export class UserService {
                 'Name, email, password, and role are required',
             );
         }
-        const existing = await User.findOne({ email: data.email });
-        if (existing) throw new ConflictError('Email already exists');
+        // Normalize email
+        const normalizedEmail = normalizeEmail(data.email);
+        // Prevent duplicate emails
+        const existing = await User.findOne({ email: normalizedEmail });
+        if (existing)
+            throw new ConflictError('A user with this email already exists');
         const hashedPassword = await bcrypt.hash(data.password, 10);
-        const user = await User.create({ ...data, password: hashedPassword });
+        const user = await User.create({
+            ...data,
+            email: normalizedEmail,
+            password: hashedPassword,
+            isFirstSetup: data.role === 'admin' ? true : false,
+        });
         const { password, ...userWithoutPassword } = user.toObject({
             versionKey: false,
         });
@@ -54,6 +67,17 @@ export class UserService {
     async updateUser(id: string, data: Partial<IUser>) {
         const user = await User.findById(id);
         if (!user) throw new NotFoundError('User not found');
+        // Normalize email if present
+        if (data.email) {
+            data.email = normalizeEmail(data.email);
+            // Prevent duplicate emails (except for self)
+            const existing = await User.findOne({ email: data.email });
+            if (existing && existing._id.toString() !== id) {
+                throw new ConflictError(
+                    'A user with this email already exists',
+                );
+            }
+        }
         if (data.password) {
             data.password = await bcrypt.hash(data.password, 10);
         } else {

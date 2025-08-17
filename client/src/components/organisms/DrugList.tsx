@@ -6,15 +6,19 @@ import type { TableColumn, TableAction } from '../molecules/Table';
 import { Pagination } from '../molecules/Pagination';
 import { SearchBar } from '../molecules/SearchBar';
 import type { Drug } from '../../types/drug.types';
+import { useAuthStore } from '../../store/auth.store';
 
 /**
  * DrugList component to display and manage the list of drugs.
  */
+
 export const DrugList: React.FC = () => {
     const [isSearching, setIsSearching] = useState(false);
     const [searchQuery, setSearchQueryLocal] = useState('');
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const navigate = useNavigate();
+
+    const { user } = useAuthStore();
 
     const {
         data: drugs,
@@ -62,6 +66,9 @@ export const DrugList: React.FC = () => {
             pagination.setPage(page);
         }
     };
+
+    // Only allow create/edit/delete for users who are NOT cashier or pharmacist
+    const canManageDrugs = user && user.role !== 'cashier' && user.role !== 'pharmacist';
 
     return (
         <div className="space-y-6">
@@ -264,27 +271,32 @@ export const DrugList: React.FC = () => {
                                 ] as TableColumn<Drug>[]
                             }
                             actions={
-                                [
-                                    {
-                                        label: 'Edit',
-                                        onClick: (drug: Drug) => {
-                                            // Redirect to edit page or open edit modal
-                                            navigate(`/drugs/edit/${drug.id}`);
-                                        },
-                                    },
-                                    {
-                                        label: 'Delete',
-                                        onClick: (drug: Drug) => {
-                                            if (
-                                                window.confirm(
-                                                    `Are you sure you want to delete ${drug.name}?`,
-                                                )
-                                            ) {
-                                                deleteDrug.mutate(drug.id);
-                                            }
-                                        },
-                                    },
-                                ] as TableAction<Drug>[]
+                                canManageDrugs
+                                    ? ([
+                                          {
+                                              label: 'Edit',
+                                              onClick: (drug: Drug) => {
+                                                  navigate(
+                                                      `/drugs/edit/${drug.id}`,
+                                                  );
+                                              },
+                                          },
+                                          {
+                                              label: 'Delete',
+                                              onClick: (drug: Drug) => {
+                                                  if (
+                                                      window.confirm(
+                                                          `Are you sure you want to delete ${drug.name}?`,
+                                                      )
+                                                  ) {
+                                                      deleteDrug.mutate(
+                                                          drug.id,
+                                                      );
+                                                  }
+                                              },
+                                          },
+                                      ] as TableAction<Drug>[])
+                                    : []
                             }
                         />
 

@@ -17,8 +17,10 @@ import {
 
 export class AuthService {
     async signup(userData: ISignupRequest): Promise<IAuthResponse> {
+        // Normalize email
+        const normalizedEmail = userData.email.trim().toLowerCase();
         // Check if email already exists
-        const existingUser = await User.findOne({ email: userData.email });
+        const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) {
             throw new ConflictError('Email already in use');
         }
@@ -26,7 +28,7 @@ export class AuthService {
         // Create new user
         const user = await User.create({
             name: userData.name,
-            email: userData.email,
+            email: normalizedEmail,
             password: userData.password,
             role: userData.role || UserRole.CASHIER,
         });
@@ -36,7 +38,7 @@ export class AuthService {
             id: user._id,
             email: user.email,
             role: user.role,
-            isFirstSetup: user.isFirstSetup
+            isFirstSetup: user.isFirstSetup,
         };
 
         const tokens = generateTokens(tokenPayload);
@@ -51,15 +53,17 @@ export class AuthService {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                isFirstSetup: user.isFirstSetup
+                isFirstSetup: user.isFirstSetup,
             },
             tokens,
         };
     }
 
     async login(loginData: ILoginRequest): Promise<IAuthResponse> {
+        // Normalize email
+        const normalizedEmail = loginData.email.trim().toLowerCase();
         // Find user by email
-        const user = await User.findOne({ email: loginData.email });
+        const user = await User.findOne({ email: normalizedEmail });
         if (!user) {
             throw new UnauthorizedError('Invalid email or password');
         }
@@ -75,7 +79,7 @@ export class AuthService {
             id: user._id,
             email: user.email,
             role: user.role,
-            isFirstSetup: user.isFirstSetup
+            isFirstSetup: user.isFirstSetup,
         };
 
         const tokens = generateTokens(tokenPayload);
@@ -90,7 +94,7 @@ export class AuthService {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                isFirstSetup: user.isFirstSetup
+                isFirstSetup: user.isFirstSetup,
             },
             tokens,
         };
@@ -119,7 +123,7 @@ export class AuthService {
             id: user._id,
             email: user.email,
             role: user.role,
-            isFirstSetup: user.isFirstSetup
+            isFirstSetup: user.isFirstSetup,
         };
 
         const tokens = generateTokens(tokenPayload);
@@ -134,7 +138,7 @@ export class AuthService {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                isFirstSetup: user.isFirstSetup
+                isFirstSetup: user.isFirstSetup,
             },
             tokens,
         };

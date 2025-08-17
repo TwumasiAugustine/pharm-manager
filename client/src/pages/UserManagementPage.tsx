@@ -67,12 +67,29 @@ const UserManagementPage: React.FC = () => {
             notify.warning('Name, email, and password are required');
             return;
         }
+        // Normalize email
+        const normalizedEmail = formData.email.trim().toLowerCase();
+        // Check for duplicate email in current users (client-side quick check)
+        if (
+            !editUserId &&
+            users?.users.some((u) => u.email.toLowerCase() === normalizedEmail)
+        ) {
+            notify.error('A user with this email already exists.');
+            return;
+        }
         try {
             if (editUserId) {
-                await updateUser.mutateAsync({ id: editUserId, ...formData });
+                const updateData = { ...formData, email: normalizedEmail };
+                if (!updateData.password) {
+                    delete updateData.password;
+                }
+                await updateUser.mutateAsync({ id: editUserId, ...updateData });
                 setEditUserId(null);
             } else {
-                await createUser.mutateAsync(formData as IUser);
+                await createUser.mutateAsync({
+                    ...formData,
+                    email: normalizedEmail,
+                } as IUser);
             }
             setFormData({
                 name: '',
@@ -113,6 +130,12 @@ const UserManagementPage: React.FC = () => {
         } finally {
             setAssigning(false);
         }
+    };
+
+    // Handler to open permission modal for a user
+    const openPermissionModal = (user: IUser) => {
+        setPermissionUserId(user._id);
+        setPermissions(user.permissions ?? []);
     };
 
     return (
@@ -159,6 +182,7 @@ const UserManagementPage: React.FC = () => {
                     isLoading={isLoading}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    onAssignPermissions={openPermissionModal}
                 />
 
                 {/* Permission Assignment Modal */}

@@ -1,13 +1,15 @@
-// Admin: Assign permissions to a user
+import { Request, Response, NextFunction } from 'express';
 import User from '../models/user.model';
+import { UserService } from '../services/user.service';
+import { successResponse } from '../utils/response';
+
+// Admin: Assign permissions to a user
 export const assignPermissions = async (req: Request, res: Response) => {
     if (!req.user || req.user.role !== 'admin') {
-        return res
-            .status(403)
-            .json({
-                success: false,
-                message: 'Only admin can assign permissions',
-            });
+        return res.status(403).json({
+            success: false,
+            message: 'Only admin can assign permissions',
+        });
     }
     const { userId, permissions } = req.body;
     const user = await User.findByIdAndUpdate(
@@ -21,12 +23,6 @@ export const assignPermissions = async (req: Request, res: Response) => {
             .json({ success: false, message: 'User not found' });
     res.json({ success: true, user });
 };
-import { Request, Response, NextFunction } from 'express';
-import { UserService } from '../services/user.service';
-import { successResponse } from '../utils/response';
-
-import User from '../models/user.model';
-
 /**
  * Standalone handler to check if the current admin is in first setup mode.
  * Returns { isFirstSetup: boolean }

@@ -8,6 +8,7 @@ interface UserListProps {
     isLoading: boolean;
     onEdit: (user: IUser) => void;
     onDelete: (user: IUser) => void;
+    onAssignPermissions?: (user: IUser) => void;
 }
 
 const UserList: React.FC<UserListProps> = ({
@@ -15,6 +16,7 @@ const UserList: React.FC<UserListProps> = ({
     isLoading,
     onEdit,
     onDelete,
+    onAssignPermissions,
 }) => (
     <div className="bg-white p-4 rounded-lg shadow-sm">
         <Table<IUser & { id?: string }>
@@ -31,7 +33,20 @@ const UserList: React.FC<UserListProps> = ({
                             ? value.charAt(0).toUpperCase() + value.slice(1)
                             : '',
                 },
-            ]}
+                onAssignPermissions && {
+                    header: 'Permissions',
+                    accessor: 'permissions',
+                    cell: (_: unknown, row?: IUser) =>
+                        row ? (
+                            <button
+                                className="text-xs text-indigo-600 underline hover:text-indigo-900"
+                                onClick={() => onAssignPermissions(row)}
+                            >
+                                Assign Permissions
+                            </button>
+                        ) : null,
+                },
+            ].filter(Boolean)}
             actions={[
                 {
                     label: 'Edit',

@@ -98,7 +98,7 @@ export class SaleController {
             next(err);
         }
     }
-    // ...existing code...
+    // Get all sales with pagination and optional date range
 
     async getSales(req: Request, res: Response, next: NextFunction) {
         try {

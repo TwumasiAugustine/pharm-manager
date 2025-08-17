@@ -155,6 +155,7 @@ export function Table<T extends { id?: string | number }>({
                                         : column.cell
                                         ? column.cell(
                                               item[column.accessor] as unknown,
+                                              item,
                                           )
                                         : (item[
                                               column.accessor

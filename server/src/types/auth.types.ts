@@ -23,6 +23,7 @@ export interface ITokenPayload {
     email: string;
     role: UserRole;
     isFirstSetup: boolean;
+    permissions?: string[];
 }
 
 export interface IAuthTokens {
