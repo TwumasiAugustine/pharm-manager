@@ -20,6 +20,7 @@ export interface IUser {
 
 export interface ITokenPayload {
     id: string;
+    name: string;
     email: string;
     role: UserRole;
     isFirstSetup: boolean;

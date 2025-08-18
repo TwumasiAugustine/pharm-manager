@@ -3,11 +3,12 @@ import { UserActivityController } from '../controllers/user-activity.controller'
 import { authenticate } from '../middlewares/auth.middleware';
 import { authorize } from '../middlewares/authorize.middleware';
 import { UserRole } from '../types/auth.types';
+import { csrfProtection } from '../middlewares/csrf.middleware';
 
 const router = Router();
 const userActivityController = new UserActivityController();
 
-// Apply authentication middleware to all routes
+// All routes require authentication
 router.use(authenticate);
 
 /**

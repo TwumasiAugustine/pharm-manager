@@ -18,18 +18,21 @@ export const useLogin = () => {
     return useMutation({
         mutationFn: async (credentials: LoginRequest) => {
             // First, login the user
-            const user = await authApi.login(credentials);
+            const responseUser = await authApi.login(credentials);
+            const user = responseUser.user || responseUser; // handle both {user: {...}} and flat
 
             // If user is admin, check pharmacy configuration status
             if (user.role === UserRole.ADMIN) {
                 try {
                     const isConfigured = await pharmacyApi.checkConfigStatus();
                     setPharmacyConfigured(isConfigured);
-
-                    // Return both user and config status
                     return { user, isPharmacyConfigured: isConfigured };
                 } catch (error) {
-                    console.error("Error:", error.message)
+                    if (error instanceof Error) {
+                        console.error('Error:', error.message);
+                    } else {
+                        console.error('Error:', error);
+                    }
                     setPharmacyConfigured(false);
                     return { user, isPharmacyConfigured: false };
                 }
@@ -43,10 +46,6 @@ export const useLogin = () => {
             setUser(data.user);
             setIsAuthenticated(true);
             queryClient.setQueryData(['currentUser'], data.user);
-
-            // Set session indicators
-            localStorage.setItem('hasLoggedInBefore', 'true');
-            sessionStorage.setItem('hasSession', 'true');
 
             // If admin and pharmacy not configured, redirect to setup
             if (
@@ -76,13 +75,11 @@ export const useRegister = () => {
 
     return useMutation({
         mutationFn: (userData: RegisterRequest) => authApi.register(userData),
-        onSuccess: (user) => {
+        onSuccess: (responseUser) => {
+            const user = responseUser.user || responseUser;
             setUser(user);
             setIsAuthenticated(true);
             queryClient.setQueryData(['currentUser'], user);
-            // Set session indicators
-            localStorage.setItem('hasLoggedInBefore', 'true');
-            sessionStorage.setItem('hasSession', 'true');
             navigate('/dashboard');
             notify.success('Account created successfully');
         },
@@ -105,8 +102,6 @@ export const useLogout = () => {
         onSuccess: () => {
             clearAuth();
             queryClient.clear();
-            // Clear session indicators
-            sessionStorage.removeItem('hasSession');
             navigate('/login');
             notify.success('Logged out successfully');
         },
@@ -125,26 +120,19 @@ export const useCurrentUser = () => {
         retry: false,
         staleTime: 5 * 60 * 1000, // 5 minutes
         refetchOnWindowFocus: false, // Prevent excessive refetching
-        enabled:
-            document.cookie.includes('session') ||
-            sessionStorage.getItem('hasSession') === 'true', // Only run if we might have a session
         refetchOnMount: false, // Don't refetch on mount if data exists
     });
 
     useEffect(() => {
-        if (query.isSuccess && query.data.user) {
-            setUser(query.data.user as User);
+        if (query.isSuccess && query.data) {
+            const user = (query.data as any).user || query.data;
+            setUser(user);
             setIsAuthenticated(true);
             setIsLoading(false);
-            // Update session indicators on successful auth
-            sessionStorage.setItem('hasSession', 'true');
-            localStorage.setItem('hasLoggedInBefore', 'true');
         } else if (query.isError) {
             setUser(null);
             setIsAuthenticated(false);
             setIsLoading(false);
-            // Clear session indicator on error
-            sessionStorage.removeItem('hasSession');
         }
     }, [
         query.isSuccess,

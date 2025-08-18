@@ -15,19 +15,34 @@ import { getErrorMessage } from '../../utils/error';
 import type { Drug, PaginatedDrugsResponse } from '../../types/drug.types';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { Sale, CreateSaleRequest } from '../../types/sale.types';
-import type { CreateSaleFormValues } from '../../validations/sale.validation';
+// import type { CreateSaleFormValues } from '../../validations/sale.validation';
 import { formatGHSDisplayAmount } from '../../utils/currency';
 
+type SaleFormItem = {
+    drugId: string;
+    drugName: string;
+    quantity: number;
+    priceAtSale: number;
+    maxQuantity: number;
+    saleType: 'unit' | 'pack' | 'carton';
+};
+type SaleFormType = {
+    items: SaleFormItem[];
+    paymentMethod: 'cash' | 'card' | 'mobile';
+    transactionId?: string;
+    notes?: string;
+    customerId?: string;
+};
 interface CreateSaleFormProps {
-    onSubmit: (data: CreateSaleFormValues) => void;
+    onSubmit: (data: SaleFormType) => void;
     drugData: PaginatedDrugsResponse | undefined;
     isLoadingDrugs: boolean;
     searchTerm: string;
     setSearchTerm: (value: string) => void;
     handleAddDrug: (drug: Drug) => void;
-    fields: FieldArrayWithId<CreateSaleFormValues, 'items', 'id'>[];
+    fields: FieldArrayWithId<SaleFormType, 'items', 'id'>[];
     remove: UseFieldArrayRemove;
-    errors: FieldErrors<CreateSaleFormValues>;
+    errors: FieldErrors<SaleFormType>;
     totalAmount: number;
     createSaleMutation: UseMutationResult<
         Sale,
@@ -50,8 +65,7 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
     totalAmount,
     createSaleMutation,
 }) => {
-    const { handleSubmit, watch, control } =
-        useFormContext<CreateSaleFormValues>();
+    const { handleSubmit, watch, control } = useFormContext<SaleFormType>();
     const watchedItems = watch('items');
     const isProcessing = createSaleMutation.isPending;
 
@@ -117,7 +131,7 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                                                 </span>
                                                 <span className="text-xs text-gray-500 ml-2">
                                                     {formatGHSDisplayAmount(
-                                                        drug.price,
+                                                        drug.pricePerUnit,
                                                     )}
                                                 </span>
                                             </li>

@@ -68,7 +68,8 @@ export const DrugList: React.FC = () => {
     };
 
     // Only allow create/edit/delete for users who are NOT cashier or pharmacist
-    const canManageDrugs = user && user.role !== 'cashier' && user.role !== 'pharmacist';
+    const canManageDrugs =
+        user && user.role !== 'cashier' && user.role !== 'pharmacist';
 
     return (
         <div className="space-y-6">

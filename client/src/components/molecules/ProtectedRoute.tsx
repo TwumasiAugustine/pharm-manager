@@ -11,6 +11,8 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
         useAuthStore();
     const location = useLocation();
 
+    console.log(user)
+
     // If auth is still loading, show a minimalist loading screen
     if (isLoading) {
         return (
@@ -39,7 +41,7 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     // Unless they are already on the setup page
     if (
         user.role === UserRole.ADMIN &&
-        !isPharmacyConfigured &&
+        isPharmacyConfigured &&
         location.pathname !== '/pharmacy-setup'
     ) {
         return <Navigate to="/pharmacy-setup" replace />;

@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { generateCsrfToken } from '../middlewares/csrf.middleware';
 import { AuthService } from '../services/auth.service';
 import { successResponse } from '../utils/response';
 import { getCookieOptions } from '../utils/jwt';
@@ -31,6 +32,13 @@ export class AuthController {
             res.cookie('refreshToken', result.tokens?.refreshToken, {
                 ...getCookieOptions(isProduction),
                 path: '/api/auth', // Restrict refresh token to auth endpoints
+            });
+            // Set CSRF token cookie (not httpOnly)
+            res.cookie('csrfToken', generateCsrfToken(), {
+                secure: isProduction,
+                sameSite: isProduction ? 'strict' : 'lax',
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+                path: '/',
             });
 
             // Send response
@@ -65,6 +73,13 @@ export class AuthController {
             res.cookie('refreshToken', result.tokens?.refreshToken, {
                 ...getCookieOptions(isProduction),
                 path: '/api/auth', // Restrict refresh token to auth endpoints
+            });
+            // Set CSRF token cookie (not httpOnly)
+            res.cookie('csrfToken', generateCsrfToken(), {
+                secure: isProduction,
+                sameSite: isProduction ? 'strict' : 'lax',
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+                path: '/',
             });
 
             // Log audit event for successful login and initialize user session
@@ -177,6 +192,13 @@ export class AuthController {
                 ...getCookieOptions(isProduction),
                 path: '/api/auth',
             });
+            // Set CSRF token cookie (not httpOnly)
+            res.cookie('csrfToken', generateCsrfToken(), {
+                secure: isProduction,
+                sameSite: isProduction ? 'strict' : 'lax',
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+                path: '/',
+            });
 
             // Send response
             res.status(200).json(
@@ -212,9 +234,11 @@ export class AuthController {
                 successResponse({
                     user: {
                         id: req.user.id,
+                        name: req.user.name,
                         email: req.user.email,
                         role: req.user.role,
                         isFirstSetup: req.user.isFirstSetup,
+                        permissions: req.user.permissions || [],
                     },
                 }),
             );

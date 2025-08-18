@@ -15,85 +15,61 @@ const api = axios.create({
     timeout: 30000, // Set a default timeout of 30 seconds
 });
 
-// Request interceptor
+// --- Robust request interceptor ---
 api.interceptors.request.use(
     (config) => {
-        // Public endpoints that don't require authentication
-        const publicEndpoints = [
-            '/auth/login',
-            '/auth/register',
-            '/auth/signup', // Added for backward compatibility
-            '/auth/refresh',
-            '/auth/me', // Added /me endpoint
-            '/health', // Added health check endpoint
-        ];
-
-        // Add optional debug logging
-        const debugMode = localStorage.getItem('apiDebug') === 'true';
-        if (debugMode) {
-            console.log(`API Request to: ${config.url}`);
-        }
-
-        // Check if this is a public endpoint
-        const isPublicEndpoint = publicEndpoints.some((endpoint) =>
-            config.url?.includes(endpoint),
-        );
-
-        // If it's not a public endpoint, check for authentication
-        if (!isPublicEndpoint) {
-            // Check if we have any reason to believe we're authenticated
-            const hasAuthIndicators =
-                document.cookie.includes('session') ||
-                sessionStorage.getItem('hasSession') === 'true';
-
-            // Check if we're on an auth-protected route in the app
-
-            // If we know we're not authenticated, cancel the request
-            if (!hasAuthIndicators) {
-                // Create a new error with a specific message
-                const error = new Error(
-                    'Authentication required - request canceled client-side',
-                );
-                console.warn(
-                    `🛑 Canceled request to ${config.url} - no auth indicators detected`,
-                );
-
-                // Return a rejected promise to cancel the request
-                return Promise.reject(error);
+        // Add CSRF token header for state-changing requests
+        const method = config.method?.toUpperCase();
+        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method || '')) {
+            // Always read CSRF token fresh from cookies
+            const csrfToken = document.cookie
+                .split('; ')
+                .find((row) => row.startsWith('csrfToken='))
+                ?.split('=')[1];
+            if (csrfToken) {
+                if (!config.headers)
+                    config.headers = {} as typeof config.headers;
+                (config.headers as Record<string, string>)['X-CSRF-Token'] =
+                    csrfToken;
             }
         }
 
+        // All session checks are handled by the server via cookies.
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    },
+    (error) => Promise.reject(error),
 );
 
-// Response interceptor
-api.interceptors.response.use(
-    (response: AxiosResponse) => {
-        return response;
-    },
-    async (error: AxiosError) => {
-        // Add optional debug logging
-        const debugMode = localStorage.getItem('apiDebug') === 'true';
-        if (debugMode) {
-            console.log(`API Error:`, error);
+// --- Robust refresh logic with request queueing (singleton outside interceptor) ---
+let isRefreshing = false;
+type QueuePromise = {
+    resolve: (value?: unknown) => void;
+    reject: (reason?: unknown) => void;
+};
+let failedQueue: QueuePromise[] = [];
+const processQueue = (error: unknown, token: unknown = null) => {
+    failedQueue.forEach((prom) => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
         }
+    });
+    failedQueue = [];
+};
 
+api.interceptors.response.use(
+    (response: AxiosResponse) => response,
+    async (error: AxiosError) => {
         // If the error was client-side (request cancellation), just pass it through
         if (error.message?.includes('request canceled client-side')) {
             return Promise.reject(error);
         }
 
         const originalRequest = error.config as
-            | (AxiosRequestConfig & {
-                  _retry?: boolean;
-              })
+            | (AxiosRequestConfig & { _retry?: boolean })
             | undefined;
 
-        // Handle session expiration
         if (
             error.response?.status === 401 &&
             originalRequest &&
@@ -101,90 +77,59 @@ api.interceptors.response.use(
         ) {
             originalRequest._retry = true;
 
-            // Check if we're already trying to refresh the token or if it's an auth endpoint
-            // This prevents infinite refresh loops
+            // Don't try to refresh for auth endpoints
             const isAuthEndpoint =
                 originalRequest.url === '/auth/refresh' ||
                 originalRequest.url === '/auth/login' ||
                 originalRequest.url === '/auth/register' ||
                 originalRequest.url === '/auth/me';
-
-            // Don't try to refresh for auth endpoints
             if (isAuthEndpoint) {
-                // Clear session indicators to prevent future retries
-                sessionStorage.removeItem('hasSession');
-                console.warn(
-                    'Auth endpoint returned 401, clearing session indicator',
-                );
                 return Promise.reject(error);
             }
 
-            // Check if we might have a session
-            const mightHaveSession =
-                document.cookie.includes('session') ||
-                sessionStorage.getItem('hasSession') === 'true';
-
-            if (!mightHaveSession) {
-                // Don't even try to refresh if we know we don't have a session
-                console.warn(
-                    'No session indicators found, skipping token refresh',
-                );
-                sessionStorage.removeItem('hasSession'); // Ensure it's cleared
-                return Promise.reject(error);
+            if (isRefreshing) {
+                return new Promise(function (resolve, reject) {
+                    failedQueue.push({ resolve, reject });
+                })
+                    .then(() => api(originalRequest))
+                    .catch((err) => Promise.reject(err));
             }
 
-            try {
-                console.log('Attempting to refresh authentication token...');
-                // Try to refresh token
-                const refreshSuccess = await import('./auth.api').then(
-                    (module) => module.authApi.refreshToken(),
-                );
-
-                // Only retry if refresh was successful
-                if (refreshSuccess) {
-                    console.log(
-                        'Token refresh successful, retrying original request',
-                    );
-                    sessionStorage.setItem('hasSession', 'true');
-                    return api(originalRequest);
-                } else {
-                    // If refresh fails, clear session indicator
-                    console.warn(
-                        'Token refresh failed, clearing session indicators',
-                    );
-                    sessionStorage.removeItem('hasSession');
-                    localStorage.removeItem('hasSession');
-
-                    // If we're on a protected route, redirect to login
-                    if (
-                        !window.location.pathname.includes('/login') &&
-                        !window.location.pathname.includes('/register')
-                    ) {
-                        console.log(
-                            'Redirecting to login page after failed token refresh',
+            isRefreshing = true;
+            return new Promise((resolve, reject) => {
+                (async () => {
+                    try {
+                        const refreshSuccess = await import('./auth.api').then(
+                            (module) => module.authApi.refreshToken(),
                         );
-                        window.location.href = '/login';
+                        if (refreshSuccess) {
+                            processQueue(null);
+                            resolve(api(originalRequest));
+                        } else {
+                            processQueue(error);
+                            // Redirect to login if refresh fails
+                            if (
+                                !window.location.pathname.includes('/login') &&
+                                !window.location.pathname.includes('/register')
+                            ) {
+                                window.location.href = '/login';
+                            }
+                            reject(error);
+                        }
+                    } catch (refreshError) {
+                        processQueue(refreshError);
+                        if (
+                            !window.location.pathname.includes('/login') &&
+                            !window.location.pathname.includes('/register')
+                        ) {
+                            window.location.href = '/login';
+                        }
+                        reject(refreshError);
+                    } finally {
+                        isRefreshing = false;
                     }
-                    return Promise.reject(error);
-                }
-            } catch (refreshError: any) {
-                // If refresh fails, clear session indicator
-                console.error('Token refresh error:', refreshError);
-                sessionStorage.removeItem('hasSession');
-                localStorage.removeItem('hasSession');
-
-                // If we're on a protected route, redirect to login
-                if (
-                    !window.location.pathname.includes('/login') &&
-                    !window.location.pathname.includes('/register')
-                ) {
-                    console.log(
-                        'Redirecting to login page after refresh error',
-                    );
-                    window.location.href = '/login';
-                }
-                return Promise.reject(refreshError);
-            }
+                })();
+            });
         }
 
         // For non-401 errors or errors that couldn't be recovered via refresh
@@ -192,15 +137,6 @@ api.interceptors.response.use(
     },
 );
 
-// Utility function to toggle API debugging
-export const toggleApiDebug = (enabled: boolean): void => {
-    if (enabled) {
-        localStorage.setItem('apiDebug', 'true');
-        console.log('API debugging enabled');
-    } else {
-        localStorage.removeItem('apiDebug');
-        console.log('API debugging disabled');
-    }
-};
+// Debug toggling removed for security: no localStorage or sessionStorage usage allowed
 
 export default api;

@@ -28,7 +28,9 @@ const UserForm: React.FC<UserFormProps> = ({
         </h2>
         <form onSubmit={onSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label htmlFor="name" className="sr-only">Full Name</label>
                 <input
+                    id="name"
                     type="text"
                     name="name"
                     placeholder="Full Name"
@@ -39,7 +41,9 @@ const UserForm: React.FC<UserFormProps> = ({
                     className="border rounded px-3 py-2 w-full"
                     required
                 />
+                <label htmlFor="email" className="sr-only">Email</label>
                 <input
+                    id="email"
                     type="email"
                     name="email"
                     placeholder="Email"
@@ -50,7 +54,9 @@ const UserForm: React.FC<UserFormProps> = ({
                     className="border rounded px-3 py-2 w-full"
                     required
                 />
+                <label htmlFor="password" className="sr-only">Password</label>
                 <input
+                    id="password"
                     type="password"
                     name="password"
                     placeholder={
@@ -65,6 +71,7 @@ const UserForm: React.FC<UserFormProps> = ({
                     className="border rounded px-3 py-2 w-full"
                     required={!editUserId}
                 />
+                <label htmlFor="role" className='sr-only'>Role</label>
                 <select
                     id="role"
                     name="role"

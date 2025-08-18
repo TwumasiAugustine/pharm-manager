@@ -1,3 +1,4 @@
+import { csrfProtection } from '../middlewares/csrf.middleware';
 import { Router } from 'express';
 import { ReportController } from '../controllers/report.controller';
 import { authenticate } from '../middlewares/auth.middleware';
@@ -16,6 +17,7 @@ router.use(authenticate);
  */
 router.post(
     '/generate',
+    csrfProtection,
     reportController.generateReport.bind(reportController),
 );
 
@@ -27,6 +29,7 @@ router.post(
  */
 router.post(
     '/export/pdf',
+    csrfProtection,
     reportController.exportReportPDF.bind(reportController),
 );
 
@@ -38,6 +41,7 @@ router.post(
  */
 router.post(
     '/export/csv',
+    csrfProtection,
     reportController.exportReportCSV.bind(reportController),
 );
 

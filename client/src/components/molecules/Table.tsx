@@ -6,7 +6,7 @@ import React from 'react';
 export interface TableColumn<T> {
     header: string;
     accessor: keyof T | ((data: T) => React.ReactNode);
-    cell?: (value: unknown) => React.ReactNode;
+    cell?: (value: unknown, row?: T) => React.ReactNode;
     className?: string;
 }
 
@@ -143,25 +143,26 @@ export function Table<T extends { id?: string | number }>({
                                     : ''
                             }
                         >
-                            {columns.map((column, colIndex) => (
-                                <td
-                                    key={colIndex}
-                                    className={`px-6 py-4 whitespace-nowrap text-sm ${
-                                        column.className || ''
-                                    }`}
-                                >
-                                    {typeof column.accessor === 'function'
-                                        ? column.accessor(item)
-                                        : column.cell
-                                        ? column.cell(
-                                              item[column.accessor] as unknown,
-                                              item,
-                                          )
-                                        : (item[
-                                              column.accessor
-                                          ] as React.ReactNode)}
-                                </td>
-                            ))}
+                            {columns.map((column, colIndex) => {
+                                let value: unknown;
+                                if (typeof column.accessor === 'function') {
+                                    value = column.accessor(item);
+                                } else {
+                                    value = item[column.accessor];
+                                }
+                                return (
+                                    <td
+                                        key={colIndex}
+                                        className={`px-6 py-4 whitespace-nowrap text-sm ${
+                                            column.className || ''
+                                        }`}
+                                    >
+                                        {column.cell
+                                            ? column.cell(value, item)
+                                            : (value as React.ReactNode)}
+                                    </td>
+                                );
+                            })}
                             {actions && actions.length > 0 && (
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
                                     <div className="flex justify-end space-x-2">

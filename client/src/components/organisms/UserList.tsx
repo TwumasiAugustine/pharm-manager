@@ -33,20 +33,26 @@ const UserList: React.FC<UserListProps> = ({
                             ? value.charAt(0).toUpperCase() + value.slice(1)
                             : '',
                 },
-                onAssignPermissions && {
-                    header: 'Permissions',
-                    accessor: 'permissions',
-                    cell: (_: unknown, row?: IUser) =>
-                        row ? (
-                            <button
-                                className="text-xs text-indigo-600 underline hover:text-indigo-900"
-                                onClick={() => onAssignPermissions(row)}
-                            >
-                                Assign Permissions
-                            </button>
-                        ) : null,
-                },
-            ].filter(Boolean)}
+                ...(onAssignPermissions
+                    ? [
+                          {
+                              header: 'Permissions',
+                              accessor: (row: IUser) => row.permissions,
+                              cell: (_: unknown, row?: IUser) =>
+                                  row ? (
+                                      <button
+                                          className="text-xs text-indigo-600 underline hover:text-indigo-900"
+                                          onClick={() =>
+                                              onAssignPermissions(row)
+                                          }
+                                      >
+                                          Assign Permissions
+                                      </button>
+                                  ) : null,
+                          },
+                      ]
+                    : []),
+            ]}
             actions={[
                 {
                     label: 'Edit',

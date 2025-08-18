@@ -47,6 +47,14 @@ const navItems = [
             /^\/sales\/[^/]+$/.test(pathname),
         adminOnly: false,
     },
+    // Cashier-only: Finalize Sale (Short Code)
+    {
+        to: '/sales/new',
+        icon: <FaShoppingCart className="mr-3" />,
+        label: 'Finalize Sale (Short Code)',
+        match: (pathname: string) => pathname === '/sales/new',
+        cashierOnly: true,
+    },
     {
         to: '/customers',
         icon: <FaUser className="mr-3" />,
@@ -148,24 +156,34 @@ function Sidebar({
                     </button>
                 </div>
                 <nav className="mt-6">
-                    {navItems.map(
-                        (item) =>
-                            (!item.adminOnly || user?.role === 'admin') && (
-                                <Link
-                                    key={item.to}
-                                    to={item.to}
-                                    className={`flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors ${
-                                        item.match(location.pathname)
-                                            ? 'bg-blue-50 border-r-4 border-blue-500'
-                                            : ''
-                                    }`}
-                                    onClick={onClose}
-                                >
-                                    {item.icon}
-                                    {item.label}
-                                </Link>
-                            ),
-                    )}
+                    {navItems.map((item) => {
+                        // Admin-only
+                        if (item.adminOnly && user?.role !== 'admin')
+                            return null;
+                        // Cashier-only
+                        if (item.cashierOnly && user?.role !== 'cashier')
+                            return null;
+                        // Hide cashier-only for non-cashiers
+                        if (!item.adminOnly && !item.cashierOnly) {
+                            // Show for all roles except if cashierOnly is set
+                            // (already handled above)
+                        }
+                        return (
+                            <Link
+                                key={item.to}
+                                to={item.to}
+                                className={`flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors ${
+                                    item.match(location.pathname)
+                                        ? 'bg-blue-50 border-r-4 border-blue-500'
+                                        : ''
+                                }`}
+                                onClick={onClose}
+                            >
+                                {item.icon}
+                                {item.label}
+                            </Link>
+                        );
+                    })}
                 </nav>
             </aside>
         </>
@@ -217,10 +235,16 @@ function TopBar({
                     <h1 className="text-xl font-semibold">{title}</h1>
                 </div>
                 <div className="flex items-center">
-                    <div className="mr-4 flex items-center">
-                        <FaUser className="mr-2" />
-                        <span className="truncate max-w-[120px]">
-                            {user?.email} ({user?.role})
+                    <div className="mr-4 flex flex-col items-start">
+                        <span className="font-semibold flex items-center">
+                            <FaUser className="mr-2" />
+                            {user?.name}
+                        </span>
+                        <span className="text-gray-600 text-xs">
+                            {user?.email}
+                        </span>
+                        <span className="text-gray-400 text-xs">
+                            {user?.role}
                         </span>
                     </div>
                     <button
@@ -237,17 +261,17 @@ function TopBar({
     );
 }
 
-
 interface DashboardLayoutProps {
     children: ReactNode;
 }
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     const { mutate: logout } = useLogout();
-    const { user } = useAuthStore();
+    const store = useAuthStore();
     const location = useLocation();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
+    const user = store.user;
     const handleLogout = () => logout();
 
     return (
@@ -267,9 +291,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     onLogout={handleLogout}
                     onMenuClick={() => setSidebarOpen(true)}
                 />
-                <main className="flex-1 overflow-y-auto p-4">
-                    {children}
-                </main>
+                <main className="flex-1 overflow-y-auto p-4">{children}</main>
             </div>
         </div>
     );

@@ -1,3 +1,4 @@
+import { csrfProtection } from '../middlewares/csrf.middleware';
 import { Router } from 'express';
 import { ExpiryController } from '../controllers/expiry.controller';
 import { authenticate } from '../middlewares/auth.middleware';
@@ -41,6 +42,7 @@ router.get(
  */
 router.put(
     '/notifications/:id/read',
+    csrfProtection,
     expiryController.markNotificationAsRead.bind(expiryController),
 );
 
@@ -51,6 +53,7 @@ router.put(
  */
 router.put(
     '/notifications/read-all',
+    csrfProtection,
     expiryController.markAllNotificationsAsRead.bind(expiryController),
 );
 
@@ -61,6 +64,7 @@ router.put(
  */
 router.post(
     '/notifications/create',
+    csrfProtection,
     expiryController.createExpiryNotifications.bind(expiryController),
 );
 

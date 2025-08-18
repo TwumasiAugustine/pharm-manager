@@ -5,6 +5,7 @@ import { authorize } from '../middlewares/authorize.middleware';
 import { UserRole } from '../types/auth.types';
 import { validate } from '../middlewares/validation.middleware';
 import { createSaleSchema } from '../validations/sale.validation';
+import { csrfProtection } from '../middlewares/csrf.middleware';
 
 const router = Router();
 const saleController = new SaleController();
@@ -12,12 +13,18 @@ const saleController = new SaleController();
 router.get('/shortcode/:code', authenticate, saleController.getSaleByShortCode);
 
 // Finalize/print sale by short code (for cashier)
-router.post('/finalize', authenticate, saleController.finalizeSaleByShortCode);
+router.post(
+    '/finalize',
+    authenticate,
+    csrfProtection,
+    saleController.finalizeSaleByShortCode,
+);
 
 // Create a new sale
 router.post(
     '/',
     authenticate,
+    csrfProtection,
     authorize([UserRole.ADMIN, UserRole.PHARMACIST]),
     validate(createSaleSchema),
     saleController.createSale,

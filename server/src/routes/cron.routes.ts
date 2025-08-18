@@ -1,3 +1,4 @@
+import { csrfProtection } from '../middlewares/csrf.middleware';
 import { Router } from 'express';
 import { cronController } from '../controllers/cron.controller';
 import { authenticate } from '../middlewares/auth.middleware';
@@ -24,6 +25,7 @@ router.get('/status', cronController.getCronJobStatus.bind(cronController));
  */
 router.post(
     '/trigger-expiry-notifications',
+    csrfProtection,
     cronController.triggerExpiryNotifications.bind(cronController),
 );
 
@@ -34,6 +36,7 @@ router.post(
  */
 router.post(
     '/trigger-cleanup-notifications',
+    csrfProtection,
     cronController.triggerCleanupNotifications.bind(cronController),
 );
 

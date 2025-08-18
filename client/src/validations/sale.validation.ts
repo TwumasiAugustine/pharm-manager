@@ -6,6 +6,7 @@ export const saleItemSchema = z.object({
     quantity: z.number().min(1, 'Quantity must be at least 1'),
     priceAtSale: z.number(),
     maxQuantity: z.number(),
+    saleType: z.enum(['unit', 'pack', 'carton']),
 });
 
 export const createSaleSchema = z.object({

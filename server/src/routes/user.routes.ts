@@ -1,3 +1,4 @@
+import { csrfProtection } from '../middlewares/csrf.middleware';
 import { Router } from 'express';
 
 import { UserController } from '../controllers/user.controller';
@@ -20,12 +21,18 @@ router.get('/', authenticate, authorize([UserRole.ADMIN]), (req, res, next) =>
     controller.getUsers(req, res, next),
 );
 // Admin: Assign permissions to user
-router.post('/assign-permissions', authenticate, assignPermissions);
+router.post(
+    '/assign-permissions',
+    authenticate,
+    csrfProtection,
+    assignPermissions,
+);
 
 // Create a new user (admin only)
 router.post(
     '/',
     authenticate,
+    csrfProtection,
     authorize([UserRole.ADMIN]),
     validate(createUserSchema),
     (req, res, next) => controller.createUser(req, res, next),
@@ -35,6 +42,7 @@ router.post(
 router.put(
     '/:id',
     authenticate,
+    csrfProtection,
     authorize([UserRole.ADMIN]),
     validate(updateUserSchema),
     (req, res, next) => controller.updateUser(req, res, next),

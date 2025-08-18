@@ -1,3 +1,4 @@
+import { csrfProtection } from '../middlewares/csrf.middleware';
 import { Router } from 'express';
 import { DrugController } from '../controllers/drug.controller';
 import { authenticate } from '../middlewares/auth.middleware';
@@ -26,12 +27,24 @@ router.get('/:id', drugController.getDrug.bind(drugController));
 router.use(authorize(UserRole.ADMIN, UserRole.PHARMACIST));
 
 // Create a new drug
-router.post('/', drugController.createDrug.bind(drugController));
+router.post(
+    '/',
+    csrfProtection,
+    drugController.createDrug.bind(drugController),
+);
 
 // Update a drug
-router.put('/:id', drugController.updateDrug.bind(drugController));
+router.put(
+    '/:id',
+    csrfProtection,
+    drugController.updateDrug.bind(drugController),
+);
 
 // Delete a drug
-router.delete('/:id', drugController.deleteDrug.bind(drugController));
+router.delete(
+    '/:id',
+    csrfProtection,
+    drugController.deleteDrug.bind(drugController),
+);
 
 export default router;

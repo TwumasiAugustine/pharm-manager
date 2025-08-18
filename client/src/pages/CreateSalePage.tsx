@@ -38,7 +38,11 @@ const CreateSalePage: React.FC = () => {
         formState: { errors },
     } = form;
 
-    const { fields, append, remove } = useFieldArray({
+    const { fields, append, remove } = useFieldArray<
+        CreateSaleFormValues,
+        'items',
+        'id'
+    >({
         control,
         name: 'items',
     });
@@ -61,8 +65,9 @@ const CreateSalePage: React.FC = () => {
                 drugId: drug.id,
                 drugName: drug.name,
                 quantity: 1,
-                priceAtSale: drug.price,
+                priceAtSale: drug.pricePerUnit || 0,
                 maxQuantity: drug.quantity,
+                saleType: 'unit',
             });
         }
         setSearchTerm('');
@@ -75,9 +80,10 @@ const CreateSalePage: React.FC = () => {
                 items: data.items.map((item) => ({
                     drugId: item.drugId,
                     quantity: item.quantity,
+                    saleType: item.saleType || 'unit',
                 })),
                 totalAmount,
-                paymentMethod: data.paymentMethod as "cash" | "card" | "mobile",
+                paymentMethod: data.paymentMethod as 'cash' | 'card' | 'mobile',
                 transactionId: data.transactionId,
                 notes: data.notes,
             };

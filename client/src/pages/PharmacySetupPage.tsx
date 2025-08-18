@@ -43,7 +43,7 @@ const PharmacySetupPage: React.FC = () => {
             // Refetch pharmacy info so UI stays in sync
             await queryClient.invalidateQueries({ queryKey: ['pharmacyInfo'] });
         } catch (e) {
-            alert('Failed to update sale short code setting');
+            console.error('')
         } finally {
             setToggleLoading(false);
         }
