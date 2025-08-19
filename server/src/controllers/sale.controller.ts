@@ -84,17 +84,46 @@ export class SaleController {
                 throw new UnauthorizedError('No permission to finalize sale');
             }
             const { code } = req.body;
-            const sale = await Sale.findOneAndUpdate(
-                { shortCode: code, finalized: false },
-                { finalized: true },
-                { new: true },
-            );
-            if (!sale)
-                throw new BadRequestError('Invalid or already finalized code');
+            // Find sale by code
+            const sale = await Sale.findOne({ shortCode: code });
+            if (!sale) {
+                throw new BadRequestError('Invalid or expired code');
+            }
+            // Check if code is expired (older than 10 minutes)
+            const now = new Date();
+            const createdAt =
+                sale.createdAt instanceof Date
+                    ? sale.createdAt
+                    : new Date(sale.createdAt);
+            const diffMs = now.getTime() - createdAt.getTime();
+            const diffMinutes = diffMs / (1000 * 60);
+            if (diffMinutes > 10) {
+                throw new BadRequestError(
+                    'Short code has expired. Please ask the pharmacist to generate a new one.',
+                );
+            }
+            // If already finalized, allow printing (do not update again)
+            if (sale.finalized) {
+                return res.json(
+                    successResponse(
+                        sale,
+                        'Sale already finalized and ready for printing',
+                    ),
+                );
+            }
+            // Otherwise, finalize the sale
+            sale.finalized = true;
+            await sale.save();
             res.json(
                 successResponse(sale, 'Sale finalized and ready for printing'),
             );
         } catch (err: any) {
+            // If unauthorized, send 401 for frontend to handle logout
+            if (err instanceof UnauthorizedError) {
+                return res
+                    .status(401)
+                    .json({ success: false, message: err.message });
+            }
             next(err);
         }
     }

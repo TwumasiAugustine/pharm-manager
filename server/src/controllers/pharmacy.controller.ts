@@ -55,6 +55,7 @@ export const fetchPharmacyInfo = async (req: Request, res: Response) => {
                     registrationNumber: '',
                     taxId: '',
                     operatingHours: '',
+                    requireSaleShortCode: false,
                 },
                 isConfigured,
             },

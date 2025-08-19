@@ -14,35 +14,24 @@ import { Alert, AlertDescription, AlertTitle } from '../molecules/Alert';
 import { getErrorMessage } from '../../utils/error';
 import type { Drug, PaginatedDrugsResponse } from '../../types/drug.types';
 import type { UseMutationResult } from '@tanstack/react-query';
-import type { Sale, CreateSaleRequest } from '../../types/sale.types';
+import type {
+    Sale,
+    CreateSaleRequest,
+    SaleFormInput,
+} from '../../types/sale.types';
 // import type { CreateSaleFormValues } from '../../validations/sale.validation';
 import { formatGHSDisplayAmount } from '../../utils/currency';
 
-type SaleFormItem = {
-    drugId: string;
-    drugName: string;
-    quantity: number;
-    priceAtSale: number;
-    maxQuantity: number;
-    saleType: 'unit' | 'pack' | 'carton';
-};
-type SaleFormType = {
-    items: SaleFormItem[];
-    paymentMethod: 'cash' | 'card' | 'mobile';
-    transactionId?: string;
-    notes?: string;
-    customerId?: string;
-};
 interface CreateSaleFormProps {
-    onSubmit: (data: SaleFormType) => void;
+    onSubmit: (data: SaleFormInput) => void;
     drugData: PaginatedDrugsResponse | undefined;
     isLoadingDrugs: boolean;
     searchTerm: string;
     setSearchTerm: (value: string) => void;
     handleAddDrug: (drug: Drug) => void;
-    fields: FieldArrayWithId<SaleFormType, 'items', 'id'>[];
+    fields: FieldArrayWithId<SaleFormInput, 'items', 'id'>[];
     remove: UseFieldArrayRemove;
-    errors: FieldErrors<SaleFormType>;
+    errors: FieldErrors<SaleFormInput>;
     totalAmount: number;
     createSaleMutation: UseMutationResult<
         Sale,
@@ -65,7 +54,7 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
     totalAmount,
     createSaleMutation,
 }) => {
-    const { handleSubmit, watch, control } = useFormContext<SaleFormType>();
+    const { handleSubmit, watch, control } = useFormContext<SaleFormInput>();
     const watchedItems = watch('items');
     const isProcessing = createSaleMutation.isPending;
 
@@ -151,63 +140,75 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
 
                     {/* Sale Items - Responsive */}
                     <div className="space-y-4">
-                        {fields.map((field, index) => (
-                            <div
-                                key={field.id}
-                                className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-2 md:space-y-0 p-2 border rounded-md"
-                            >
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-semibold truncate">
-                                        {field.drugName}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                        Price:{' '}
-                                        {formatGHSDisplayAmount(
-                                            field.priceAtSale,
-                                        )}
-                                    </p>
-                                </div>
-                                <Controller
-                                    name={`items.${index}.quantity`}
-                                    control={control}
-                                    render={({
-                                        field: { onChange, ...restField },
-                                    }) => (
-                                        <Input
-                                            type="number"
-                                            className="w-full md:w-24"
-                                            min="1"
-                                            max={field.maxQuantity}
-                                            onChange={(e) =>
-                                                onChange(
-                                                    parseInt(
-                                                        e.target.value,
-                                                        10,
-                                                    ) || 0,
-                                                )
-                                            }
-                                            {...restField}
-                                        />
-                                    )}
-                                />
-                                <p className="w-full md:w-28 text-right">
-                                    Subtotal:{' '}
-                                    {formatGHSDisplayAmount(
-                                        (watchedItems?.[index]?.priceAtSale ??
-                                            0) *
-                                            (watchedItems?.[index]?.quantity ??
-                                                0),
-                                    )}
-                                </p>
-                                <Button
-                                    type="button"
-                                    variant="danger"
-                                    onClick={() => remove(index)}
+                        {fields.map((field, index) => {
+                            // Lookup drug info for display
+                            const drugInfo = drugData?.drugs?.find(
+                                (d) => d.id === field.drug,
+                            );
+                            // Get current quantity from watchedItems
+                            const currentQty =
+                                Array.isArray(watchedItems) &&
+                                watchedItems[index]?.quantity
+                                    ? watchedItems[index].quantity
+                                    : field.quantity;
+                            const price = drugInfo?.pricePerUnit ?? 0;
+                            const subtotal = price * (currentQty ?? 0);
+                            return (
+                                <div
+                                    key={field.id}
+                                    className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-2 md:space-y-0 p-2 border rounded-md"
                                 >
-                                    <FaTrash className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold truncate">
+                                            {drugInfo
+                                                ? drugInfo.name
+                                                : field.drug}
+                                        </p>
+                                        <p className="text-sm text-gray-500">
+                                            Price:{' '}
+                                            {formatGHSDisplayAmount(price)}
+                                        </p>
+                                    </div>
+                                    <Controller
+                                        name={`items.${index}.quantity`}
+                                        control={control}
+                                        render={({
+                                            field: { onChange, ...restField },
+                                        }) => (
+                                            <Input
+                                                type="number"
+                                                className="w-full md:w-24"
+                                                min="1"
+                                                max={
+                                                    drugInfo?.quantity ??
+                                                    undefined
+                                                }
+                                                onChange={(e) =>
+                                                    onChange(
+                                                        parseInt(
+                                                            e.target.value,
+                                                            10,
+                                                        ) || 0,
+                                                    )
+                                                }
+                                                {...restField}
+                                            />
+                                        )}
+                                    />
+                                    <p className="w-full md:w-28 text-right">
+                                        Subtotal:{' '}
+                                        {formatGHSDisplayAmount(subtotal)}
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        variant="danger"
+                                        onClick={() => remove(index)}
+                                    >
+                                        <FaTrash className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            );
+                        })}
                         {errors.items && (
                             <p className="text-red-500 text-sm">
                                 {errors.items.message}

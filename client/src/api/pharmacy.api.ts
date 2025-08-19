@@ -61,19 +61,15 @@ export const pharmacyApi = {
             let isConfigured = false;
 
             if (response.data.data?.pharmacyInfo) {
-                // Standard format in nested data.pharmacyInfo
                 pharmacyInfo = response.data.data.pharmacyInfo;
                 isConfigured = response.data.data.isConfigured;
             } else if (response.data.data && response.data.data.name) {
-                // Direct pharmacyInfo in data field
                 pharmacyInfo = response.data.data;
                 isConfigured = true;
             } else if (response.data.name) {
-                // Direct pharmacyInfo at root
                 pharmacyInfo = response.data;
                 isConfigured = true;
             } else {
-                // Empty object if no valid data format found
                 pharmacyInfo = {
                     name: '',
                     slogan: '',
@@ -92,6 +88,7 @@ export const pharmacyApi = {
                     registrationNumber: '',
                     taxId: '',
                     operatingHours: '',
+                    requireSaleShortCode: false,
                 };
                 isConfigured = false;
             }
@@ -115,6 +112,10 @@ export const pharmacyApi = {
                 registrationNumber: pharmacyInfo.registrationNumber || '',
                 taxId: pharmacyInfo.taxId || '',
                 operatingHours: pharmacyInfo.operatingHours || '',
+                requireSaleShortCode:
+                    typeof pharmacyInfo.requireSaleShortCode === 'boolean'
+                        ? pharmacyInfo.requireSaleShortCode
+                        : false,
                 _id: pharmacyInfo._id,
                 __v: pharmacyInfo.__v,
                 createdAt: pharmacyInfo.createdAt,

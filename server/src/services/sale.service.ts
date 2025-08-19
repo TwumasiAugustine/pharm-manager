@@ -52,6 +52,8 @@ export class SaleService {
         notes?: string;
         userId: string;
         customerId?: string;
+        shortCode?: string;
+        finalized?: boolean;
     }) {
         // Try to use transactions, fall back to non-transactional approach if needed
         let session: mongoose.ClientSession | null = null;
@@ -153,6 +155,8 @@ export class SaleService {
                                 paymentMethod: data.paymentMethod,
                                 transactionId: data.transactionId,
                                 notes: data.notes,
+                                shortCode: data.shortCode,
+                                finalized: data.finalized,
                             },
                         ],
                         { session: session! },
@@ -222,6 +226,8 @@ export class SaleService {
         notes?: string;
         userId: string;
         customerId?: string;
+        shortCode?: string;
+        finalized?: boolean;
     }) {
         try {
             let calculatedTotal = 0;
@@ -306,6 +312,8 @@ export class SaleService {
                 paymentMethod: data.paymentMethod,
                 transactionId: data.transactionId,
                 notes: data.notes,
+                shortCode: data.shortCode,
+                finalized: data.finalized,
             });
 
             // Update customer purchases if customerId provided
