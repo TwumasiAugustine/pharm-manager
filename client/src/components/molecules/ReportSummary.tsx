@@ -52,6 +52,13 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
             bgColor: 'bg-green-100',
         },
         {
+            label: 'Total Profit',
+            value: formatCurrency((summary as any).totalProfit ?? 0),
+            icon: () => <span className="font-bold text-lg">₵</span>,
+            color: 'text-orange-600',
+            bgColor: 'bg-orange-100',
+        },
+        {
             label: 'Total Sales',
             value: formatNumber(summary.totalSales),
             icon: FiTrendingUp,

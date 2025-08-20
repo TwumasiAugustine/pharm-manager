@@ -54,6 +54,42 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
     const { handleSubmit, watch, control } =
         useFormContext<CreateSaleFormValues>();
     const watchedItems = watch('items');
+
+    // Helper to calculate available stock for a drug based on saleType and items in cart
+    const getAvailableStock = (
+        drug: Drug,
+        saleType: 'unit' | 'pack' | 'carton',
+        currentIndex: number,
+    ) => {
+        // Calculate how many of this drug are already in the cart (excluding the current item)
+        let used = 0;
+        if (Array.isArray(watchedItems)) {
+            watchedItems.forEach((item, idx) => {
+                if (idx !== currentIndex && item.drugId === drug.id) {
+                    // Convert all to units for deduction
+                    if (item.saleType === 'unit') used += item.quantity;
+                    else if (item.saleType === 'pack')
+                        used += item.quantity * (drug.unitsPerCarton || 1);
+                    else if (item.saleType === 'carton')
+                        used +=
+                            item.quantity *
+                            (drug.unitsPerCarton || 1) *
+                            (drug.packsPerCarton || 1);
+                }
+            });
+        }
+        // Total available units
+        const totalUnits = drug.quantity - used;
+        if (saleType === 'unit') return totalUnits;
+        if (saleType === 'pack')
+            return Math.floor(totalUnits / (drug.unitsPerCarton || 1));
+        if (saleType === 'carton')
+            return Math.floor(
+                totalUnits /
+                    ((drug.unitsPerCarton || 1) * (drug.packsPerCarton || 1)),
+            );
+        return 0;
+    };
     const isProcessing = createSaleMutation.isPending;
 
     return (
@@ -143,13 +179,35 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                             const drugInfo = drugData?.drugs?.find(
                                 (d) => d.id === field.drugId,
                             );
-                            // Get current quantity from watchedItems
+                            // Get current saleType and quantity from watchedItems
+                            const currentSaleType =
+                                Array.isArray(watchedItems) &&
+                                watchedItems[index]?.saleType
+                                    ? watchedItems[index].saleType
+                                    : field.saleType || 'unit';
                             const currentQty =
                                 Array.isArray(watchedItems) &&
                                 watchedItems[index]?.quantity
                                     ? watchedItems[index].quantity
                                     : field.quantity;
-                            const price = drugInfo?.pricePerUnit ?? 0;
+                            // Calculate available stock for this drug and saleType
+                            const availableStock = drugInfo
+                                ? getAvailableStock(
+                                      drugInfo,
+                                      currentSaleType,
+                                      index,
+                                  )
+                                : 0;
+                            // Price logic
+                            let price = 0;
+                            if (drugInfo) {
+                                if (currentSaleType === 'unit')
+                                    price = drugInfo.pricePerUnit;
+                                else if (currentSaleType === 'pack')
+                                    price = drugInfo.pricePerPack;
+                                else if (currentSaleType === 'carton')
+                                    price = drugInfo.pricePerCarton;
+                            }
                             const subtotal = price * (currentQty ?? 0);
                             return (
                                 <div
@@ -166,7 +224,33 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                                             Price:{' '}
                                             {formatGHSDisplayAmount(price)}
                                         </p>
+                                        <p className="text-xs text-gray-500">
+                                            In Stock: {availableStock}{' '}
+                                            {currentSaleType}
+                                        </p>
                                     </div>
+                                    {/* Sale Type Dropdown */}
+                                    <Controller
+                                        name={`items.${index}.saleType`}
+                                        control={control}
+                                        render={({ field: saleTypeField }) => (
+                                            <select
+                                                className="w-full md:w-24 border rounded-md p-1"
+                                                {...saleTypeField}
+                                            >
+                                                <option value="unit">
+                                                    Unit
+                                                </option>
+                                                <option value="pack">
+                                                    Pack
+                                                </option>
+                                                <option value="carton">
+                                                    Carton
+                                                </option>
+                                            </select>
+                                        )}
+                                    />
+                                    {/* Quantity Input */}
                                     <Controller
                                         name={`items.${index}.quantity`}
                                         control={control}
@@ -177,18 +261,17 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                                                 type="number"
                                                 className="w-full md:w-24"
                                                 min="1"
-                                                max={
-                                                    drugInfo?.quantity ??
-                                                    undefined
-                                                }
-                                                onChange={(e) =>
-                                                    onChange(
+                                                max={availableStock}
+                                                onChange={(e) => {
+                                                    let val =
                                                         parseInt(
                                                             e.target.value,
                                                             10,
-                                                        ) || 0,
-                                                    )
-                                                }
+                                                        ) || 0;
+                                                    if (val > availableStock)
+                                                        val = availableStock;
+                                                    onChange(val);
+                                                }}
                                                 {...restField}
                                             />
                                         )}

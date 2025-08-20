@@ -7,7 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 .github
-
+.vscode
 *.md
 # Diagnostic reports (these are things like field dumps and heap dumps)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json

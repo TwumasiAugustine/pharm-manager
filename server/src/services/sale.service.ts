@@ -362,20 +362,27 @@ export class SaleService {
     }> {
         const query: any = {};
 
-        // Date filtering
+        // Date filtering (always use UTC for consistency)
         if (startDate || endDate) {
             query.createdAt = {};
-            if (startDate) query.createdAt.$gte = new Date(startDate);
-            if (endDate) query.createdAt.$lte = new Date(endDate);
+            if (startDate) {
+                // Start of day UTC
+                const start = new Date(startDate);
+                start.setUTCHours(0, 0, 0, 0);
+                query.createdAt.$gte = start;
+            }
+            if (endDate) {
+                // End of day UTC (23:59:59.999)
+                const end = new Date(endDate);
+                end.setUTCHours(23, 59, 59, 999);
+                query.createdAt.$lte = end;
+            }
         } else {
-            // Default to showing today's sales if no date range is specified
-            const today = new Date();
-            const startOfToday = new Date(
-                today.getFullYear(),
-                today.getMonth(),
-                today.getDate(),
-            );
-            query.createdAt = { $gte: startOfToday };
+            // Default to showing today's sales (UTC)
+            const now = new Date();
+            const startOfTodayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+            const endOfTodayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
+            query.createdAt = { $gte: startOfTodayUTC, $lte: endOfTodayUTC };
         }
 
         const sales = await Sale.find(query)
@@ -424,11 +431,14 @@ export class SaleService {
         });
 
         // Group sales by date
+        // Group sales by UTC date string (YYYY-MM-DD)
         const groupedSales = mappedSales.reduce<Record<string, MappedSale[]>>(
             (acc, sale) => {
-                const date = new Date(sale.createdAt).toDateString();
-                if (!acc[date]) acc[date] = [];
-                acc[date].push(sale);
+                const d = new Date(sale.createdAt);
+                // Always use UTC for grouping
+                const dateStr = d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
+                if (!acc[dateStr]) acc[dateStr] = [];
+                acc[dateStr].push(sale);
                 return acc;
             },
             {},

@@ -1,3 +1,12 @@
+// Type guard for API user response
+function isUserResponse(obj: unknown): obj is { user: User } {
+    return (
+        typeof obj === 'object' &&
+        obj !== null &&
+        'user' in obj &&
+        typeof (obj as { user?: unknown }).user === 'object'
+    );
+}
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../api/auth.api';
@@ -19,7 +28,9 @@ export const useLogin = () => {
         mutationFn: async (credentials: LoginRequest) => {
             // First, login the user
             const responseUser = await authApi.login(credentials);
-            const user = responseUser.user || responseUser; // handle both {user: {...}} and flat
+            const user = isUserResponse(responseUser)
+                ? responseUser.user
+                : responseUser;
 
             // If user is admin, check pharmacy configuration status
             if (user.role === UserRole.ADMIN) {
@@ -76,7 +87,9 @@ export const useRegister = () => {
     return useMutation({
         mutationFn: (userData: RegisterRequest) => authApi.register(userData),
         onSuccess: (responseUser) => {
-            const user = responseUser.user || responseUser;
+            const user = isUserResponse(responseUser)
+                ? responseUser.user
+                : responseUser;
             setUser(user);
             setIsAuthenticated(true);
             queryClient.setQueryData(['currentUser'], user);
@@ -125,7 +138,9 @@ export const useCurrentUser = () => {
 
     useEffect(() => {
         if (query.isSuccess && query.data) {
-            const user = (query.data as any).user || query.data;
+            const user = isUserResponse(query.data)
+                ? query.data.user
+                : query.data;
             setUser(user);
             setIsAuthenticated(true);
             setIsLoading(false);

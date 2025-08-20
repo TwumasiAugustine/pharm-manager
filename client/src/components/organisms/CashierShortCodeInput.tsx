@@ -18,9 +18,13 @@ const CashierShortCodeInput: React.FC<CashierShortCodeInputProps> = ({
         e.preventDefault();
         try {
             await onFinalize(enteredShortCode);
-        } catch (err) {
+        } catch (err: unknown) {
             // Swallow error to prevent unhandled rejection and native form submit
-            console.log(err.message)
+            if (err && typeof err === 'object' && 'message' in err) {
+                console.error((err as { message?: string }).message);
+            } else {
+                console.error(err);
+            }
         }
         return false;
     };

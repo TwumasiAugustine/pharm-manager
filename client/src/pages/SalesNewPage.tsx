@@ -85,7 +85,14 @@ const SalesNewPage: React.FC = () => {
               const drugInfo = (drugData?.drugs || []).find(
                   (d) => d.id === item.drugId,
               );
-              const price = drugInfo?.pricePerUnit ?? 0;
+              let price = 0;
+              if (drugInfo) {
+                  if (item.saleType === 'unit') price = drugInfo.pricePerUnit;
+                  else if (item.saleType === 'pack')
+                      price = drugInfo.pricePerPack;
+                  else if (item.saleType === 'carton')
+                      price = drugInfo.pricePerCarton;
+              }
               return sum + price * (item.quantity || 0);
           }, 0)
         : 0;
@@ -99,7 +106,7 @@ const SalesNewPage: React.FC = () => {
                 quantity: 1,
                 priceAtSale: drug.pricePerUnit || 0,
                 maxQuantity: drug.quantity || 0,
-                saleType: 'unit',
+                saleType: 'unit', // default, user can change in form
             });
         }
         setSearchTerm('');
