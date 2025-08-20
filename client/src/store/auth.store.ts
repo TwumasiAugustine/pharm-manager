@@ -16,7 +16,7 @@ export const useAuthStore = create<
         (set) => ({
             user: null,
             isAuthenticated: false,
-            isLoading: true,
+            isLoading: false,
             isPharmacyConfigured: false,
 
             setUser: (user) => set({ user }),

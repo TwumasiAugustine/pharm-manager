@@ -11,7 +11,6 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
         useAuthStore();
     const location = useLocation();
 
-    console.log(user)
 
     // If auth is still loading, show a minimalist loading screen
     if (isLoading) {

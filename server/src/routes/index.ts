@@ -1,4 +1,6 @@
+
 import { Router } from 'express';
+import { generateCsrfToken } from '../middlewares/csrf.middleware';
 import authRoutes from './auth.routes';
 import drugRoutes from './drug.routes';
 import saleRoutes from './sale.routes';
@@ -21,6 +23,22 @@ router.get('/health', (req, res) => {
         message: 'Server is running',
         timestamp: new Date().toISOString(),
     });
+});
+
+// CSRF token endpoint for frontend to fetch and set CSRF cookie
+
+
+router.get('/csrf-token', (req, res) => {
+    if (!req.cookies['csrfToken']) {
+        const token = generateCsrfToken();
+        res.cookie('csrfToken', token, {
+            httpOnly: false,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+        });
+        return res.json({ csrfToken: token });
+    }
+    return res.json({ csrfToken: req.cookies['csrfToken'] });
 });
 
 // API routes

@@ -35,15 +35,6 @@ export const authApi = {
 
     refreshToken: async (): Promise<boolean> => {
         try {
-            // Skip refresh attempt if there's no session indicator
-            if (
-                !document.cookie.includes('session') &&
-                sessionStorage.getItem('hasSession') !== 'true'
-            ) {
-                console.log('Skipping token refresh - no session detected');
-                return false;
-            }
-
             const response = await api.get<ApiResponseData<null>>(
                 '/auth/refresh',
             );
@@ -51,8 +42,6 @@ export const authApi = {
         } catch (error) {
             // If refresh fails, return false instead of throwing
             console.error('Refresh token failed:', error);
-            // Clear session indicator on refresh failure
-            sessionStorage.removeItem('hasSession');
             return false;
         }
     },

@@ -238,6 +238,11 @@ const SalesListPage: React.FC = () => {
             },
         },
         {
+            header: 'Finalized',
+            accessor: (sale) => (sale.finalized ? 'Yes' : 'No'),
+            className: 'text-center',
+        },
+        {
             header: 'Total Amount',
             accessor: (sale) => {
                 const amount =

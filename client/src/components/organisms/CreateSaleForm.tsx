@@ -14,24 +14,21 @@ import { Alert, AlertDescription, AlertTitle } from '../molecules/Alert';
 import { getErrorMessage } from '../../utils/error';
 import type { Drug, PaginatedDrugsResponse } from '../../types/drug.types';
 import type { UseMutationResult } from '@tanstack/react-query';
-import type {
-    Sale,
-    CreateSaleRequest,
-    SaleFormInput,
-} from '../../types/sale.types';
-// import type { CreateSaleFormValues } from '../../validations/sale.validation';
+import type { Sale, CreateSaleRequest } from '../../types/sale.types';
 import { formatGHSDisplayAmount } from '../../utils/currency';
 
+import type { CreateSaleFormValues } from '../../validations/sale.validation';
+
 interface CreateSaleFormProps {
-    onSubmit: (data: SaleFormInput) => void;
+    onSubmit: (data: CreateSaleFormValues) => void | Promise<void>;
     drugData: PaginatedDrugsResponse | undefined;
     isLoadingDrugs: boolean;
     searchTerm: string;
     setSearchTerm: (value: string) => void;
     handleAddDrug: (drug: Drug) => void;
-    fields: FieldArrayWithId<SaleFormInput, 'items', 'id'>[];
+    fields: FieldArrayWithId<CreateSaleFormValues, 'items', 'id'>[];
     remove: UseFieldArrayRemove;
-    errors: FieldErrors<SaleFormInput>;
+    errors: FieldErrors<CreateSaleFormValues>;
     totalAmount: number;
     createSaleMutation: UseMutationResult<
         Sale,
@@ -54,7 +51,8 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
     totalAmount,
     createSaleMutation,
 }) => {
-    const { handleSubmit, watch, control } = useFormContext<SaleFormInput>();
+    const { handleSubmit, watch, control } =
+        useFormContext<CreateSaleFormValues>();
     const watchedItems = watch('items');
     const isProcessing = createSaleMutation.isPending;
 
@@ -143,7 +141,7 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                         {fields.map((field, index) => {
                             // Lookup drug info for display
                             const drugInfo = drugData?.drugs?.find(
-                                (d) => d.id === field.drug,
+                                (d) => d.id === field.drugId,
                             );
                             // Get current quantity from watchedItems
                             const currentQty =
@@ -162,7 +160,7 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                                         <p className="font-semibold truncate">
                                             {drugInfo
                                                 ? drugInfo.name
-                                                : field.drug}
+                                                : field.drugName}
                                         </p>
                                         <p className="text-sm text-gray-500">
                                             Price:{' '}

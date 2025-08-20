@@ -1,3 +1,16 @@
+// Type guard for API errors
+function isApiError(
+    err: unknown,
+): err is { response: { status?: number; data?: { message?: string } } } {
+    return (
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as { response?: unknown }).response === 'object'
+    );
+}
+// Local type for sale response with optional requireShortCode
+type SaleWithShortCode = Sale & { requireShortCode?: boolean };
 import React, { useState } from 'react';
 import { useAuthStore } from '../store/auth.store';
 import CashierShortCodeInput from '../components/organisms/CashierShortCodeInput';
@@ -13,7 +26,8 @@ import { useCreateSale } from '../hooks/useSales';
 import { usePharmacyInfo } from '../hooks/usePharmacy';
 import { useDrugs } from '../hooks/useDrugs';
 import type { Drug } from '../types/drug.types';
-import type { Sale, SaleFormItem, SaleFormInput } from '../types/sale.types';
+import type { Sale } from '../types/sale.types';
+import type { CreateSaleFormValues } from '../validations/sale.validation';
 
 const SalesNewPage: React.FC = () => {
     const { user } = useAuthStore();
@@ -46,8 +60,8 @@ const SalesNewPage: React.FC = () => {
     }, [requireShortCode]);
 
     // Sale item type for form now imported from types/sale.types.ts
-    const form = useForm<SaleFormInput>({
-        defaultValues: { items: [], paymentMethod: 'cash' },
+    const form = useForm<CreateSaleFormValues>({
+        defaultValues: { items: [], paymentMethod: '' },
     });
     // Customer selection state (for CustomerSelect)
     const selectedCustomerId = form.watch('customerId');
@@ -55,7 +69,7 @@ const SalesNewPage: React.FC = () => {
         form.setValue('customerId', customerId);
     };
     const { fields, append, remove } = useFieldArray<
-        SaleFormInput,
+        CreateSaleFormValues,
         'items',
         'id'
     >({
@@ -67,9 +81,9 @@ const SalesNewPage: React.FC = () => {
     // Calculate total amount: sum of price * quantity for each item
     const items = form.watch('items');
     const totalAmount = Array.isArray(items)
-        ? items.reduce((sum: number, item: SaleFormItem) => {
+        ? items.reduce((sum: number, item) => {
               const drugInfo = (drugData?.drugs || []).find(
-                  (d) => d.id === item.drug,
+                  (d) => d.id === item.drugId,
               );
               const price = drugInfo?.pricePerUnit ?? 0;
               return sum + price * (item.quantity || 0);
@@ -78,10 +92,13 @@ const SalesNewPage: React.FC = () => {
 
     // Add drug to sale
     const handleAddDrug = (drug: Drug) => {
-        if (!fields.some((item) => item.drug === drug.id)) {
+        if (!fields.some((item) => item.drugId === drug.id)) {
             append({
-                drug: drug.id,
+                drugId: drug.id,
+                drugName: drug.name,
                 quantity: 1,
+                priceAtSale: drug.pricePerUnit || 0,
+                maxQuantity: drug.quantity || 0,
                 saleType: 'unit',
             });
         }
@@ -92,32 +109,31 @@ const SalesNewPage: React.FC = () => {
     const mutation = useCreateSale();
 
     // Sale form submit handler
-    const onSubmit = (data: SaleFormInput) => {
+    const onSubmit = (data: CreateSaleFormValues) => {
         const payload = {
-            items: data.items.map(({ drug, quantity, saleType }) => ({
-                drugId: drug,
+            items: data.items.map(({ drugId, quantity, saleType }) => ({
+                drugId,
                 quantity,
                 saleType,
             })),
             totalAmount,
-            paymentMethod: data.paymentMethod,
+            paymentMethod: data.paymentMethod as 'cash' | 'card' | 'mobile',
             customerId: data.customerId,
             transactionId: data.transactionId,
             notes: data.notes,
         };
         mutation.mutate(payload, {
-            onSuccess: (sale: any) => {
+            onSuccess: (sale: Sale) => {
                 // Debug: log sale object and relevant flags
-                // eslint-disable-next-line no-console
                 console.log('Sale response:', sale, {
                     requireShortCode,
                     isPharmacist,
                     shortCode: sale.shortCode,
                 });
-                // Use backend value if present, else fallback
+                const saleWithShortCode = sale as SaleWithShortCode;
                 const backendRequireShortCode =
-                    typeof sale.requireShortCode !== 'undefined'
-                        ? sale.requireShortCode
+                    typeof saleWithShortCode.requireShortCode !== 'undefined'
+                        ? saleWithShortCode.requireShortCode
                         : requireShortCode;
                 setEffectiveRequireShortCode(backendRequireShortCode);
                 // If short code is required and user is pharmacist, always show code and never redirect
@@ -140,29 +156,38 @@ const SalesNewPage: React.FC = () => {
             const sale = await saleApi.finalizeSaleByShortCode(code);
             setFinalizedSale(sale);
             setShortCodeError('');
-        } catch (err: any) {
-            // Handle 401 Unauthorized (show message in UI)
-            if (err?.response?.status === 401) {
+        } catch (err: unknown) {
+            if (isApiError(err) && err.response?.status === 401) {
                 setShortCodeError(
                     'You are not authorized to finalize sales. Please contact your administrator.',
                 );
                 return;
             }
-            // If sale is already finalized, show it for printing
-            if (err?.response?.data?.message?.includes('already finalized')) {
+            if (
+                isApiError(err) &&
+                typeof err.response?.data?.message === 'string' &&
+                err.response.data.message.includes('already finalized')
+            ) {
                 try {
                     const sale = await saleApi.getSaleByShortCode(code);
                     setFinalizedSale(sale);
                     setShortCodeError('');
                     return;
-                } catch (fetchErr) {
-                    setShortCodeError('Could not fetch finalized sale.');
+                } catch (err2) {
+                    setShortCodeError(
+                        `${err2}, Could not fetch finalized sale.`,
+                    );
                     return;
                 }
             }
-            setShortCodeError(
-                err?.response?.data?.message || 'Invalid or expired code.',
-            );
+            let errorMsg = 'Invalid or expired code.';
+            if (
+                isApiError(err) &&
+                typeof err.response?.data?.message === 'string'
+            ) {
+                errorMsg = err.response.data.message;
+            }
+            setShortCodeError(errorMsg);
         } finally {
             setIsFinalizing(false);
         }

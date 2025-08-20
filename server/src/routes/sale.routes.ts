@@ -17,6 +17,7 @@ router.post(
     '/finalize',
     authenticate,
     csrfProtection,
+    authorize([UserRole.ADMIN, UserRole.PHARMACIST, UserRole.CASHIER]),
     saleController.finalizeSaleByShortCode,
 );
 
@@ -25,7 +26,7 @@ router.post(
     '/',
     authenticate,
     csrfProtection,
-    authorize([UserRole.ADMIN, UserRole.PHARMACIST]),
+    authorize([UserRole.ADMIN, UserRole.PHARMACIST, UserRole.CASHIER]),
     validate(createSaleSchema),
     saleController.createSale,
 );
@@ -42,7 +43,7 @@ router.get(
 router.get(
     '/:id',
     authenticate,
-    authorize([UserRole.ADMIN, UserRole.PHARMACIST]),
+    authorize([UserRole.ADMIN, UserRole.PHARMACIST, UserRole.CASHIER]),
     saleController.getSaleById,
 );
 

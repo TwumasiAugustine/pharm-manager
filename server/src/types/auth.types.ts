@@ -53,6 +53,7 @@ export interface IAuthResponse {
         email: string;
         role: UserRole;
         isFirstSetup: boolean;
+        permissions?: string[];
     };
     tokens?: IAuthTokens;
 }

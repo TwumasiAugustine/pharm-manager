@@ -56,6 +56,7 @@ export class AuthService {
                 email: user.email,
                 role: user.role,
                 isFirstSetup: user.isFirstSetup,
+                permissions: user.permissions || [],
             },
             tokens,
         };
@@ -76,13 +77,14 @@ export class AuthService {
             throw new UnauthorizedError('Invalid email or password');
         }
 
-        // Generate tokens
+        // Generate tokens (include permissions)
         const tokenPayload: ITokenPayload = {
             id: user._id,
             name: user.name,
             email: user.email,
             role: user.role,
             isFirstSetup: user.isFirstSetup,
+            permissions: user.permissions || [],
         };
 
         const tokens = generateTokens(tokenPayload);
@@ -98,6 +100,7 @@ export class AuthService {
                 email: user.email,
                 role: user.role,
                 isFirstSetup: user.isFirstSetup,
+                permissions: user.permissions || [],
             },
             tokens,
         };
@@ -128,6 +131,7 @@ export class AuthService {
             email: user.email,
             role: user.role,
             isFirstSetup: user.isFirstSetup,
+            permissions: user.permissions || [],
         };
 
         const tokens = generateTokens(tokenPayload);
@@ -143,6 +147,7 @@ export class AuthService {
                 email: user.email,
                 role: user.role,
                 isFirstSetup: user.isFirstSetup,
+                permissions: user.permissions || [],
             },
             tokens,
         };

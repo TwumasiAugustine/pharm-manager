@@ -14,6 +14,7 @@ export const createSaleSchema = z.object({
     paymentMethod: z.string().min(1, 'Payment method is required'),
     transactionId: z.string().optional(),
     notes: z.string().optional(),
+    customerId: z.string().optional(),
 });
 
 export type CreateSaleFormValues = z.infer<typeof createSaleSchema>;
