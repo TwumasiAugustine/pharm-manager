@@ -18,6 +18,7 @@ import type { Sale, CreateSaleRequest } from '../../types/sale.types';
 import { formatGHSDisplayAmount } from '../../utils/currency';
 
 import type { CreateSaleFormValues } from '../../validations/sale.validation';
+import { BranchSelect } from '../molecules/BranchSelect';
 
 interface CreateSaleFormProps {
     onSubmit: (data: CreateSaleFormValues) => void | Promise<void>;
@@ -92,6 +93,7 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
     };
     const isProcessing = createSaleMutation.isPending;
 
+    // Removed unused branchId variable
     return (
         <Card>
             <CardHeader>
@@ -99,6 +101,22 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                    {/* Branch Selection */}
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Branch
+                        </label>
+                        <Controller
+                            name="branchId"
+                            control={control}
+                            render={({ field }) => (
+                                <BranchSelect
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                />
+                            )}
+                        />
+                    </div>
                     {/* Drug Search - Responsive and always loads from DB */}
                     <div className="space-y-2">
                         <label

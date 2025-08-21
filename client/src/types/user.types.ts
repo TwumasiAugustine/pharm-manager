@@ -10,6 +10,7 @@ export interface IUser {
     email: string;
     password?: string;
     role: UserRole;
+    branchId?: string; // Branch assignment
     isFirstSetup?: boolean;
     refreshToken?: string;
     createdAt?: string;

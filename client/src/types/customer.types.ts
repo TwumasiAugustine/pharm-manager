@@ -5,6 +5,7 @@ export interface Customer {
     email?: string;
     address?: string;
     purchases: string[];
+    branchId?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -14,6 +15,7 @@ export interface CreateCustomerRequest {
     phone: string;
     email?: string;
     address?: string;
+    branchId?: string;
 }
 
 export interface PaginatedCustomersResponse {

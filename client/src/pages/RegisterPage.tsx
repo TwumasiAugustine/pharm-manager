@@ -7,6 +7,7 @@ import { Input } from '../components/atoms/Input';
 import { Button } from '../components/atoms/Button';
 import { useRegister } from '../hooks/useAuth';
 import { UserRole } from '../types/auth.types';
+import { BranchSelect } from '../components/molecules/BranchSelect';
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
@@ -30,7 +31,8 @@ const RegisterPage = () => {
 
     const onSubmit = (data: RegisterFormValues) => {
         // Exclude confirmPassword before sending data to register
-        const registerData = (({ confirmPassword, ...rest }) => rest)(data);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { confirmPassword, ...registerData } = data;
         register(registerData);
     };
 
@@ -94,7 +96,10 @@ const RegisterPage = () => {
                         />
 
                         <div className="mb-4">
-                            <label htmlFor="role" className="form-label block text-sm font-medium text-gray-700 mb-1">
+                            <label
+                                htmlFor="role"
+                                className="form-label block text-sm font-medium text-gray-700 mb-1"
+                            >
                                 Role
                             </label>
                             <select
@@ -115,6 +120,18 @@ const RegisterPage = () => {
                                     {errors.role.message}
                                 </p>
                             )}
+                        </div>
+                        <div className="mb-4">
+                            <label
+                                htmlFor="branchId"
+                                className="form-label block text-sm font-medium text-gray-700 mb-1"
+                            >
+                                Branch
+                            </label>
+                            <BranchSelect
+                                value={undefined}
+                                onChange={() => {}}
+                            />
                         </div>
                     </div>
 

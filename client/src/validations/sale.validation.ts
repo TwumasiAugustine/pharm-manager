@@ -15,6 +15,7 @@ export const createSaleSchema = z.object({
     transactionId: z.string().optional(),
     notes: z.string().optional(),
     customerId: z.string().optional(),
+    branchId: z.string().min(1, 'Branch is required'),
 });
 
 export type CreateSaleFormValues = z.infer<typeof createSaleSchema>;

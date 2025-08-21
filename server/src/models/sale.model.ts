@@ -12,6 +12,7 @@ export interface ISaleItem {
     profit: number; // New: profit for this item
 }
 
+import { IBranch } from '../types/branch.types';
 // Interface for the Sale document
 export interface ISale extends Document {
     items: ISaleItem[];
@@ -24,6 +25,7 @@ export interface ISale extends Document {
     notes?: string; // Optional notes about the sale
     shortCode?: string; // Short code for cashier to finalize/print
     finalized?: boolean; // Whether the sale has been finalized/printed
+    branch: IBranch | Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -62,6 +64,11 @@ const saleSchema = new Schema<ISale>(
     {
         items: {
             type: [saleItemSchema],
+            required: true,
+        },
+        branch: {
+            type: Schema.Types.ObjectId,
+            ref: 'Branch',
             required: true,
         },
         totalAmount: {

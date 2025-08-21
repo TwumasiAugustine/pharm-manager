@@ -1,5 +1,6 @@
-
 import { Router } from 'express';
+import branchRoutes from './branch.routes';
+import stockRoutes from './stock.routes';
 import { generateCsrfToken } from '../middlewares/csrf.middleware';
 import authRoutes from './auth.routes';
 import drugRoutes from './drug.routes';
@@ -27,7 +28,6 @@ router.get('/health', (req, res) => {
 
 // CSRF token endpoint for frontend to fetch and set CSRF cookie
 
-
 router.get('/csrf-token', (req, res) => {
     if (!req.cookies['csrfToken']) {
         const token = generateCsrfToken();
@@ -43,6 +43,8 @@ router.get('/csrf-token', (req, res) => {
 
 // API routes
 router.use('/auth', authRoutes);
+router.use('/branches', branchRoutes);
+router.use('/stock', stockRoutes);
 router.use('/drugs', drugRoutes);
 router.use('/sales', saleRoutes);
 router.use('/pharmacy', pharmacyRoutes);

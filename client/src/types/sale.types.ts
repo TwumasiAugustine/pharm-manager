@@ -93,6 +93,7 @@ export interface SaleSearchParams {
     userId?: string;
     sortBy?: 'date' | 'total';
     sortOrder?: 'asc' | 'desc';
+    branchId?: string;
 }
 
 // For grouped sales (by date)

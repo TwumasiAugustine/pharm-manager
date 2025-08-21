@@ -1,3 +1,4 @@
+import { BranchSelect } from '../components/molecules/BranchSelect';
 import React, { useState, useRef, useEffect } from 'react';
 import { useSales } from '../hooks/useSales';
 import { Link, useNavigate } from 'react-router-dom';
@@ -35,9 +36,10 @@ const SalesListPage: React.FC = () => {
     const [page, setPage] = useState(1);
     const [showActionsDropdown, setShowActionsDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const [branchId, setBranchId] = useState<string>('');
     const [filters, setFilters] = useState<SaleSearchParams>({
         page: 1,
-        limit: 10, // Set limit to 19 for individual sales
+        limit: 10, // Set limit to 10 for individual sales
         groupByDate: true,
         sortBy: 'date',
         sortOrder: 'desc',
@@ -48,7 +50,7 @@ const SalesListPage: React.FC = () => {
     const [showFilters, setShowFilters] = useState(false);
 
     const navigate = useNavigate();
-    const { data, isLoading, error } = useSales(filters);
+    const { data, isLoading, error } = useSales({ ...filters, branchId });
 
     // Debug log to check data structure
     React.useEffect(() => {
@@ -491,6 +493,9 @@ const SalesListPage: React.FC = () => {
     return (
         <DashboardLayout>
             <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex items-center gap-3 mb-4">
+                    <BranchSelect value={branchId} onChange={setBranchId} />
+                </div>
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-semibold">Sales History</h2>
 

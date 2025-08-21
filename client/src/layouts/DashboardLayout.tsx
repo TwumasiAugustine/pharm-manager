@@ -79,6 +79,13 @@ const navItems = [
         adminOnly: false,
     },
     {
+        to: '/branches',
+        icon: <FaCogs className="mr-3" />,
+        label: 'Branch Management',
+        match: (pathname: string) => pathname === '/branches',
+        adminOnly: true,
+    },
+    {
         to: '/reports',
         icon: <FaChartBar className="mr-3" />,
         label: 'Reports',

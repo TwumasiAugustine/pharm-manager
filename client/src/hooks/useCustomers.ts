@@ -16,7 +16,12 @@ import { useSafeNotify } from '../utils/useSafeNotify';
  * Hook for fetching a paginated list of customers
  */
 export const useCustomers = (
-    params: { page?: number; limit?: number; search?: string } = {},
+    params: {
+        page?: number;
+        limit?: number;
+        search?: string;
+        branchId?: string;
+    } = {},
 ): QueryResultWithPagination<PaginatedCustomersResponse, Error> => {
     const [page, setPage] = React.useState<number>(params.page || 1);
     const [limit, setLimit] = React.useState<number>(params.limit || 10);
@@ -25,9 +30,10 @@ export const useCustomers = (
         () => ({
             page,
             limit,
-            search: params.search || '', // Use the search parameter directly
+            search: params.search || '',
+            branchId: params.branchId || '',
         }),
-        [page, limit, params.search],
+        [page, limit, params.search, params.branchId],
     );
 
     const queryKey = ['customers', queryParams];
@@ -38,40 +44,43 @@ export const useCustomers = (
         staleTime: 5 * 60 * 1000, // 5 minutes
     });
 
-    const mappedData: PaginatedCustomersResponse = React.useMemo(() => {
-        const raw = query.data;
-        if (!raw || typeof raw !== 'object') {
+    const mappedData: PaginatedCustomersResponse & { totalItems: number } =
+        React.useMemo(() => {
+            const raw = query.data;
+            if (!raw || typeof raw !== 'object') {
+                return {
+                    customers: [],
+                    totalCount: 0,
+                    page,
+                    limit,
+                    totalPages: 0,
+                    totalItems: 0,
+                };
+            }
             return {
-                customers: [],
-                totalCount: 0,
-                page,
-                limit,
-                totalPages: 0,
+                customers: Array.isArray(raw.customers)
+                    ? raw.customers.map(
+                          (customer: Customer & { _id?: string }) => ({
+                              id: customer.id || customer._id || '',
+                              name: customer.name || '',
+                              phone: customer.phone || '',
+                              email: customer.email || '',
+                              address: customer.address || '',
+                              purchases: Array.isArray(customer.purchases)
+                                  ? customer.purchases
+                                  : [],
+                              createdAt: customer.createdAt || '',
+                              updatedAt: customer.updatedAt || '',
+                          }),
+                      )
+                    : [],
+                totalCount: raw.totalCount ?? 0,
+                page: raw.page ?? page,
+                limit: raw.limit ?? limit,
+                totalPages: raw.totalPages ?? 0,
+                totalItems: raw.totalCount ?? 0,
             };
-        }
-        return {
-            customers: Array.isArray(raw.customers)
-                ? raw.customers.map(
-                      (customer: Customer & { _id?: string }) => ({
-                          id: customer.id || customer._id || '',
-                          name: customer.name || '',
-                          phone: customer.phone || '',
-                          email: customer.email || '',
-                          address: customer.address || '',
-                          purchases: Array.isArray(customer.purchases)
-                              ? customer.purchases
-                              : [],
-                          createdAt: customer.createdAt || '',
-                          updatedAt: customer.updatedAt || '',
-                      }),
-                  )
-                : [],
-            totalCount: raw.totalCount ?? 0,
-            page: raw.page ?? page,
-            limit: raw.limit ?? limit,
-            totalPages: raw.totalPages ?? 0,
-        };
-    }, [query.data, page, limit]);
+        }, [query.data, page, limit]);
 
     const totalPages = React.useMemo(() => {
         return mappedData.totalPages || 0;
@@ -83,6 +92,7 @@ export const useCustomers = (
         limit,
         setLimit,
         totalPages,
+        totalItems: mappedData.totalItems,
     };
 
     return {

@@ -12,6 +12,7 @@ import { DrugBasicFields } from './DrugBasicFields';
 import { DrugCategoryField } from './DrugCategoryField';
 import { DrugAdvancedFields } from './DrugAdvancedFields';
 import { DrugMetaFields } from './DrugMetaFields';
+import { BranchSelect } from '../molecules/BranchSelect';
 import { DrugPricingFields } from './DrugPricingFields';
 import { FormSection } from './DrugFormSection';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -88,6 +89,7 @@ export const DrugForm = ({
                           ensuredInitialData.requiresPrescription,
                       supplier: ensuredInitialData.supplier || '',
                       location: ensuredInitialData.location || '',
+                      branchId: (ensuredInitialData as any).branchId || '',
                   }
                 : undefined,
         [ensuredInitialData],
@@ -329,6 +331,12 @@ export const DrugForm = ({
             </div>
 
             <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
+                <FormSection title="Branch">
+                    <BranchSelect
+                        value={watch('branchId' as any) as string}
+                        onChange={(id) => setValue('branchId' as any, id)}
+                    />
+                </FormSection>
                 <FormSection title="Meta">
                     <DrugMetaFields register={register} errors={errors} />
                 </FormSection>

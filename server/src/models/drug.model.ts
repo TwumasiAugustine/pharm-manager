@@ -1,5 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+import { IBranch } from '../types/branch.types';
+
 export interface IDrug extends Document {
     name: string;
     brand: string;
@@ -19,6 +21,7 @@ export interface IDrug extends Document {
     supplier?: string;
     location?: string;
     costPrice: number;
+    branch: IBranch | mongoose.Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -111,6 +114,11 @@ const drugSchema = new Schema<IDrug>(
             type: Schema.Types.String,
             trim: true,
         },
+        branch: {
+            type: Schema.Types.ObjectId,
+            ref: 'Branch',
+            required: true,
+        },
     },
     {
         timestamps: true,
@@ -134,61 +142,28 @@ const drugSchema = new Schema<IDrug>(
 );
 
 // Pre-save hook for auto-calculation
-drugSchema.pre('save', function (next) {
-    // @ts-ignore
-    const doc = this;
+drugSchema.pre<IDrug>('save', function (next) {
     // Auto-calculate pricePerPack and pricePerCarton if only pricePerUnit is provided
     if (
-        doc.pricePerUnit &&
-        (!doc.pricePerPack || doc.pricePerPack === 0) &&
-        doc.unitsPerCarton
+        this.pricePerUnit &&
+        (!this.pricePerPack || this.pricePerPack === 0) &&
+        this.unitsPerCarton
     ) {
-        doc.pricePerPack = doc.pricePerUnit * doc.unitsPerCarton;
+        this.pricePerPack = this.pricePerUnit * this.unitsPerCarton;
     }
     if (
-        doc.pricePerPack &&
-        (!doc.pricePerCarton || doc.pricePerCarton === 0) &&
-        doc.packsPerCarton
+        this.pricePerPack &&
+        (!this.pricePerCarton || this.pricePerCarton === 0) &&
+        this.packsPerCarton
     ) {
-        doc.pricePerCarton = doc.pricePerPack * doc.packsPerCarton;
+        this.pricePerCarton = this.pricePerPack * this.packsPerCarton;
     }
     // Auto-calculate quantity based on carton and unit data
-    if (doc.drugsInCarton && doc.unitsPerCarton && doc.packsPerCarton) {
-        doc.quantity =
-            doc.drugsInCarton * doc.unitsPerCarton * doc.packsPerCarton;
+    if (this.drugsInCarton && this.unitsPerCarton && this.packsPerCarton) {
+        this.quantity =
+            this.drugsInCarton * this.unitsPerCarton * this.packsPerCarton;
     }
     // Ensure costPrice is per unit (already enforced by schema)
-    next();
-});
-drugSchema.pre<IDrug>('save', function (next) {
-    this.quantity = this.drugsInCarton * this.unitsPerCarton;
-
-    // Only calculate prices if not set
-    if (
-        !this.pricePerPack &&
-        this.pricePerUnit &&
-        this.unitsPerCarton &&
-        this.packsPerCarton
-    ) {
-        this.pricePerPack =
-            this.pricePerUnit * (this.unitsPerCarton / this.packsPerCarton);
-    }
-    if (!this.pricePerCarton && this.pricePerUnit && this.unitsPerCarton) {
-        this.pricePerCarton = this.pricePerUnit * this.unitsPerCarton;
-    }
-    if (!this.pricePerUnit && this.pricePerCarton && this.unitsPerCarton) {
-        this.pricePerUnit = this.pricePerCarton / this.unitsPerCarton;
-    }
-    if (
-        !this.pricePerUnit &&
-        this.pricePerPack &&
-        this.unitsPerCarton &&
-        this.packsPerCarton
-    ) {
-        this.pricePerUnit =
-            this.pricePerPack / (this.unitsPerCarton / this.packsPerCarton);
-    }
-
     next();
 });
 

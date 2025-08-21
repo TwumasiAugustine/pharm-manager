@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '../atoms/Button';
 import { FaUserPlus } from 'react-icons/fa';
 import type { IUser } from '../../types/user.types';
+import { BranchSelect } from '../molecules/BranchSelect';
 import { UserRole } from '../../types/user.types';
 
 interface UserFormProps {
@@ -28,7 +29,9 @@ const UserForm: React.FC<UserFormProps> = ({
         </h2>
         <form onSubmit={onSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label htmlFor="name" className="sr-only">Full Name</label>
+                <label htmlFor="name" className="sr-only">
+                    Full Name
+                </label>
                 <input
                     id="name"
                     type="text"
@@ -41,7 +44,9 @@ const UserForm: React.FC<UserFormProps> = ({
                     className="border rounded px-3 py-2 w-full"
                     required
                 />
-                <label htmlFor="email" className="sr-only">Email</label>
+                <label htmlFor="email" className="sr-only">
+                    Email
+                </label>
                 <input
                     id="email"
                     type="email"
@@ -54,7 +59,9 @@ const UserForm: React.FC<UserFormProps> = ({
                     className="border rounded px-3 py-2 w-full"
                     required
                 />
-                <label htmlFor="password" className="sr-only">Password</label>
+                <label htmlFor="password" className="sr-only">
+                    Password
+                </label>
                 <input
                     id="password"
                     type="password"
@@ -71,7 +78,9 @@ const UserForm: React.FC<UserFormProps> = ({
                     className="border rounded px-3 py-2 w-full"
                     required={!editUserId}
                 />
-                <label htmlFor="role" className='sr-only'>Role</label>
+                <label htmlFor="role" className="sr-only">
+                    Role
+                </label>
                 <select
                     id="role"
                     name="role"
@@ -89,6 +98,12 @@ const UserForm: React.FC<UserFormProps> = ({
                     <option value={UserRole.PHARMACIST}>Pharmacist</option>
                     <option value={UserRole.CASHIER}>Cashier</option>
                 </select>
+                <BranchSelect
+                    value={formData.branchId}
+                    onChange={(id) =>
+                        setFormData((f) => ({ ...f, branchId: id }))
+                    }
+                />
             </div>
             <div className="flex gap-2 justify-end">
                 <Button type="button" color="secondary" onClick={onCancel}>

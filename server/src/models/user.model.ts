@@ -2,7 +2,10 @@ import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { IUser, UserRole } from '../types/auth.types';
 
-const userSchema = new Schema<IUser>(
+import { IBranch } from '../types/branch.types';
+const userSchema = new Schema<
+    IUser & { branch?: IBranch | mongoose.Types.ObjectId }
+>(
     {
         name: {
             type: String,
@@ -34,6 +37,11 @@ const userSchema = new Schema<IUser>(
         isFirstSetup: {
             type: Boolean,
             default: true,
+        },
+        branch: {
+            type: Schema.Types.ObjectId,
+            ref: 'Branch',
+            required: false, // Admins may not be branch-specific
         },
         permissions: {
             type: [String],

@@ -51,6 +51,7 @@ export interface CreateDrugRequest {
     supplier?: string;
     location?: string;
     costPrice: number;
+    branchId?: string;
 }
 
 /**
@@ -71,6 +72,7 @@ export interface DrugSearchParams {
     sortOrder?: 'asc' | 'desc';
     expiryBefore?: string;
     expiryAfter?: string;
+    branchId?: string;
 }
 
 /**
@@ -95,4 +97,5 @@ export interface DrugAvailability {
     quantity: number;
     requestedQuantity: number;
     isExpired: boolean;
+    branchId?: string;
 }

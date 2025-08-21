@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { DrugList } from '../components/organisms/DrugList';
+import { BranchSelect } from '../components/molecules/BranchSelect';
 import { DrugForm } from '../components/organisms/DrugForm';
 import { useCreateDrug } from '../hooks/useDrugs';
 import {
@@ -18,6 +19,7 @@ import type { CreateDrugRequest } from '../types/drug.types';
  */
 const DrugsPage: React.FC = () => {
     const [showAddForm, setShowAddForm] = useState(false);
+    const [branchId, setBranchId] = useState<string>('');
     const [showActionsDropdown, setShowActionsDropdown] = useState(false);
     const actionsDropdownRef = useRef<HTMLDivElement>(null);
     const createDrug = useCreateDrug();
@@ -62,6 +64,9 @@ const DrugsPage: React.FC = () => {
                             Manage your pharmacy's drug inventory and stock
                             levels
                         </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <BranchSelect value={branchId} onChange={setBranchId} />
                     </div>
 
                     <div className="flex items-center gap-3 flex-wrap justify-end sm:justify-start">
@@ -150,7 +155,7 @@ const DrugsPage: React.FC = () => {
                         isSubmitting={createDrug.isPending}
                     />
                 ) : (
-                    <DrugList />
+                    <DrugList branchId={branchId} />
                 )}
             </div>
         </DashboardLayout>

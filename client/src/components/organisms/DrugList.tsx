@@ -12,7 +12,11 @@ import { useAuthStore } from '../../store/auth.store';
  * DrugList component to display and manage the list of drugs.
  */
 
-export const DrugList: React.FC = () => {
+interface DrugListProps {
+    branchId?: string;
+}
+
+export const DrugList: React.FC<DrugListProps> = ({ branchId }) => {
     const [isSearching, setIsSearching] = useState(false);
     const [searchQuery, setSearchQueryLocal] = useState('');
     const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -27,7 +31,7 @@ export const DrugList: React.FC = () => {
         refetch,
         pagination,
         setSearchQuery,
-    } = useDrugs();
+    } = useDrugs(branchId ? { branchId } : {});
 
     const deleteDrug = useDeleteDrug();
 

@@ -8,11 +8,13 @@ import { Pagination } from '../components/molecules/Pagination';
 import { SearchBar } from '../components/molecules/SearchBar';
 import type { Customer, CreateCustomerRequest } from '../types/customer.types';
 import DashboardLayout from '../layouts/DashboardLayout';
+import { BranchSelect } from '../components/molecules/BranchSelect';
 import { useDebounce } from '../hooks/useDebounce';
 import { FaUsers, FaUserPlus, FaEye, FaSync, FaDownload } from 'react-icons/fa';
 import { FiMoreVertical } from 'react-icons/fi';
 
 const CustomerManagementPage: React.FC = () => {
+    const [branchId, setBranchId] = useState<string>('');
     const [showForm, setShowForm] = useState(false);
     const [showActionsDropdown, setShowActionsDropdown] = useState(false);
     const actionsDropdownRef = useRef<HTMLDivElement>(null);
@@ -33,7 +35,10 @@ const CustomerManagementPage: React.FC = () => {
         isError,
         refetch,
         pagination,
-    } = useCustomers({ limit: 5, search: debouncedSearchTerm }); // Set limit to 5 customers per page
+    } = useCustomers({ limit: 5, search: debouncedSearchTerm, branchId }); // Set limit to 5 customers per page
+    const handleBranchChange = (id: string) => {
+        setBranchId(id);
+    };
 
     const createCustomer = useCreateCustomer();
 
@@ -173,6 +178,9 @@ const CustomerManagementPage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            <div className="flex items-center gap-3 mb-4">
+                <BranchSelect value={branchId} onChange={handleBranchChange} />
+            </div>
             <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <div>
@@ -306,6 +314,23 @@ const CustomerManagementPage: React.FC = () => {
                                         required
                                     />
                                 </div>
+                                <div className="md:col-span-2">
+                                    <label
+                                        htmlFor="branchId"
+                                        className="block text-sm font-medium text-gray-700 mb-1"
+                                    >
+                                        Branch
+                                    </label>
+                                    <BranchSelect
+                                        value={formData.branchId || ''}
+                                        onChange={(id) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                branchId: id,
+                                            }))
+                                        }
+                                    />
+                                </div>
                                 <div>
                                     <label
                                         htmlFor="email"
@@ -416,7 +441,7 @@ const CustomerManagementPage: React.FC = () => {
                                 totalPages={pagination.totalPages}
                                 onPageChange={handlePageChange}
                                 showInfo={true}
-                                totalItems={pagination.total}
+                                totalItems={pagination.totalItems}
                                 itemsPerPage={pagination.limit}
                                 size="md"
                             />

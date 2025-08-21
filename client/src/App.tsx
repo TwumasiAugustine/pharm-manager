@@ -1,4 +1,4 @@
-import  { Suspense, lazy } from 'react';
+import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { NotificationProvider } from './context/NotificationContext';
 import { DisplayProvider } from './context/DisplayContext';
@@ -22,6 +22,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const SalesListPage = lazy(() => import('./pages/SalesListPage'));
 const SalesNewPage = lazy(() => import('./pages/SalesNewPage'));
 const SalesReceiptPage = lazy(() => import('./pages/SalesReceiptPage'));
+const BranchManagementPage = lazy(() => import('./pages/BranchManagementPage'));
 const CustomerManagementPage = lazy(
     () => import('./pages/CustomerManagementPage'),
 );
@@ -170,6 +171,10 @@ function App() {
                                         <Route
                                             path="/reports"
                                             element={<ReportsPage />}
+                                        />
+                                        <Route
+                                            path="/branches"
+                                            element={<BranchManagementPage />}
                                         />
                                     </Route>
                                     <Route
