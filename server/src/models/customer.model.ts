@@ -21,10 +21,13 @@ const customerSchema = new Schema<ICustomer>(
             type: String,
             required: true,
             index: true,
+            unique: true,
         },
         email: {
             type: String,
             index: true,
+            unique: true,
+            sparse: true, // allow multiple docs with no email
         },
         address: {
             type: String,

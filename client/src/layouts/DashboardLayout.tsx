@@ -253,6 +253,11 @@ function TopBar({
                         <span className="text-gray-400 text-xs">
                             {user?.role}
                         </span>
+                        {user?.branch?.name && (
+                            <span className="text-blue-600 text-xs font-semibold">
+                                Branch: {user.branch.name}
+                            </span>
+                        )}
                     </div>
                     <button
                         type="button"

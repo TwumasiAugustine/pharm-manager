@@ -230,6 +230,18 @@ export class AuthController {
                 return;
             }
 
+            // Populate branch if present
+            const User = require('../models/user.model').default;
+            let userDoc = await User.findById(req.user.id).populate('branch');
+
+            let branch = null;
+            if (userDoc && userDoc.branch) {
+                branch = {
+                    id: userDoc.branch._id,
+                    name: userDoc.branch.name,
+                };
+            }
+
             res.status(200).json(
                 successResponse({
                     user: {
@@ -239,6 +251,7 @@ export class AuthController {
                         role: req.user.role,
                         isFirstSetup: req.user.isFirstSetup,
                         permissions: req.user.permissions || [],
+                        branch,
                     },
                 }),
             );

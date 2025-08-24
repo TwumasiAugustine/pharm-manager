@@ -1,6 +1,6 @@
-import type {Branch} from '../../types/branch.types'
+import type { Branch } from '../../types/branch.types';
 import { Table } from '../molecules/Table';
-import type {  TableColumn, TableAction } from '../molecules/Table';
+import type { TableColumn, TableAction } from '../molecules/Table';
 
 import { Pagination } from '../molecules/Pagination';
 
@@ -14,6 +14,7 @@ interface BranchListProps {
     onPageChange?: (page: number) => void;
     totalItems?: number;
     itemsPerPage?: number;
+    deleteLoading?: boolean;
 }
 
 export const BranchList: React.FC<BranchListProps> = ({
@@ -26,10 +27,15 @@ export const BranchList: React.FC<BranchListProps> = ({
     onPageChange,
     totalItems,
     itemsPerPage,
+    deleteLoading = false,
 }) => {
     const columns: TableColumn<Branch>[] = [
         { header: 'Name', accessor: 'name' },
-        { header: 'Manager', accessor: 'manager', cell: (v) => (typeof v === 'string' && v) ? v : '-' },
+        {
+            header: 'Manager',
+            accessor: 'manager',
+            cell: (v) => (typeof v === 'string' && v ? v : '-'),
+        },
         { header: 'City', accessor: (b) => b.address.city },
         { header: 'Country', accessor: (b) => b.address.country },
     ];
@@ -41,9 +47,34 @@ export const BranchList: React.FC<BranchListProps> = ({
             className: 'text-blue-600',
         },
         {
-            label: 'Delete',
-            onClick: (b) => onDelete(b.id),
-            className: 'text-red-600',
+            label: deleteLoading ? 'Deleting...' : 'Delete',
+            onClick: (b) => {
+                if (!deleteLoading && b.id) onDelete(b.id);
+            },
+            className: `text-red-600 ${
+                deleteLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`,
+            icon: deleteLoading ? (
+                <svg
+                    className="animate-spin h-4 w-4 mr-1 inline"
+                    viewBox="0 0 24 24"
+                >
+                    <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                    />
+                    <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8z"
+                    />
+                </svg>
+            ) : undefined,
         },
     ];
 

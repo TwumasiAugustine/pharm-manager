@@ -37,4 +37,9 @@ const BranchSchema: Schema = new Schema(
     { timestamps: true },
 );
 
+// Add unique indexes for branch name and contact email/phone
+BranchSchema.index({ name: 1 }, { unique: true });
+BranchSchema.index({ 'contact.email': 1 }, { unique: true });
+BranchSchema.index({ 'contact.phone': 1 }, { unique: true });
+
 export default mongoose.model<IBranch>('Branch', BranchSchema);

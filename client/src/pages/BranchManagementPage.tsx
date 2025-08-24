@@ -15,9 +15,6 @@ import { Button } from '../components/atoms/Button';
 
 export default function BranchManagementPage() {
     const { data: branches, isLoading, error } = useBranches();
-    const createBranch = useCreateBranch();
-    const updateBranch = useUpdateBranch();
-    const deleteBranch = useDeleteBranch();
     const [form, setForm] = useState<
         Omit<Branch, 'id' | 'createdAt' | 'updatedAt'>
     >({
@@ -34,6 +31,12 @@ export default function BranchManagementPage() {
     });
     const [editingId, setEditingId] = useState<string | null>(null);
     const [showForm, setShowForm] = useState(false);
+    const [formError, setFormError] = useState<string | null>(null);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
+
+    const createBranch = useCreateBranch();
+    const updateBranch = useUpdateBranch();
+    const deleteBranch = useDeleteBranch();
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         const { name, value } = e.target;
@@ -60,14 +63,7 @@ export default function BranchManagementPage() {
         }
     }
 
-    function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
-        if (editingId) {
-            updateBranch.mutate({ id: editingId, branch: form });
-            setEditingId(null);
-        } else {
-            createBranch.mutate(form);
-        }
+    function resetForm() {
         setForm({
             name: '',
             address: {
@@ -80,7 +76,49 @@ export default function BranchManagementPage() {
             contact: { phone: '', email: '' },
             manager: '',
         });
+        setEditingId(null);
         setShowForm(false);
+        setFormError(null);
+    }
+
+    function sanitizeBranchData(data: any) {
+        // Remove id, _id, createdAt, updatedAt recursively
+        const omitFields = (obj: any) => {
+            if (Array.isArray(obj)) return obj.map(omitFields);
+            if (obj && typeof obj === 'object') {
+                const { id, _id, createdAt, updatedAt, ...rest } = obj;
+                Object.keys(rest).forEach((key) => {
+                    rest[key] = omitFields(rest[key]);
+                });
+                return rest;
+            }
+            return obj;
+        };
+        return omitFields(data);
+    }
+
+    function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setFormError(null);
+        const sanitized = sanitizeBranchData(form);
+        if (editingId) {
+            updateBranch.mutate(
+                { id: editingId, branch: sanitized },
+                {
+                    onSuccess: resetForm,
+                    onError: (err: any) => {
+                        setFormError(err?.message || 'Failed to update branch');
+                    },
+                },
+            );
+        } else {
+            createBranch.mutate(sanitized, {
+                onSuccess: resetForm,
+                onError: (err: any) => {
+                    setFormError(err?.message || 'Failed to create branch');
+                },
+            });
+        }
     }
 
     function handleCancelEdit() {
@@ -114,7 +152,27 @@ export default function BranchManagementPage() {
     }
 
     function handleDelete(id: string) {
-        deleteBranch.mutate(id);
+        setDeleteError(null);
+        if (!id) return;
+        // Debug log
+        // eslint-disable-next-line no-console
+        console.log('Deleting branch with id:', id);
+        deleteBranch.mutate(id, {
+            onError: (err: any) => {
+                // Try to extract more error info
+                let msg = 'Failed to delete branch';
+                if (err?.response) {
+                    msg = `Error ${err.response.status}: ${
+                        err.response.data?.error || err.response.statusText
+                    }`;
+                } else if (err?.message) {
+                    msg = err.message;
+                }
+                // eslint-disable-next-line no-console
+                console.error('Delete branch error:', err);
+                setDeleteError(msg);
+            },
+        });
     }
 
     if (isLoading) return <LoadingSkeleton />;
@@ -164,23 +222,41 @@ export default function BranchManagementPage() {
                     </div>
                 )}
                 {showForm && (
-                    <BranchForm
-                        form={form}
-                        onChange={handleChange}
-                        onSubmit={handleSubmit}
-                        isEditing={!!editingId}
-                        onCancelEdit={handleCancelEdit}
-                        isPending={
-                            createBranch.isPending || updateBranch.isPending
-                        }
-                    />
+                    <>
+                        <BranchForm
+                            form={form}
+                            onChange={handleChange}
+                            onSubmit={handleSubmit}
+                            isEditing={!!editingId}
+                            onCancelEdit={handleCancelEdit}
+                            isPending={
+                                createBranch.isPending || updateBranch.isPending
+                            }
+                        />
+                        {formError && (
+                            <div className="text-red-500 text-center mb-2">
+                                {formError}
+                            </div>
+                        )}
+                    </>
                 )}
                 <BranchList
-                    branches={branches || []}
+                    branches={
+                        (branches || []).map((b: any) => ({
+                            ...b,
+                            id: b.id || b._id,
+                        }))
+                    }
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     isLoading={false}
+                    deleteLoading={deleteBranch.isPending}
                 />
+                {deleteError && (
+                    <div className="text-red-500 text-center mb-2">
+                        {deleteError}
+                    </div>
+                )}
             </div>
         </DashboardLayout>
     );

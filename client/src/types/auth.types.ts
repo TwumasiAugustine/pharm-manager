@@ -13,6 +13,10 @@ export interface User {
     email: string;
     role: UserRole;
     permissions?: string[];
+    branch?: {
+        id: string;
+        name: string;
+    } | null;
 }
 
 export interface LoginRequest {
