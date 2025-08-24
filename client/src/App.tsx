@@ -1,4 +1,6 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
+import { useAuthStore } from './store/auth.store';
+import { pharmacyApi } from './api/pharmacy.api';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { NotificationProvider } from './context/NotificationContext';
 import { DisplayProvider } from './context/DisplayContext';
@@ -104,6 +106,15 @@ socketService.on('cron-job-failed', () => {
 });
 
 function App() {
+    const { isAuthenticated, setPharmacyConfigured } = useAuthStore();
+
+    // On app mount, always check pharmacy config status if authenticated
+    useEffect(() => {
+        if (isAuthenticated) {
+            pharmacyApi.checkConfigStatus().then(setPharmacyConfigured);
+        }
+    }, [isAuthenticated, setPharmacyConfigured]);
+
     return (
         <QueryClientProvider client={queryClient}>
             <NotificationProvider>
@@ -172,10 +183,6 @@ function App() {
                                             path="/reports"
                                             element={<ReportsPage />}
                                         />
-                                        <Route
-                                            path="/branches"
-                                            element={<BranchManagementPage />}
-                                        />
                                     </Route>
                                     <Route
                                         element={
@@ -184,6 +191,10 @@ function App() {
                                             />
                                         }
                                     >
+                                        <Route
+                                            path="/branches"
+                                            element={<BranchManagementPage />}
+                                        />
                                         <Route
                                             path="/pharmacy-setup"
                                             element={<PharmacySetupPage />}

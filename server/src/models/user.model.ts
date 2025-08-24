@@ -36,7 +36,7 @@ const userSchema = new Schema<
         },
         isFirstSetup: {
             type: Boolean,
-            default: true,
+            default: false,
         },
         branch: {
             type: Schema.Types.ObjectId,

@@ -10,23 +10,42 @@ export function BranchSelect({
     const { data: branches, isLoading } = useBranches();
     if (isLoading)
         return (
-            <select disabled aria-label="Select Branch">
-                <option>Loading...</option>
-            </select>
+            <div className="relative">
+                <select
+                    disabled
+                    aria-label="Select Branch"
+                    className="block w-full rounded-lg border border-gray-300 bg-gray-100 py-2 px-3 pr-8 text-gray-400 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all appearance-none"
+                >
+                    <option>Loading...</option>
+                </select>
+                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-300">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </span>
+            </div>
         );
     return (
-        <select
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            required
-            aria-label="Select Branch"
-        >
-            <option value="">Select Branch</option>
-            {branches?.map((branch: { id: string; name: string }) => (
-                <option key={branch.id} value={branch.id}>
-                    {branch.name}
-                </option>
-            ))}
-        </select>
+        <div className="relative">
+            <select
+                value={value || ''}
+                onChange={(e) => onChange(e.target.value)}
+                required
+                aria-label="Select Branch"
+                className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 pr-8 text-gray-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all appearance-none"
+            >
+                <option value="">Select Branch</option>
+                {branches?.map((branch: { id: string; name: string }) => (
+                    <option key={branch.id} value={branch.id}>
+                        {branch.name}
+                    </option>
+                ))}
+            </select>
+            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </span>
+        </div>
     );
 }

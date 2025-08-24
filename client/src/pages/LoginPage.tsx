@@ -29,27 +29,27 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-white">
+            <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-8 border border-gray-100">
+                <div className="flex flex-col items-center">
+                    <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900 tracking-tight">
                         Sign in to your account
                     </h2>
                     <p className="mt-2 text-center text-sm text-gray-600">
                         Or{' '}
                         <Link
                             to="/register"
-                            className="font-medium text-primary-600 hover:text-primary-500"
+                            className="font-medium text-blue-600 hover:text-blue-500"
                         >
                             create a new account
                         </Link>
                     </p>
                 </div>
                 <form
-                    className="mt-8 space-y-6"
+                    className="mt-6 space-y-6"
                     onSubmit={handleSubmit(onSubmit)}
                 >
-                    <div className="rounded-md shadow-sm -space-y-px">
+                    <div className="space-y-4">
                         <Input
                             id="email"
                             type="email"
@@ -68,8 +68,15 @@ const LoginPage = () => {
                             {...register('password')}
                             error={errors.password?.message}
                         />
+                        <div className="flex justify-end">
+                            <Link
+                                to="/forgot-password"
+                                className="text-sm text-blue-600 hover:text-blue-500 font-medium transition-colors"
+                            >
+                                Forgot password?
+                            </Link>
+                        </div>
                     </div>
-
                     <div>
                         <Button
                             type="submit"

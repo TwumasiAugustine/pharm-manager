@@ -77,12 +77,20 @@ const PharmacySetupPage: React.FC = () => {
         }
     }, [defaultValues, reset]);
 
-    const onSubmit = (data: PharmacyInfo) => {
-        updatePharmacy(data, {
-            onSuccess: () => {
+    const { setPharmacyConfigured } = useAuthStore();
+
+    const onSubmit = async (data: PharmacyInfo) => {
+        await updatePharmacy(data);
+        // After update, re-check config status and update auth store
+        try {
+            const isConfigured = await pharmacyApi.checkConfigStatus();
+            setPharmacyConfigured(isConfigured);
+            if (isConfigured) {
                 navigate('/dashboard');
-            },
-        });
+            }
+        } catch (e) {
+            // fallback: do nothing
+        }
     };
 
     return (

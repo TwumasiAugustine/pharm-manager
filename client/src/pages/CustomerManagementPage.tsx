@@ -2,15 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomers, useCreateCustomer } from '../hooks/useCustomers';
 import { useSafeNotify } from '../utils/useSafeNotify';
-import { Table } from '../components/molecules/Table';
-import type { TableColumn } from '../components/molecules/Table';
+import { CustomerForm } from '../components/organisms/CustomerForm';
+import { CustomerTable } from '../components/organisms/CustomerTable';
 import { Pagination } from '../components/molecules/Pagination';
 import { SearchBar } from '../components/molecules/SearchBar';
-import type { Customer, CreateCustomerRequest } from '../types/customer.types';
+import type { CreateCustomerRequest } from '../types/customer.types';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { BranchSelect } from '../components/molecules/BranchSelect';
 import { useDebounce } from '../hooks/useDebounce';
-import { FaUsers, FaUserPlus, FaEye, FaSync, FaDownload } from 'react-icons/fa';
+import { FaUsers, FaUserPlus, FaSync, FaDownload } from 'react-icons/fa';
 import { FiMoreVertical } from 'react-icons/fi';
 
 const CustomerManagementPage: React.FC = () => {
@@ -24,7 +24,9 @@ const CustomerManagementPage: React.FC = () => {
         phone: '',
         email: '',
         address: '',
+        branchId: '',
     });
+    // const { data: branches } = useBranches();
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedSearchTerm = useDebounce(searchTerm, 500); // Debounce for 500ms
     const navigate = useNavigate();
@@ -81,8 +83,17 @@ const CustomerManagementPage: React.FC = () => {
         }
 
         try {
-            await createCustomer.mutateAsync(formData);
-            setFormData({ name: '', phone: '', email: '', address: '' });
+            await createCustomer.mutateAsync({
+                ...formData,
+                branchId: formData.branchId || branchId,
+            });
+            setFormData({
+                name: '',
+                phone: '',
+                email: '',
+                address: '',
+                branchId: branchId,
+            });
             setShowForm(false);
         } catch (error) {
             console.error('Error creating customer:', error);
@@ -178,9 +189,6 @@ const CustomerManagementPage: React.FC = () => {
 
     return (
         <DashboardLayout>
-            <div className="flex items-center gap-3 mb-4">
-                <BranchSelect value={branchId} onChange={handleBranchChange} />
-            </div>
             <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <div>
@@ -278,115 +286,57 @@ const CustomerManagementPage: React.FC = () => {
                             <FaUserPlus className="mr-2 text-blue-500" />
                             New Customer
                         </h2>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label
-                                        htmlFor="name"
-                                        className="block text-sm font-medium text-gray-700 mb-1"
-                                    >
-                                        Name *
-                                    </label>
-                                    <input
-                                        id="name"
-                                        type="text"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label
-                                        htmlFor="phone"
-                                        className="block text-sm font-medium text-gray-700 mb-1"
-                                    >
-                                        Phone *
-                                    </label>
-                                    <input
-                                        id="phone"
-                                        type="text"
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={handleChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                        required
-                                    />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label
-                                        htmlFor="branchId"
-                                        className="block text-sm font-medium text-gray-700 mb-1"
-                                    >
-                                        Branch
-                                    </label>
-                                    <BranchSelect
-                                        value={formData.branchId || ''}
-                                        onChange={(id) =>
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                branchId: id,
-                                            }))
-                                        }
-                                    />
-                                </div>
-                                <div>
-                                    <label
-                                        htmlFor="email"
-                                        className="block text-sm font-medium text-gray-700 mb-1"
-                                    >
-                                        Email
-                                    </label>
-                                    <input
-                                        id="email"
-                                        type="email"
-                                        name="email"
-                                        value={formData.email || ''}
-                                        onChange={handleChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                    />
-                                </div>
-                                <div>
-                                    <label
-                                        htmlFor="address"
-                                        className="block text-sm font-medium text-gray-700 mb-1"
-                                    >
-                                        Address
-                                    </label>
-                                    <input
-                                        id="address"
-                                        type="text"
-                                        name="address"
-                                        value={formData.address || ''}
-                                        onChange={handleChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex justify-end">
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                                    disabled={createCustomer.isPending}
-                                >
-                                    {createCustomer.isPending
-                                        ? 'Saving...'
-                                        : 'Save Customer'}
-                                </button>
-                            </div>
-                        </form>
+                        <CustomerForm
+                            formData={{
+                                ...formData,
+                                branchId: formData.branchId || branchId,
+                            }}
+                            onChange={handleChange}
+                            onBranchChange={(id) =>
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    branchId: id,
+                                }))
+                            }
+                            onSubmit={handleSubmit}
+                            isPending={createCustomer.isPending}
+                        />
                     </div>
                 )}
 
-                {/* Search Bar */}
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <SearchBar
-                        placeholder="Search customers..."
-                        onSearch={handleSearch}
-                        className="w-full md:w-80"
-                        initialValue={searchTerm}
-                    />
+                {/* Improved Search & Filter Card */}
+                <div className="bg-white p-4 rounded-lg shadow flex flex-col sm:flex-row sm:items-center gap-4 border border-gray-200">
+                    <div className="flex items-center w-full gap-3">
+                        <div className="w-full sm:w-56 max-w-xs">
+                            <BranchSelect
+                                value={branchId}
+                                onChange={handleBranchChange}
+                                className="focus:ring-2 focus:ring-blue-500 border-gray-300"
+                            />
+                        </div>
+                        <div className="hidden sm:block h-8 border-l border-gray-200 mx-2"></div>
+                        <div className="flex-1 flex items-center gap-2">
+                            <SearchBar
+                                placeholder="Search customers..."
+                                onSearch={handleSearch}
+                                className="w-full md:w-80 focus:ring-2 focus:ring-blue-500 border-gray-300"
+                                initialValue={searchTerm}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setSearchTerm('')}
+                                className="ml-1 px-2 py-1 text-xs text-gray-500 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style={{
+                                    display: searchTerm
+                                        ? 'inline-block'
+                                        : 'none',
+                                }}
+                                aria-label="Clear search"
+                            >
+                                Clear
+                            </button>
+                        </div>
+                    </div>
                     {debouncedSearchTerm && isLoading && (
                         <div className="mt-2 flex items-center text-sm text-gray-500">
                             <div className="animate-spin h-4 w-4 mr-2 border-2 border-gray-500 border-t-transparent rounded-full"></div>
@@ -397,35 +347,12 @@ const CustomerManagementPage: React.FC = () => {
 
                 {/* Customers Table */}
                 <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <Table<Customer>
-                        data={customers?.customers || []}
+                    <CustomerTable
+                        customers={customers?.customers || []}
                         isLoading={isLoading}
-                        columns={
-                            [
-                                {
-                                    header: 'Name',
-                                    accessor: 'name',
-                                },
-                                {
-                                    header: 'Phone',
-                                    accessor: 'phone',
-                                },
-                                {
-                                    header: 'Email',
-                                    accessor: 'email',
-                                    cell: (value) => value || '-',
-                                },
-                            ] as TableColumn<Customer>[]
+                        onView={(customer) =>
+                            navigate(`/customers/${customer.id}`)
                         }
-                        actions={[
-                            {
-                                label: 'View Details',
-                                icon: <FaEye />,
-                                onClick: (customer) => {
-                                    navigate(`/customers/${customer.id}`);
-                                },
-                            },
-                        ]}
                         emptyMessage={
                             debouncedSearchTerm
                                 ? `No customers found matching "${debouncedSearchTerm}".`

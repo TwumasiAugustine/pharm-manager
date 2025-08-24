@@ -1,7 +1,6 @@
 import React from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { ExpiryPageHeader } from '../components/organisms/ExpiryPageHeader';
-import { ExpiryPageActions } from '../components/organisms/ExpiryPageActions';
 import { ExpiryPageFilters } from '../components/organisms/ExpiryPageFilters';
 import { ExpiryPageContent } from '../components/organisms/ExpiryPageContent';
 import { NotificationPanel } from '../components/molecules/NotificationPanel';
@@ -43,7 +42,7 @@ export const ExpiryPage: React.FC = () => {
                 <div className="relative">
                     <ExpiryPageHeader
                         user={user}
-                        onRefresh={() => refreshData()}
+                        onRefresh={refreshData}
                         onExport={handleExportData}
                         onToggleFilters={() => setShowFilters(!showFilters)}
                         onToggleNotifications={() =>
@@ -52,7 +51,6 @@ export const ExpiryPage: React.FC = () => {
                         onTriggerNotifications={() =>
                             triggerExpiryNotifications.mutate()
                         }
-                        showFilters={showFilters}
                         isLoading={drugsLoading}
                         isTriggering={triggerExpiryNotifications.isPending}
                         unreadNotifications={unreadNotifications}
@@ -60,34 +58,12 @@ export const ExpiryPage: React.FC = () => {
                         notificationsDropdownRef={
                             notificationsDropdownRef as React.RefObject<HTMLDivElement>
                         }
+                        showActionsDropdown={showActionsDropdown}
+                        setShowActionsDropdown={setShowActionsDropdown}
+                        actionsDropdownRef={
+                            actionsDropdownRef as React.RefObject<HTMLDivElement>
+                        }
                     />
-
-                    {/* Mobile/Tablet Actions */}
-                    <div className="absolute top-4 right-4 sm:hidden">
-                        <ExpiryPageActions
-                            user={user}
-                            showActionsDropdown={showActionsDropdown}
-                            onToggleActionsDropdown={() =>
-                                setShowActionsDropdown(!showActionsDropdown)
-                            }
-                            onToggleFilters={() => setShowFilters(true)}
-                            onRefresh={() => refreshData()}
-                            onTriggerNotifications={() =>
-                                triggerExpiryNotifications.mutate()
-                            }
-                            onExport={handleExportData}
-                            onToggleNotifications={() =>
-                                setShowNotifications(!showNotifications)
-                            }
-                            isLoading={drugsLoading}
-                            isTriggering={triggerExpiryNotifications.isPending}
-                            expiringDrugs={expiringDrugs || []}
-                            unreadNotifications={unreadNotifications}
-                            actionsDropdownRef={
-                                actionsDropdownRef as React.RefObject<HTMLDivElement>
-                            }
-                        />
-                    </div>
 
                     {/* Filter Dropdowns */}
                     <ExpiryPageFilters

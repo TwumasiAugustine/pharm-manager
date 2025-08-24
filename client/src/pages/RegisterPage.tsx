@@ -25,7 +25,7 @@ const RegisterPage = () => {
             email: '',
             password: '',
             confirmPassword: '',
-            role: UserRole.CASHIER, // Default role
+            role: UserRole.CASHIER,       // Default role
         },
     });
 
@@ -37,10 +37,11 @@ const RegisterPage = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-            <div className="max-w-md w-full space-y-8">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-white">
+            <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-8 border border-gray-100">
+                <div className="flex flex-col items-center">
+                    {/* Optional: Add a logo or icon here */}
+                    <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900 tracking-tight">
                         Create a new account
                     </h2>
                     <p className="mt-2 text-center text-sm text-gray-600">
@@ -54,10 +55,10 @@ const RegisterPage = () => {
                     </p>
                 </div>
                 <form
-                    className="mt-8 space-y-6"
+                    className="mt-6 space-y-6"
                     onSubmit={handleSubmit(onSubmit)}
                 >
-                    <div className="rounded-md shadow-sm -space-y-px">
+                    <div className="space-y-4">
                         <Input
                             id="name"
                             type="text"
@@ -102,19 +103,38 @@ const RegisterPage = () => {
                             >
                                 Role
                             </label>
-                            <select
-                                id="role"
-                                className="input block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                {...registerField('role')}
-                            >
-                                <option value={UserRole.CASHIER}>
-                                    Cashier
-                                </option>
-                                <option value={UserRole.PHARMACIST}>
-                                    Pharmacist
-                                </option>
-                                <option value={UserRole.ADMIN}>Admin</option>
-                            </select>
+                            <div className="relative">
+                                <select
+                                    id="role"
+                                    className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 pr-8 text-gray-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all appearance-none"
+                                    {...registerField('role')}
+                                >
+                                    <option value={UserRole.CASHIER}>
+                                        Cashier
+                                    </option>
+                                    <option value={UserRole.PHARMACIST}>
+                                        Pharmacist
+                                    </option>
+                                    <option value={UserRole.ADMIN}>
+                                        Admin
+                                    </option>
+                                </select>
+                                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
+                                    <svg
+                                        className="h-4 w-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M19 9l-7 7-7-7"
+                                        />
+                                    </svg>
+                                </span>
+                            </div>
                             {errors.role?.message && (
                                 <p className="error-message text-red-600 text-xs mt-1">
                                     {errors.role.message}
@@ -128,10 +148,27 @@ const RegisterPage = () => {
                             >
                                 Branch
                             </label>
-                            <BranchSelect
-                                value={undefined}
-                                onChange={() => {}}
-                            />
+                            <div className="relative">
+                                <BranchSelect
+                                    value={undefined}
+                                    onChange={() => {}}
+                                />
+                                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
+                                    <svg
+                                        className="h-4 w-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M19 9l-7 7-7-7"
+                                        />
+                                    </svg>
+                                </span>
+                            </div>
                         </div>
                     </div>
 

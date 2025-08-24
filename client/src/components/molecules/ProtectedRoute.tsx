@@ -11,7 +11,6 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
         useAuthStore();
     const location = useLocation();
 
-
     // If auth is still loading, show a minimalist loading screen
     if (isLoading) {
         return (
@@ -36,14 +35,21 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
         return <Navigate to="/unauthorized" replace />;
     }
 
-    // If user is admin and pharmacy is not configured, redirect to setup page
-    // Unless they are already on the setup page
-    if (
-        user.role === UserRole.ADMIN &&
-        isPharmacyConfigured &&
-        location.pathname !== '/pharmacy-setup'
-    ) {
-        return <Navigate to="/pharmacy-setup" replace />;
+    // If pharmacy is not configured
+    if (!isPharmacyConfigured) {
+        if (
+            user.role === UserRole.ADMIN &&
+            location.pathname !== '/pharmacy-setup'
+        ) {
+            return <Navigate to="/pharmacy-setup" replace />;
+        }
+        // Non-admins: show unauthorized page if pharmacy not configured
+        if (
+            user.role !== UserRole.ADMIN &&
+            location.pathname !== '/unauthorized'
+        ) {
+            return <Navigate to="/unauthorized" replace />;
+        }
     }
 
     // Render the protected component
