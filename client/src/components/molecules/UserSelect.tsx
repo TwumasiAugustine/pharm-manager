@@ -17,10 +17,11 @@ export function UserSelect({
     const { data, isLoading } = useUsers({ limit: 100 });
     return (
         <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor='user-select' className="block text-sm font-medium text-gray-700 mb-1">
                 {label}
             </label>
             <select
+                id="user-select"
                 value={value || ''}
                 onChange={(e) => onChange(e.target.value)}
                 required={required}

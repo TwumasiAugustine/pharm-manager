@@ -311,7 +311,6 @@ const CustomerManagementPage: React.FC = () => {
                             <BranchSelect
                                 value={branchId}
                                 onChange={handleBranchChange}
-                                className="focus:ring-2 focus:ring-blue-500 border-gray-300"
                             />
                         </div>
                         <div className="hidden sm:block h-8 border-l border-gray-200 mx-2"></div>

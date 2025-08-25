@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+
 import type { Branch } from '../types/branch.types';
 import {
     useBranches,
@@ -38,28 +38,31 @@ export default function BranchManagementPage() {
     const updateBranch = useUpdateBranch();
     const deleteBranch = useDeleteBranch();
 
-    function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    /**
+     * Handles input changes for the branch form.
+     */
+    function handleChange(e: ChangeEvent<HTMLInputElement>) {
         const { name, value } = e.target;
         if (name.startsWith('address.')) {
             const key = name.replace('address.', '');
-            setForm({
-                ...form,
+            setForm((prev) => ({
+                ...prev,
                 address: {
-                    ...form.address,
+                    ...prev.address,
                     [key]: value,
                 },
-            });
+            }));
         } else if (name.startsWith('contact.')) {
             const key = name.replace('contact.', '');
-            setForm({
-                ...form,
+            setForm((prev) => ({
+                ...prev,
                 contact: {
-                    ...form.contact,
+                    ...prev.contact,
                     [key]: value,
                 },
-            });
+            }));
         } else {
-            setForm({ ...form, [name]: value });
+            setForm((prev) => ({ ...prev, [name]: value }));
         }
     }
 
@@ -81,11 +84,14 @@ export default function BranchManagementPage() {
         setFormError(null);
     }
 
-    function sanitizeBranchData(data: any) {
-        // Remove id, _id, createdAt, updatedAt recursively
-        const omitFields = (obj: any) => {
+    /**
+     * Recursively removes id, _id, createdAt, updatedAt fields from an object.
+     */
+    function sanitizeBranchData<T>(data: T): T {
+        const omitFields = (obj: any): any => {
             if (Array.isArray(obj)) return obj.map(omitFields);
             if (obj && typeof obj === 'object') {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const { id, _id, createdAt, updatedAt, ...rest } = obj;
                 Object.keys(rest).forEach((key) => {
                     rest[key] = omitFields(rest[key]);
@@ -97,7 +103,7 @@ export default function BranchManagementPage() {
         return omitFields(data);
     }
 
-    function handleSubmit(e: React.FormEvent) {
+    function handleSubmit(e: FormEvent) {
         e.preventDefault();
         setFormError(null);
         const sanitized = sanitizeBranchData(form);
@@ -107,7 +113,11 @@ export default function BranchManagementPage() {
                 {
                     onSuccess: resetForm,
                     onError: (err: any) => {
-                        setFormError(err?.message || 'Failed to update branch');
+                        setFormError(
+                            err?.response?.data?.error ||
+                                err?.message ||
+                                'Failed to update branch',
+                        );
                     },
                 },
             );
@@ -115,7 +125,11 @@ export default function BranchManagementPage() {
             createBranch.mutate(sanitized, {
                 onSuccess: resetForm,
                 onError: (err: any) => {
-                    setFormError(err?.message || 'Failed to create branch');
+                    setFormError(
+                        err?.response?.data?.error ||
+                            err?.message ||
+                            'Failed to create branch',
+                    );
                 },
             });
         }
@@ -138,6 +152,9 @@ export default function BranchManagementPage() {
         setShowForm(false);
     }
 
+    /**
+     * Prepares the form for editing a branch.
+     */
     function handleEdit(branch: Branch) {
         // Remove id, createdAt, updatedAt for form
         const { id, createdAt, updatedAt, ...rest } = branch;
@@ -147,19 +164,18 @@ export default function BranchManagementPage() {
             contact: { ...branch.contact },
             manager: branch.manager || '',
         });
-        setEditingId(branch.id);
+        setEditingId(id);
         setShowForm(true);
     }
 
+    /**
+     * Handles branch deletion.
+     */
     function handleDelete(id: string) {
         setDeleteError(null);
         if (!id) return;
-        // Debug log
-        // eslint-disable-next-line no-console
-        console.log('Deleting branch with id:', id);
         deleteBranch.mutate(id, {
             onError: (err: any) => {
-                // Try to extract more error info
                 let msg = 'Failed to delete branch';
                 if (err?.response) {
                     msg = `Error ${err.response.status}: ${
@@ -168,8 +184,6 @@ export default function BranchManagementPage() {
                 } else if (err?.message) {
                     msg = err.message;
                 }
-                // eslint-disable-next-line no-console
-                console.error('Delete branch error:', err);
                 setDeleteError(msg);
             },
         });
@@ -241,12 +255,10 @@ export default function BranchManagementPage() {
                     </>
                 )}
                 <BranchList
-                    branches={
-                        (branches || []).map((b: any) => ({
-                            ...b,
-                            id: b.id || b._id,
-                        }))
-                    }
+                    branches={(branches || []).map((b: any) => ({
+                        ...b,
+                        id: b.id || b._id,
+                    }))}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     isLoading={false}

@@ -3,7 +3,12 @@ import { Drug } from '../models/drug.model';
 import Branch from '../models/branch.model';
 import mongoose from 'mongoose';
 
-// POST /api/stock/transfer
+/**
+ * Transfers stock of a drug from one branch to another.
+ * @route POST /api/stock/transfer
+ * @param req Express request object
+ * @param res Express response object
+ */
 export const transferStock = async (req: Request, res: Response) => {
     const { drugId, fromBranchId, toBranchId, quantity } = req.body;
     if (!drugId || !fromBranchId || !toBranchId || !quantity || quantity <= 0) {
@@ -22,36 +27,41 @@ export const transferStock = async (req: Request, res: Response) => {
             _id: drugId,
             branch: fromBranchId,
         }).session(session);
-        if (!fromDrug) throw new Error('Drug not found in source branch');
-        if (fromDrug.quantity < quantity)
+        if (!fromDrug) {
+            throw new Error('Drug not found in source branch');
+        }
+        if (fromDrug.quantity < quantity) {
             throw new Error('Insufficient stock in source branch');
+        }
         // Deduct from source
         fromDrug.quantity -= quantity;
         await fromDrug.save({ session });
+
         // Find or create drug in destination branch
         let toDrug = await Drug.findOne({
             name: fromDrug.name,
             branch: toBranchId,
         }).session(session);
         if (!toDrug) {
-            // Clone drug to destination branch
+            // Clone drug to destination branch, omitting _id and timestamps
+            const { _id, createdAt, updatedAt, ...drugData } =
+                fromDrug.toObject();
             toDrug = new Drug({
-                ...fromDrug.toObject(),
-                _id: undefined,
+                ...drugData,
                 branch: toBranchId,
                 quantity: 0,
             });
         }
         toDrug.quantity += quantity;
         await toDrug.save({ session });
+
         await session.commitTransaction();
         session.endSession();
-        res.json({ message: 'Stock transferred successfully' });
-    } catch (err) {
+        return res.json({ message: 'Stock transferred successfully' });
+    } catch (err: any) {
         await session.abortTransaction();
         session.endSession();
-        let message = 'Unknown error';
-        if (err instanceof Error) message = err.message;
-        res.status(400).json({ error: message });
+        const message = err?.message || 'Unknown error';
+        return res.status(400).json({ error: message });
     }
 };

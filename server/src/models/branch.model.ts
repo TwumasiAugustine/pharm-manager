@@ -1,5 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
-
+/**
+ * Branch document interface
+ */
 export interface IBranch extends Document {
     name: string;
     address: {
@@ -13,12 +15,12 @@ export interface IBranch extends Document {
         phone: string;
         email: string;
     };
-    manager?: mongoose.Types.ObjectId; // User who manages this branch
+    manager?: mongoose.Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
 }
 
-const BranchSchema: Schema = new Schema(
+const BranchSchema: Schema<IBranch> = new Schema(
     {
         name: { type: String, required: true },
         address: {
@@ -34,7 +36,28 @@ const BranchSchema: Schema = new Schema(
         },
         manager: { type: Schema.Types.ObjectId, ref: 'User' },
     },
-    { timestamps: true },
+    {
+        timestamps: true,
+        toJSON: {
+            versionKey: false,
+            virtuals: true,
+            /**
+             * Transform _id to id and remove _id from output
+             */
+            transform: (_: any, ret: any) => {
+                ret.id = ret._id;
+                delete ret._id;
+            },
+        },
+        toObject: {
+            versionKey: false,
+            virtuals: true,
+            transform: (_: any, ret: any) => {
+                ret.id = ret._id;
+                delete ret._id;
+            },
+        },
+    },
 );
 
 // Add unique indexes for branch name and contact email/phone
