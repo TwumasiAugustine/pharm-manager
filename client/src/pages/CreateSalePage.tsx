@@ -86,6 +86,7 @@ const CreateSalePage: React.FC = () => {
                 paymentMethod: data.paymentMethod as 'cash' | 'card' | 'mobile',
                 transactionId: data.transactionId,
                 notes: data.notes,
+                branchId: (data as any).branchId,
             };
 
             createSaleMutation.mutate(saleData, {

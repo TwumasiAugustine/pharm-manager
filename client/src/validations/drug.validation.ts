@@ -76,6 +76,10 @@ export const drugSchema = z.object({
         .min(2, 'Location must be at least 2 characters')
         .max(100, 'Location must be less than 100 characters')
         .optional(),
+    branchId: z
+        .string()
+        .min(2, 'Branch Id must be at least 2 characters')
+        .max(100, 'Branch Id must be less than 100 characters'),
 });
 
 /**

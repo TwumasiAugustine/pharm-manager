@@ -54,6 +54,7 @@ export class SaleService {
         customerId?: string;
         shortCode?: string;
         finalized?: boolean;
+    branchId?: string;
     }) {
         // Try to use transactions, fall back to non-transactional approach if needed
         let session: mongoose.ClientSession | null = null;
@@ -142,22 +143,33 @@ export class SaleService {
                     if (Math.abs(calculatedTotal - data.totalAmount) > 0.01)
                         throw new BadRequestError('Total mismatch');
 
+                    // Validate calculatedProfit not negative (selling below cost)
+                    if (calculatedProfit < 0) {
+                        throw new BadRequestError('Calculated profit is negative. Selling below cost is not allowed.');
+                    }
+
+                    const salePayload: any = {
+                        items: saleItems,
+                        totalAmount: calculatedTotal,
+                        totalProfit: calculatedProfit,
+                        soldBy: new Types.ObjectId(data.userId),
+                        customer: data.customerId
+                            ? new Types.ObjectId(data.customerId)
+                            : undefined,
+                        paymentMethod: data.paymentMethod,
+                        transactionId: data.transactionId,
+                        notes: data.notes,
+                        shortCode: data.shortCode,
+                        finalized: data.finalized,
+                    };
+                    // Attach branch if provided
+                    if (data.branchId) {
+                        salePayload.branch = new Types.ObjectId(data.branchId);
+                    }
+
                     const sale = await Sale.create(
                         [
-                            {
-                                items: saleItems,
-                                totalAmount: calculatedTotal,
-                                totalProfit: calculatedProfit,
-                                soldBy: new Types.ObjectId(data.userId),
-                                customer: data.customerId
-                                    ? new Types.ObjectId(data.customerId)
-                                    : undefined,
-                                paymentMethod: data.paymentMethod,
-                                transactionId: data.transactionId,
-                                notes: data.notes,
-                                shortCode: data.shortCode,
-                                finalized: data.finalized,
-                            },
+                            salePayload,
                         ],
                         { session: session! },
                     );

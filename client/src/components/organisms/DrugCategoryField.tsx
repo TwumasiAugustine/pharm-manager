@@ -69,9 +69,9 @@ export const DrugCategoryField: React.FC<DrugCategoryFieldProps> = ({
                 <input
                     type="hidden"
                     id="category"
-                    {...register('category')}
-                    value={selectedCategory}
-                    readOnly
+                    {...register('category', {
+                        value: selectedCategory,
+                    })}
                 />
                 <input
                     type="text"

@@ -7,7 +7,7 @@ import { Input } from '../components/atoms/Input';
 import { Button } from '../components/atoms/Button';
 import { useRegister } from '../hooks/useAuth';
 import { UserRole } from '../types/auth.types';
-import { BranchSelect } from '../components/molecules/BranchSelect';
+// import { BranchSelect } from '../components/molecules/BranchSelect';
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
@@ -149,10 +149,10 @@ const RegisterPage = () => {
                                 Branch
                             </label>
                             <div className="relative">
-                                <BranchSelect
+                                {/* <BranchSelect
                                     value={undefined}
                                     onChange={() => {}}
-                                />
+                                /> */}
                                 <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
                                     <svg
                                         className="h-4 w-4"

@@ -135,6 +135,7 @@ export const DrugForm = ({
                     ensuredInitialData.requiresPrescription || false,
                 supplier: ensuredInitialData.supplier || '',
                 location: ensuredInitialData.location || '',
+                branchId: (ensuredInitialData as any).branchId || '',
             });
             setValue('name', ensuredInitialData.name || '', {
                 shouldValidate: true,
@@ -166,7 +167,10 @@ export const DrugForm = ({
     // Update form when category is selected
     useEffect(() => {
         if (selectedCategory) {
-            setValue('category', selectedCategory);
+            setValue('category', selectedCategory, {
+                shouldValidate: true,
+                shouldDirty: true,
+            });
         }
     }, [selectedCategory, setValue]);
 
@@ -179,6 +183,11 @@ export const DrugForm = ({
     const handleCategorySelect = (category: string) => {
         setSelectedCategory(category);
         setCategorySearchTerm(category);
+        // Directly set the form value with validation
+        setValue('category', category, {
+            shouldValidate: true,
+            shouldDirty: true,
+        });
         setShowCategoryResults(false);
     };
 
@@ -196,7 +205,20 @@ export const DrugForm = ({
 
     // Handle form submission
     const onFormSubmit: SubmitHandler<DrugFormValues> = (data) => {
+        // Log validation data
+        console.log('Form data on submit:', data);
+        console.log('Category value:', data.category);
+        console.log('Selected category state:', selectedCategory);
+        console.log('Form validation errors:', errors);
+
+        // Make sure category has a valid value
+        if (!data.category && selectedCategory) {
+            // If selected category exists but didn't get into form data
+            data.category = selectedCategory;
+        }
+
         onSubmit(data);
+
         if (!initialData) {
             reset(); // Reset form after submission only for new drugs
             setSelectedCategory('');
@@ -332,10 +354,26 @@ export const DrugForm = ({
 
             <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
                 <FormSection title="Branch">
-                    <BranchSelect
-                        value={watch('branchId' as any) as string}
-                        onChange={(id) => setValue('branchId' as any, id)}
-                    />
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Branch <span className="text-red-500">*</span>
+                        </label>
+                        <BranchSelect
+                            value={watch('branchId')}
+                            onChange={(id) =>
+                                setValue('branchId', id, {
+                                    shouldValidate: true,
+                                    shouldDirty: true,
+                                })
+                            }
+                        />
+                        {errors.branchId && (
+                            <p className="mt-1 text-sm text-red-600">
+                                {errors.branchId.message ||
+                                    'Branch is required'}
+                            </p>
+                        )}
+                    </div>
                 </FormSection>
                 <FormSection title="Meta">
                     <DrugMetaFields register={register} errors={errors} />

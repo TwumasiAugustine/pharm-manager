@@ -1,4 +1,5 @@
-
+import { useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import type { Branch } from '../types/branch.types';
 import {
     useBranches,
@@ -157,7 +158,7 @@ export default function BranchManagementPage() {
      */
     function handleEdit(branch: Branch) {
         // Remove id, createdAt, updatedAt for form
-        const { id, createdAt, updatedAt, ...rest } = branch;
+        const { id, ...rest } = branch;
         setForm({
             ...rest,
             address: { ...branch.address },

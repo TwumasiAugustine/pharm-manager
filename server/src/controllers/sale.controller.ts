@@ -27,6 +27,7 @@ export class SaleController {
                 userId,
                 shortCode,
                 finalized: !shortCode, // If no code, mark as finalized
+                branchId: req.body.branchId,
             });
 
             // Log audit event for sale creation

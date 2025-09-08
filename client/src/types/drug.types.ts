@@ -28,6 +28,7 @@ export interface Drug {
     costPrice: number;
     createdAt: string;
     updatedAt: string;
+    branchId?: string;
 }
 
 /**
