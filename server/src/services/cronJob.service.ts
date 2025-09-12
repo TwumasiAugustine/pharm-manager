@@ -257,10 +257,10 @@ class CronJobService {
 
                 // Create expiry notifications as part of inventory check
                 await this.expiryService.createExpiryNotifications();
-                
+
                 // TODO: Add low stock alerts and inventory level checks here
                 // This could involve checking stock levels against minimum thresholds
-                
+
                 // Emit job completed
                 const duration = Date.now() - startTime;
                 io.emit('cron-job-completed', {
@@ -304,7 +304,7 @@ class CronJobService {
                 // This could involve cleaning up expired JWT tokens from a blacklist/whitelist
                 // For now, we'll simulate the cleanup
                 const cleanedSessions = await this.cleanupExpiredSessions();
-                
+
                 // Emit job completed
                 const duration = Date.now() - startTime;
                 io.emit('cron-job-completed', {
@@ -315,7 +315,9 @@ class CronJobService {
                     result: { cleanedSessions },
                 });
 
-                console.log(`Daily session cleanup completed. Cleaned ${cleanedSessions} sessions`);
+                console.log(
+                    `Daily session cleanup completed. Cleaned ${cleanedSessions} sessions`,
+                );
             } catch (error) {
                 // Emit job failed
                 io.emit('cron-job-failed', {
@@ -346,8 +348,9 @@ class CronJobService {
 
                 // TODO: Implement actual report generation logic
                 // This could involve generating PDF reports, sending email summaries, etc.
-                const reportsGenerated = await this.generateWeeklySummaryReports();
-                
+                const reportsGenerated =
+                    await this.generateWeeklySummaryReports();
+
                 // Emit job completed
                 const duration = Date.now() - startTime;
                 io.emit('cron-job-completed', {
@@ -358,7 +361,9 @@ class CronJobService {
                     result: { reportsGenerated },
                 });
 
-                console.log(`Weekly summary reports generated successfully. ${reportsGenerated} reports created`);
+                console.log(
+                    `Weekly summary reports generated successfully. ${reportsGenerated} reports created`,
+                );
             } catch (error) {
                 // Emit job failed
                 io.emit('cron-job-failed', {
@@ -370,7 +375,10 @@ class CronJobService {
                             ? error.message
                             : 'Unknown error',
                 });
-                console.error('Error during weekly summary reports generation:', error);
+                console.error(
+                    'Error during weekly summary reports generation:',
+                    error,
+                );
             }
         });
 
@@ -388,10 +396,12 @@ class CronJobService {
         // 2. Remove expired session entries
         // 3. Clean up any associated data
         // 4. Return count of cleaned sessions
-        
+
         // For now, simulate cleanup
         const simulatedCleanedCount = Math.floor(Math.random() * 10);
-        console.log(`Simulated session cleanup: ${simulatedCleanedCount} sessions cleaned`);
+        console.log(
+            `Simulated session cleanup: ${simulatedCleanedCount} sessions cleaned`,
+        );
         return simulatedCleanedCount;
     }
 
@@ -407,10 +417,12 @@ class CronJobService {
         // 3. Generate financial summaries
         // 4. Send email notifications to managers
         // 5. Store reports in designated location
-        
+
         // For now, simulate report generation
         const simulatedReportCount = 3; // Weekly sales, inventory, financial reports
-        console.log(`Simulated report generation: ${simulatedReportCount} reports generated`);
+        console.log(
+            `Simulated report generation: ${simulatedReportCount} reports generated`,
+        );
         return simulatedReportCount;
     }
 
@@ -627,9 +639,9 @@ class CronJobService {
 
             // Create expiry notifications as part of inventory check
             await this.expiryService.createExpiryNotifications();
-            
+
             // TODO: Add low stock alerts and inventory level checks here
-            
+
             // Emit job completed
             const duration = Date.now() - startTime;
             io.emit('cron-job-completed', {
@@ -666,7 +678,7 @@ class CronJobService {
 
             // Cleanup expired sessions
             const cleanedSessions = await this.cleanupExpiredSessions();
-            
+
             // Emit job completed
             const duration = Date.now() - startTime;
             io.emit('cron-job-completed', {
@@ -677,7 +689,9 @@ class CronJobService {
                 result: { cleanedSessions },
             });
 
-            console.log(`Manual expired sessions cleanup completed. Cleaned ${cleanedSessions} sessions`);
+            console.log(
+                `Manual expired sessions cleanup completed. Cleaned ${cleanedSessions} sessions`,
+            );
         } catch (error) {
             // Emit job failed
             io.emit('cron-job-failed', {
@@ -703,7 +717,7 @@ class CronJobService {
 
             // Generate weekly summary reports
             const reportsGenerated = await this.generateWeeklySummaryReports();
-            
+
             // Emit job completed
             const duration = Date.now() - startTime;
             io.emit('cron-job-completed', {
@@ -714,7 +728,9 @@ class CronJobService {
                 result: { reportsGenerated },
             });
 
-            console.log(`Manual weekly summary reports generation completed. ${reportsGenerated} reports generated`);
+            console.log(
+                `Manual weekly summary reports generation completed. ${reportsGenerated} reports generated`,
+            );
         } catch (error) {
             // Emit job failed
             io.emit('cron-job-failed', {
