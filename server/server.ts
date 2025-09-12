@@ -13,6 +13,7 @@ import { requestLogger } from './src/middlewares/logger.middleware';
 import { logger } from './src/utils/logger';
 import { Server } from 'socket.io';
 import http from 'http';
+import './src/services/cronJob.service'; // Initialize cron jobs on server start
 
 // Load environment variables
 dotenv.config();

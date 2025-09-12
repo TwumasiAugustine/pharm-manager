@@ -56,4 +56,12 @@ router.get(
     reportController.getReportSummary.bind(reportController),
 );
 
+/**
+ * @route   GET /api/reports/today
+ * @desc    Get today's report data for real-time updates
+ * @access  Private
+ * @query   ?reportType=sales|inventory|expiry|financial&branchId=string
+ */
+router.get('/today', reportController.getTodayReport.bind(reportController));
+
 export default router;

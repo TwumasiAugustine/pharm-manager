@@ -10,6 +10,7 @@ import type {
     ReportSummaryData,
 } from '../types/report.types';
 import puppeteer from 'puppeteer';
+import { Types } from 'mongoose';
 
 export class ReportService {
     /**
@@ -17,24 +18,45 @@ export class ReportService {
      */
     async generateReport(filters: ReportFilters): Promise<ReportResponse> {
         try {
-            const { dateRange, reportType, page = 1, limit = 50 } = filters;
+            const {
+                dateRange,
+                reportType,
+                page = 1,
+                limit = 50,
+                branchId,
+            } = filters;
             let data: ReportDataItem[] = [];
+
+            // Ensure dateRange has default values if not provided
+            const effectiveDateRange = {
+                start: dateRange?.start || '',
+                end: dateRange?.end || '',
+            };
 
             switch (reportType) {
                 case 'sales':
-                    data = await this.generateSalesReport(dateRange);
+                    data = await this.generateSalesReport(
+                        effectiveDateRange,
+                        branchId,
+                    );
                     break;
                 case 'inventory':
-                    data = await this.generateInventoryReport();
+                    data = await this.generateInventoryReport(branchId);
                     break;
                 case 'expiry':
-                    data = await this.generateExpiryReport();
+                    data = await this.generateExpiryReport(branchId);
                     break;
                 case 'financial':
-                    data = await this.generateFinancialReport(dateRange);
+                    data = await this.generateFinancialReport(
+                        effectiveDateRange,
+                        branchId,
+                    );
                     break;
                 default:
-                    data = await this.generateSalesReport(dateRange);
+                    data = await this.generateSalesReport(
+                        effectiveDateRange,
+                        branchId,
+                    );
             }
 
             // Calculate total records before pagination
@@ -82,18 +104,14 @@ export class ReportService {
     /**
      * Generate sales report with enhanced profit and sale type analysis
      */
-    private async generateSalesReport(dateRange: {
-        start: string;
-        end: string;
-    }): Promise<ReportDataItem[]> {
-        const query: any = {};
-
-        if (dateRange.start && dateRange.end) {
-            query.createdAt = {
-                $gte: new Date(dateRange.start),
-                $lte: new Date(dateRange.end),
-            };
-        }
+    private async generateSalesReport(
+        dateRange: {
+            start: string;
+            end: string;
+        },
+        branchId?: string,
+    ): Promise<ReportDataItem[]> {
+        const query = this.buildReportDateQuery(dateRange, branchId);
 
         const sales = await Sale.find(query)
             .populate('customer', 'name phone')
@@ -147,8 +165,15 @@ export class ReportService {
     /**
      * Generate inventory report with enhanced pricing information
      */
-    private async generateInventoryReport(): Promise<ReportDataItem[]> {
-        const drugs = await DrugModel.find({}).populate(
+    private async generateInventoryReport(
+        branchId?: string,
+    ): Promise<ReportDataItem[]> {
+        const query: any = {};
+        if (branchId) {
+            query.branch = new Types.ObjectId(branchId);
+        }
+
+        const drugs = await DrugModel.find(query).populate(
             'branch',
             'name address',
         );
@@ -198,9 +223,16 @@ export class ReportService {
     /**
      * Generate expiry report with enhanced drug information
      */
-    private async generateExpiryReport(): Promise<ReportDataItem[]> {
+    private async generateExpiryReport(
+        branchId?: string,
+    ): Promise<ReportDataItem[]> {
         const now = new Date();
-        const drugs = await DrugModel.find({}).populate(
+        const query: any = {};
+        if (branchId) {
+            query.branch = new Types.ObjectId(branchId);
+        }
+
+        const drugs = await DrugModel.find(query).populate(
             'branch',
             'name address',
         );
@@ -271,11 +303,108 @@ export class ReportService {
     /**
      * Generate financial report
      */
-    private async generateFinancialReport(dateRange: {
-        start: string;
-        end: string;
-    }): Promise<ReportDataItem[]> {
-        return this.generateSalesReport(dateRange);
+    private async generateFinancialReport(
+        dateRange: {
+            start: string;
+            end: string;
+        },
+        branchId?: string,
+    ): Promise<ReportDataItem[]> {
+        return this.generateSalesReport(dateRange, branchId);
+    }
+
+    /**
+     * Build intelligent date query for reports
+     * If no dates provided, defaults to current month for better real-time data
+     * Fixed to handle timezone issues and match dashboard service behavior
+     */
+    private buildReportDateQuery(
+        dateRange: { start: string; end: string },
+        branchId?: string,
+    ) {
+        const query: any = {};
+
+        // Add branch filter if provided
+        if (branchId) {
+            query.branch = new Types.ObjectId(branchId);
+        }
+
+        if (dateRange.start && dateRange.end) {
+            // Parse dates properly and handle timezone issues
+            const startDate = this.parseLocalDate(dateRange.start);
+            const endDate = this.parseLocalDate(dateRange.end);
+
+            // Set start date to beginning of day (00:00:00)
+            startDate.setHours(0, 0, 0, 0);
+
+            // Set end date to end of day (23:59:59.999)
+            endDate.setHours(23, 59, 59, 999);
+
+            query.createdAt = {
+                $gte: startDate,
+                $lte: endDate,
+            };
+        } else if (dateRange.start && !dateRange.end) {
+            // If only start date provided, get from start to end of today
+            const startDate = this.parseLocalDate(dateRange.start);
+            startDate.setHours(0, 0, 0, 0);
+
+            const endDate = new Date();
+            endDate.setHours(23, 59, 59, 999);
+
+            query.createdAt = {
+                $gte: startDate,
+                $lte: endDate,
+            };
+        } else if (!dateRange.start && dateRange.end) {
+            // If only end date provided, get from beginning of month to end date
+            const endDate = this.parseLocalDate(dateRange.end);
+            endDate.setHours(23, 59, 59, 999);
+
+            const startDate = new Date(
+                endDate.getFullYear(),
+                endDate.getMonth(),
+                1,
+            );
+            startDate.setHours(0, 0, 0, 0);
+
+            query.createdAt = {
+                $gte: startDate,
+                $lte: endDate,
+            };
+        } else {
+            // No dates provided - default to current month for comprehensive real-time reporting
+            const now = new Date();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            startOfMonth.setHours(0, 0, 0, 0);
+
+            const endOfToday = new Date();
+            endOfToday.setHours(23, 59, 59, 999);
+
+            query.createdAt = {
+                $gte: startOfMonth,
+                $lte: endOfToday, // Include today's data up to current time
+            };
+        }
+
+        return query;
+    }
+
+    /**
+     * Parse date string as local date to avoid timezone issues
+     * Handles both YYYY-MM-DD and MM/DD/YYYY formats
+     */
+    private parseLocalDate(dateString: string): Date {
+        // Handle different date formats
+        if (dateString.includes('/')) {
+            // MM/DD/YYYY format
+            const [month, day, year] = dateString.split('/').map(Number);
+            return new Date(year, month - 1, day);
+        } else {
+            // YYYY-MM-DD format
+            const [year, month, day] = dateString.split('-').map(Number);
+            return new Date(year, month - 1, day);
+        }
     }
 
     /**
@@ -353,7 +482,7 @@ export class ReportService {
     /**
      * Export report as PDF
      */
-    async exportReportPDF(filters: ReportFilters): Promise<Buffer> {
+    public async exportReportPDF(filters: ReportFilters): Promise<Buffer> {
         try {
             const reportData = await this.generateReport(filters);
 

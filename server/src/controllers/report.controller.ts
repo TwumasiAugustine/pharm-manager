@@ -22,6 +22,31 @@ export class ReportController {
     ): Promise<void> {
         try {
             const filters: ReportFilters = req.body;
+
+            // Provide intelligent defaults for better real-time reporting
+            // Use local date strings to avoid timezone issues
+            if (
+                !filters.dateRange ||
+                (!filters.dateRange.start && !filters.dateRange.end)
+            ) {
+                const now = new Date();
+                const startOfMonth = new Date(
+                    now.getFullYear(),
+                    now.getMonth(),
+                    1,
+                );
+                const endOfMonth = new Date(
+                    now.getFullYear(),
+                    now.getMonth() + 1,
+                    0,
+                );
+
+                filters.dateRange = {
+                    start: startOfMonth.toLocaleDateString('en-CA'), // YYYY-MM-DD format
+                    end: endOfMonth.toLocaleDateString('en-CA'), // YYYY-MM-DD format
+                };
+            }
+
             const report = await this.reportService.generateReport(filters);
 
             res.status(200).json(
@@ -97,22 +122,88 @@ export class ReportController {
                 startDate,
                 endDate,
                 reportType = 'sales',
+                branchId,
             } = req.query as {
                 startDate?: string;
                 endDate?: string;
                 reportType?: 'sales' | 'inventory' | 'expiry' | 'financial';
+                branchId?: string;
             };
 
+            // Provide better default date range - current month if not specified
+            // Use local date strings to avoid timezone issues
+            const now = new Date();
+            const defaultStartDate =
+                startDate ||
+                new Date(
+                    now.getFullYear(),
+                    now.getMonth(),
+                    1,
+                ).toLocaleDateString('en-CA'); // YYYY-MM-DD format
+            const defaultEndDate =
+                endDate ||
+                new Date(
+                    now.getFullYear(),
+                    now.getMonth() + 1,
+                    0,
+                ).toLocaleDateString('en-CA'); // YYYY-MM-DD format
+
             const summary = await this.reportService.getReportSummary({
-                dateRange: { start: startDate || '', end: endDate || '' },
+                dateRange: {
+                    start: defaultStartDate,
+                    end: defaultEndDate,
+                },
                 reportType,
                 format: 'table',
+                branchId,
             });
 
             res.status(200).json(
                 successResponse(
                     summary,
                     'Report summary retrieved successfully',
+                    200,
+                ),
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Get today's report data for real-time updates
+     * @route GET /api/reports/today
+     * @access Private
+     */
+    async getTodayReport(
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> {
+        try {
+            const { reportType = 'sales', branchId } = req.query as {
+                reportType?: 'sales' | 'inventory' | 'expiry' | 'financial';
+                branchId?: string;
+            };
+
+            // Get today's date in local format to avoid timezone issues
+            const today = new Date();
+            const todayDateString = today.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+
+            const report = await this.reportService.generateReport({
+                dateRange: {
+                    start: todayDateString,
+                    end: todayDateString,
+                },
+                reportType,
+                format: 'table',
+                branchId,
+            });
+
+            res.status(200).json(
+                successResponse(
+                    report,
+                    "Today's report retrieved successfully",
                     200,
                 ),
             );
