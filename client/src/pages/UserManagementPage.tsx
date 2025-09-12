@@ -25,6 +25,7 @@ const UserManagementPage: React.FC = () => {
         email: '',
         password: '',
         role: UserRole.PHARMACIST,
+        branchId: '',
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [editUserId, setEditUserId] = useState<string | null>(null);
@@ -42,7 +43,11 @@ const UserManagementPage: React.FC = () => {
     const handleSearch = (query: string) => setSearchTerm(query);
     const handleEdit = (user: IUser) => {
         setEditUserId(user._id);
-        setFormData({ ...user, password: '' });
+        setFormData({
+            ...user,
+            password: '',
+            branchId: user.branchId || '', // Ensure branchId is included
+        });
         setShowForm(true);
     };
     const handleDelete = async (user: IUser) => {
@@ -96,6 +101,7 @@ const UserManagementPage: React.FC = () => {
                 email: '',
                 password: '',
                 role: UserRole.PHARMACIST,
+                branchId: '',
             });
             setShowForm(false);
         } catch {

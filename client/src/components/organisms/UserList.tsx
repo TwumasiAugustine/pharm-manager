@@ -48,8 +48,17 @@ const UserList: React.FC<UserListProps> = ({
                     {
                         header: 'Branch',
                         accessor: (row: IUser) => row.branchId,
-                        cell: (value: unknown) => {
-                            if (typeof value === 'string' && value) {
+                        cell: (value: unknown, row?: IUser) => {
+                            // First try to use the populated branch data
+                            if (row?.branch && typeof row.branch === 'object') {
+                                return row.branch.name;
+                            }
+                            // Fallback to branchId lookup
+                            if (
+                                typeof value === 'string' &&
+                                value &&
+                                value !== '[object Object]'
+                            ) {
                                 return branchMap[value] || value;
                             }
                             return '—';

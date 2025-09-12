@@ -23,93 +23,86 @@ const Receipt: React.FC<ReceiptProps> = ({ sale, drugs, pharmacyInfo }) => {
             : 'N/A';
 
     return (
-        <div className="w-full max-w-4xl mx-auto bg-white border rounded-lg shadow-lg p-8 print:shadow-none print:border-none">
-            {/* Receipt Header */}
-            <header className="border-b-2 border-dashed pb-6 mb-6">
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h1 className="text-4xl font-bold text-gray-800">
-                            {pharmacyInfo?.name || 'Pharmacy'}
-                        </h1>
-                        <p className="text-sm text-gray-500">
-                            {pharmacyInfo?.slogan ||
-                                'Your health is our priority'}
-                        </p>
-                    </div>
-                    <div className="text-right">
-                        <h2 className="text-2xl font-semibold uppercase text-gray-700">
-                            Sales Receipt
-                        </h2>
-                        <p className="text-sm font-mono text-gray-500">
-                            ID: {sale.id}
-                        </p>
-                    </div>
-                </div>
-                <div className="mt-4 text-sm text-gray-600">
-                    <p>{pharmacyInfo?.address?.street}</p>
-                    <p>
-                        {pharmacyInfo?.address?.city},{' '}
-                        {pharmacyInfo?.address?.state}{' '}
-                        {pharmacyInfo?.address?.postalCode}
-                    </p>
-                    <p>
-                        Phone: {pharmacyInfo?.contact?.phone} | Email:{' '}
-                        {pharmacyInfo?.contact?.email}
-                    </p>
-                </div>
-            </header>
-
-            {/* Transaction Info */}
-            <section className="grid grid-cols-2 gap-6 mb-8 text-sm">
-                <div>
-                    <h3 className="font-semibold text-gray-700 mb-2 pb-1 border-b">
-                        Billed To
-                    </h3>
-                    {sale.customer ? (
-                        <div>
-                            <p className="font-medium">{sale.customer.name}</p>
-                            <p>Phone: {sale.customer.phone}</p>
+        <div className="w-full max-w-4xl mx-auto bg-white border border-gray-200 rounded-lg shadow-lg print:shadow-none print:border-none print:rounded-none">
+            <div className="p-4 sm:p-6 lg:p-8 print:p-6">
+                {/* Receipt Header */}
+                <header className="border-b-2 border-dashed pb-4 sm:pb-6 mb-4 sm:mb-6">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                        <div className="text-center sm:text-left">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">
+                                {pharmacyInfo?.name || 'Pharmacy'}
+                            </h1>
+                            <p className="text-xs sm:text-sm text-gray-500">
+                                {pharmacyInfo?.slogan ||
+                                    'Your health is our priority'}
+                            </p>
+                            {sale.branch && (
+                                <p className="text-xs sm:text-sm font-medium text-blue-600 mt-1">
+                                    Branch: {sale.branch.name}
+                                </p>
+                            )}
                         </div>
-                    ) : (
-                        <p>Walk-in Customer</p>
-                    )}
-                </div>
-                <div className="text-right">
-                    <h3 className="font-semibold text-gray-700 mb-2 pb-1 border-b">
-                        Sale Details
-                    </h3>
-                    <p>
-                        <span className="font-semibold">Date of Issue:</span>{' '}
-                        {saleDate}
-                    </p>
-                    <p>
-                        <span className="font-semibold">Served By:</span>{' '}
-                        {soldBy}
-                    </p>
-                </div>
-            </section>
+                        <div className="text-center sm:text-right">
+                            <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold uppercase text-gray-700">
+                                Sales Receipt
+                            </h2>
+                            <p className="text-xs sm:text-sm font-mono text-gray-500 break-all">
+                                ID: {sale.id}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600 text-center sm:text-left">
+                        <p>{pharmacyInfo?.address?.street}</p>
+                        <p>
+                            {pharmacyInfo?.address?.city},{' '}
+                            {pharmacyInfo?.address?.state}{' '}
+                            {pharmacyInfo?.address?.postalCode}
+                        </p>
+                        <div className="flex flex-col sm:flex-row sm:gap-4 gap-1">
+                            <p>Phone: {pharmacyInfo?.contact?.phone}</p>
+                            <p>Email: {pharmacyInfo?.contact?.email}</p>
+                        </div>
+                    </div>
+                </header>
 
-            {/* Items Table */}
-            <section className="mb-8">
-                <table className="w-full text-sm">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="text-left font-semibold p-3">#</th>
-                            <th className="text-left font-semibold p-3">
-                                Item Description
-                            </th>
-                            <th className="text-right font-semibold p-3">
-                                Quantity
-                            </th>
-                            <th className="text-right font-semibold p-3">
-                                Unit Price
-                            </th>
-                            <th className="text-right font-semibold p-3">
-                                Total
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                {/* Transaction Info */}
+                <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 text-xs sm:text-sm">
+                    <div>
+                        <h3 className="font-semibold text-gray-700 mb-2 pb-1 border-b">
+                            Billed To
+                        </h3>
+                        {sale.customer ? (
+                            <div>
+                                <p className="font-medium">
+                                    {sale.customer.name}
+                                </p>
+                                <p>Phone: {sale.customer.phone}</p>
+                            </div>
+                        ) : (
+                            <p>Walk-in Customer</p>
+                        )}
+                    </div>
+                    <div className="sm:text-right">
+                        <h3 className="font-semibold text-gray-700 mb-2 pb-1 border-b">
+                            Sale Details
+                        </h3>
+                        <p>
+                            <span className="font-semibold">
+                                Date of Issue:
+                            </span>{' '}
+                            <span className="block sm:inline">{saleDate}</span>
+                        </p>
+                        <p>
+                            <span className="font-semibold">Served By:</span>{' '}
+                            <span className="block sm:inline">{soldBy}</span>
+                        </p>
+                    </div>
+                </section>
+
+                {/* Items Table */}
+                <section className="mb-6 sm:mb-8">
+                    {/* Mobile Card Layout */}
+                    <div className="block sm:hidden space-y-4">
                         {(sale.items || []).map((item, index) => {
                             // Use the attached drug object directly if available
                             // Otherwise fall back to the drug search
@@ -121,35 +114,36 @@ const Receipt: React.FC<ReceiptProps> = ({ sale, drugs, pharmacyInfo }) => {
                                         d._id === item.drugId,
                                 );
 
-                            // Determine price based on saleType and available fields
+                            // Determine price label and value based on saleType
+                            let priceLabel = 'Unit Price';
                             let price = item.priceAtSale || 0;
-                            if (drug) {
+
+                            if (item.saleType === 'pack') {
+                                priceLabel = 'Price per Pack';
                                 if (
+                                    drug &&
+                                    'pricePerPack' in drug &&
+                                    drug.pricePerPack
+                                ) {
+                                    price = drug.pricePerPack;
+                                }
+                            } else if (item.saleType === 'carton') {
+                                priceLabel = 'Price per Carton';
+                                if (
+                                    drug &&
+                                    'pricePerCarton' in drug &&
+                                    drug.pricePerCarton
+                                ) {
+                                    price = drug.pricePerCarton;
+                                }
+                            } else {
+                                // unit sale
+                                if (
+                                    drug &&
                                     'pricePerUnit' in drug &&
-                                    item.saleType === 'unit'
+                                    drug.pricePerUnit
                                 ) {
                                     price = drug.pricePerUnit;
-                                } else if (
-                                    'pricePerPack' in drug &&
-                                    item.saleType === 'pack'
-                                ) {
-                                    price =
-                                        drug.pricePerPack ??
-                                        item.priceAtSale ??
-                                        0;
-                                } else if (
-                                    'pricePerCarton' in drug &&
-                                    item.saleType === 'carton'
-                                ) {
-                                    price =
-                                        drug.pricePerCarton ??
-                                        item.priceAtSale ??
-                                        0;
-                                } else if (
-                                    'price' in drug &&
-                                    typeof drug.price === 'number'
-                                ) {
-                                    price = drug.price;
                                 }
                             }
 
@@ -168,67 +162,245 @@ const Receipt: React.FC<ReceiptProps> = ({ sale, drugs, pharmacyInfo }) => {
                                 drug?.brand || item.brand || 'N/A';
 
                             return (
-                                <tr
+                                <div
                                     key={`${item.drugId || ''}-${index}`}
-                                    className="border-b"
+                                    className="bg-gray-50 p-3 rounded-lg border"
                                 >
-                                    <td className="p-3">{index + 1}</td>
-                                    <td className="p-3">
-                                        <p className="font-medium text-gray-800">
-                                            {displayName}
-                                        </p>
-                                        <p className="text-xs text-gray-500">
-                                            Brand: {displayBrand}
-                                        </p>
-                                    </td>
-                                    <td className="text-right p-3">
-                                        {item.quantity}
-                                    </td>
-                                    <td className="text-right p-3">
-                                        {formatGHSDisplayAmount(price)}
-                                    </td>
-                                    <td className="text-right p-3 font-medium">
-                                        {formatGHSDisplayAmount(
-                                            price * item.quantity,
-                                        )}
-                                    </td>
-                                </tr>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="flex-1">
+                                            <p className="font-medium text-gray-800 text-sm">
+                                                {displayName}
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                                Brand: {displayBrand}
+                                            </p>
+                                        </div>
+                                        <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 capitalize ml-2">
+                                            {item.saleType}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-xs">
+                                        <div>
+                                            <p className="text-gray-500">
+                                                Quantity
+                                            </p>
+                                            <p className="font-medium">
+                                                {item.quantity}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-500">
+                                                {priceLabel}
+                                            </p>
+                                            <p className="font-medium">
+                                                {formatGHSDisplayAmount(price)}
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-gray-500">
+                                                Total
+                                            </p>
+                                            <p className="font-semibold text-gray-800">
+                                                {formatGHSDisplayAmount(
+                                                    price * item.quantity,
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
                             );
                         })}
-                    </tbody>
-                </table>
-            </section>
+                    </div>
 
-            {/* Totals Section */}
-            <section className="flex justify-end mb-8">
-                <div className="w-full max-w-xs text-sm">
-                    <div className="flex justify-between py-2 border-b">
-                        <span className="text-gray-600">Subtotal</span>
-                        <span className="font-medium">
-                            {formatGHSDisplayAmount(sale.totalAmount)}
-                        </span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b">
-                        <span className="text-gray-600">Tax (0%)</span>
-                        <span>{formatGHSDisplayAmount(0)}</span>
-                    </div>
-                    <div className="flex justify-between py-3 text-lg font-bold text-gray-800 bg-gray-50 -mx-3 px-3 rounded">
-                        <span>Total Amount</span>
-                        <span>{formatGHSDisplayAmount(sale.totalAmount)}</span>
-                    </div>
-                </div>
-            </section>
+                    {/* Desktop Table Layout */}
+                    <div className="hidden sm:block overflow-x-auto">
+                        <table className="w-full text-sm border-collapse">
+                            <thead className="bg-gray-50 border-b-2">
+                                <tr>
+                                    <th className="text-left font-semibold p-2 sm:p-4 border-b">
+                                        #
+                                    </th>
+                                    <th className="text-left font-semibold p-2 sm:p-4 border-b">
+                                        Item Description
+                                    </th>
+                                    <th className="text-center font-semibold p-2 sm:p-4 border-b">
+                                        Sale Type
+                                    </th>
+                                    <th className="text-right font-semibold p-2 sm:p-4 border-b">
+                                        Quantity
+                                    </th>
+                                    <th className="text-right font-semibold p-2 sm:p-4 border-b">
+                                        Unit Price
+                                    </th>
+                                    <th className="text-right font-semibold p-2 sm:p-4 border-b">
+                                        Total
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {(sale.items || []).map((item, index) => {
+                                    // Use the attached drug object directly if available
+                                    // Otherwise fall back to the drug search
+                                    const drug =
+                                        item.drug ||
+                                        drugs.find(
+                                            (d) =>
+                                                d.id === item.drugId ||
+                                                d._id === item.drugId,
+                                        );
 
-            {/* Footer */}
-            <footer className="text-center text-xs text-gray-500 pt-6 border-t">
-                <p>
-                    Thank you for your business! - {pharmacyInfo?.slogan || ''}
-                </p>
-                <p className="mt-1">
-                    Printed on: {printDate}. This is a computer-generated
-                    receipt.
-                </p>
-            </footer>
+                                    // Determine price label and value based on saleType
+                                    let priceLabel = 'Unit Price';
+                                    let price = item.priceAtSale || 0;
+
+                                    if (item.saleType === 'pack') {
+                                        priceLabel = 'Price per Pack';
+                                        if (
+                                            drug &&
+                                            'pricePerPack' in drug &&
+                                            drug.pricePerPack
+                                        ) {
+                                            price = drug.pricePerPack;
+                                        }
+                                    } else if (item.saleType === 'carton') {
+                                        priceLabel = 'Price per Carton';
+                                        if (
+                                            drug &&
+                                            'pricePerCarton' in drug &&
+                                            drug.pricePerCarton
+                                        ) {
+                                            price = drug.pricePerCarton;
+                                        }
+                                    } else {
+                                        // unit sale
+                                        if (
+                                            drug &&
+                                            'pricePerUnit' in drug &&
+                                            drug.pricePerUnit
+                                        ) {
+                                            price = drug.pricePerUnit;
+                                        }
+                                    }
+
+                                    // Dosage form: DrugDetails may not have it, so fallback to empty string
+                                    const displayDosageForm =
+                                        'dosageForm' in (drug || {}) &&
+                                        (drug as Drug).dosageForm
+                                            ? (drug as Drug).dosageForm
+                                            : '';
+                                    const displayName = displayDosageForm
+                                        ? `${
+                                              drug?.name || item.name
+                                          } (${displayDosageForm})`
+                                        : drug?.name || item.name;
+                                    const displayBrand =
+                                        drug?.brand || item.brand || 'N/A';
+
+                                    return (
+                                        <tr
+                                            key={`${
+                                                item.drugId || ''
+                                            }-${index}`}
+                                            className="border-b hover:bg-gray-25"
+                                        >
+                                            <td className="p-2 sm:p-4 text-gray-600">
+                                                {index + 1}
+                                            </td>
+                                            <td className="p-2 sm:p-4">
+                                                <p className="font-medium text-gray-800">
+                                                    {displayName}
+                                                </p>
+                                                <p className="text-xs text-gray-500">
+                                                    Brand: {displayBrand}
+                                                </p>
+                                            </td>
+                                            <td className="text-center p-2 sm:p-4">
+                                                <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 capitalize">
+                                                    {item.saleType}
+                                                </span>
+                                            </td>
+                                            <td className="text-right p-2 sm:p-4 font-medium">
+                                                {item.quantity}
+                                            </td>
+                                            <td className="text-right p-2 sm:p-4">
+                                                <div className="text-xs text-gray-500 mb-1">
+                                                    {priceLabel}
+                                                </div>
+                                                <div className="font-medium">
+                                                    {formatGHSDisplayAmount(
+                                                        price,
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="text-right p-2 sm:p-4 font-semibold text-gray-800">
+                                                {formatGHSDisplayAmount(
+                                                    price * item.quantity,
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                {/* Totals Section */}
+                <section className="flex justify-center sm:justify-end mb-6 sm:mb-8">
+                    <div className="w-full sm:max-w-sm">
+                        <div className="bg-gray-50 p-4 sm:p-6 rounded-lg border">
+                            <div className="flex justify-between py-2 text-sm">
+                                <span className="text-gray-600">Subtotal</span>
+                                <span className="font-medium">
+                                    {formatGHSDisplayAmount(sale.totalAmount)}
+                                </span>
+                            </div>
+                            <div className="flex justify-between py-2 text-sm border-b">
+                                <span className="text-gray-600">Tax (0%)</span>
+                                <span>{formatGHSDisplayAmount(0)}</span>
+                            </div>
+                            <div className="flex justify-between py-3 sm:py-4 text-lg sm:text-xl font-bold text-gray-800">
+                                <span>Total Amount</span>
+                                <span className="text-green-600">
+                                    {formatGHSDisplayAmount(sale.totalAmount)}
+                                </span>
+                            </div>
+                            <div className="text-center pt-3 border-t">
+                                <p className="text-sm text-gray-600">
+                                    Payment Method:{' '}
+                                    <span className="font-medium capitalize">
+                                        {sale.paymentMethod}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Footer */}
+                <footer className="text-center text-xs sm:text-sm text-gray-500 pt-4 sm:pt-6 border-t-2 border-dashed">
+                    <div className="mb-3 sm:mb-4">
+                        <p className="font-medium text-gray-700">
+                            Thank you for choosing{' '}
+                            {pharmacyInfo?.name || 'our pharmacy'}!
+                        </p>
+                        <p className="text-xs mt-1">
+                            {pharmacyInfo?.slogan ||
+                                'Your health is our priority'}
+                        </p>
+                    </div>
+                    <div className="text-xs space-y-1">
+                        <p>Receipt generated on: {printDate}</p>
+                        <p className="break-words">
+                            This is a computer-generated receipt and does not
+                            require a signature.
+                        </p>
+                        {sale.branch && (
+                            <p>Served at: {sale.branch.name} Branch</p>
+                        )}
+                    </div>
+                </footer>
+            </div>
         </div>
     );
 };

@@ -1,7 +1,14 @@
 import User from '../models/user.model';
+import Branch from '../models/branch.model';
 import { NotFoundError, ConflictError, BadRequestError } from '../utils/errors';
 import { IUser } from '../types/user.types';
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
+
+// Extended interface for user operations that include branchId
+interface IUserWithBranchId extends Partial<IUser> {
+    branchId?: string;
+}
 
 function normalizeEmail(email: string): string {
     return email.trim().toLowerCase();
@@ -29,7 +36,8 @@ export class UserService {
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit)
-            .select('-password');
+            .select('-password')
+            .populate('branch', 'name address _id');
         return {
             users,
             total,
@@ -39,12 +47,24 @@ export class UserService {
         };
     }
 
-    async createUser(data: Partial<IUser>) {
+    async createUser(data: IUserWithBranchId) {
         if (!data.name || !data.email || !data.password || !data.role) {
             throw new BadRequestError(
                 'Name, email, password, and role are required',
             );
         }
+
+        // Validate branch assignment if provided
+        if (data.branchId) {
+            if (!mongoose.Types.ObjectId.isValid(data.branchId)) {
+                throw new BadRequestError('Invalid branch ID format');
+            }
+            const branch = await Branch.findById(data.branchId);
+            if (!branch) {
+                throw new NotFoundError('Branch not found');
+            }
+        }
+
         // Normalize email
         const normalizedEmail = normalizeEmail(data.email);
         // Prevent duplicate emails
@@ -52,21 +72,45 @@ export class UserService {
         if (existing)
             throw new ConflictError('A user with this email already exists');
         const hashedPassword = await bcrypt.hash(data.password, 10);
-        const user = await User.create({
+
+        const userData: any = {
             ...data,
             email: normalizedEmail,
             password: hashedPassword,
             isFirstSetup: data.role === 'admin' ? true : false,
-        });
-        const { password, ...userWithoutPassword } = user.toObject({
-            versionKey: false,
-        });
-        return userWithoutPassword;
+        };
+
+        // Convert branchId to branch field for MongoDB
+        if (data.branchId) {
+            userData.branch = new mongoose.Types.ObjectId(data.branchId);
+            delete userData.branchId; // Remove branchId as we use 'branch' in the model
+        }
+
+        const user = await User.create(userData);
+
+        // Populate branch info in response
+        await user.populate('branch', 'name address _id');
+        const populatedUser = user.toObject({ versionKey: false }) as any;
+        const { password: _, ...userResponse } = populatedUser;
+
+        return userResponse;
     }
 
-    async updateUser(id: string, data: Partial<IUser>) {
+    async updateUser(id: string, data: IUserWithBranchId) {
         const user = await User.findById(id);
         if (!user) throw new NotFoundError('User not found');
+
+        // Validate branch assignment if provided
+        if (data.branchId) {
+            if (!mongoose.Types.ObjectId.isValid(data.branchId)) {
+                throw new BadRequestError('Invalid branch ID format');
+            }
+            const branch = await Branch.findById(data.branchId);
+            if (!branch) {
+                throw new NotFoundError('Branch not found');
+            }
+        }
+
         // Normalize email if present
         if (data.email) {
             data.email = normalizeEmail(data.email);
@@ -83,10 +127,26 @@ export class UserService {
         } else {
             delete data.password;
         }
-        Object.assign(user, data);
+
+        // Handle branch assignment
+        const updateData: any = { ...data };
+        if (data.branchId) {
+            updateData.branch = new mongoose.Types.ObjectId(data.branchId);
+            delete updateData.branchId; // Remove branchId as we use 'branch' in the model
+        } else if (data.branchId === null || data.branchId === '') {
+            updateData.branch = null; // Remove branch assignment
+            delete updateData.branchId;
+        }
+
+        Object.assign(user, updateData);
         await user.save();
-        const { password, ...userObj } = user.toObject();
-        return userObj;
+
+        // Populate branch info in response
+        await user.populate('branch', 'name address _id');
+        const populatedUser = user.toObject({ versionKey: false }) as any;
+        const { password: _, ...userResponse } = populatedUser;
+
+        return userResponse;
     }
 
     async deleteUser(id: string) {

@@ -10,6 +10,7 @@ export interface IUser {
     email: string;
     password: string;
     role: UserRole;
+    branchId?: string; // Branch assignment
     isFirstSetup: boolean;
     refreshToken?: string;
     createdAt: Date;
@@ -38,6 +39,7 @@ export interface ISignupRequest {
     email: string;
     password: string;
     role?: UserRole;
+    branchId?: string;
 }
 
 export interface ILoginRequest {

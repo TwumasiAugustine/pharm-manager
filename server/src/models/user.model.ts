@@ -50,6 +50,66 @@ const userSchema = new Schema<
     },
     {
         timestamps: true,
+        toJSON: {
+            transform: function (doc: any, ret: any) {
+                // Add branchId for frontend compatibility
+                if (ret.branch) {
+                    // Handle populated branch object
+                    if (typeof ret.branch === 'object' && '_id' in ret.branch) {
+                        ret.branchId = ret.branch._id.toString();
+                    }
+                    // Handle branch object with transformed id field
+                    else if (
+                        typeof ret.branch === 'object' &&
+                        'id' in ret.branch
+                    ) {
+                        ret.branchId = ret.branch.id.toString();
+                    }
+                    // Handle ObjectId or string
+                    else if (typeof ret.branch === 'string') {
+                        ret.branchId = ret.branch;
+                    }
+                    // Handle any other case (ObjectId, etc.)
+                    else if (
+                        ret.branch &&
+                        typeof ret.branch.toString === 'function'
+                    ) {
+                        ret.branchId = ret.branch.toString();
+                    }
+                }
+                return ret;
+            },
+        },
+        toObject: {
+            transform: function (doc: any, ret: any) {
+                // Add branchId for frontend compatibility
+                if (ret.branch) {
+                    // Handle populated branch object
+                    if (typeof ret.branch === 'object' && '_id' in ret.branch) {
+                        ret.branchId = ret.branch._id.toString();
+                    }
+                    // Handle branch object with transformed id field
+                    else if (
+                        typeof ret.branch === 'object' &&
+                        'id' in ret.branch
+                    ) {
+                        ret.branchId = ret.branch.id.toString();
+                    }
+                    // Handle ObjectId or string
+                    else if (typeof ret.branch === 'string') {
+                        ret.branchId = ret.branch;
+                    }
+                    // Handle any other case (ObjectId, etc.)
+                    else if (
+                        ret.branch &&
+                        typeof ret.branch.toString === 'function'
+                    ) {
+                        ret.branchId = ret.branch.toString();
+                    }
+                }
+                return ret;
+            },
+        },
     },
 );
 

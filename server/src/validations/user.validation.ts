@@ -5,6 +5,7 @@ export const createUserSchema = z.object({
     email: z.string().email('Invalid email'),
     password: z.string().min(6, 'Password must be at least 6 characters'),
     role: z.enum(['admin', 'pharmacist', 'cashier']),
+    branchId: z.string().optional(), // Branch assignment
 });
 
 export const updateUserSchema = z.object({
@@ -15,4 +16,5 @@ export const updateUserSchema = z.object({
         .min(6, 'Password must be at least 6 characters')
         .optional(),
     role: z.enum(['admin', 'pharmacist', 'cashier']).optional(),
+    branchId: z.string().optional(), // Branch assignment
 });

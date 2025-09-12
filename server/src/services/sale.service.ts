@@ -509,6 +509,7 @@ export class SaleService {
             .populate('items.drug')
             .populate('soldBy', 'name')
             .populate('customer', 'name phone')
+            .populate('branch', 'name address')
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit);
@@ -547,6 +548,13 @@ export class SaleService {
                                   '',
                           }
                         : saleObj.customer,
+                branch:
+                    saleObj.branch && typeof saleObj.branch === 'object'
+                        ? {
+                              ...(saleObj.branch as any),
+                              id: (saleObj.branch as any)._id?.toString() || '',
+                          }
+                        : saleObj.branch,
             };
         });
 
@@ -591,7 +599,8 @@ export class SaleService {
         const sale = await Sale.findById(id)
             .populate('items.drug')
             .populate('soldBy', 'name')
-            .populate('customer', 'name phone');
+            .populate('customer', 'name phone')
+            .populate('branch', 'name address');
         if (!sale) throw new NotFoundError('Sale not found');
 
         // Map _id to id for sale and nested objects
@@ -623,6 +632,13 @@ export class SaleService {
                           id: (saleObj.customer as any)._id?.toString() || '',
                       }
                     : saleObj.customer,
+            branch:
+                saleObj.branch && typeof saleObj.branch === 'object'
+                    ? {
+                          ...(saleObj.branch as any),
+                          id: (saleObj.branch as any)._id?.toString() || '',
+                      }
+                    : saleObj.branch,
         };
         return mappedSale;
     }

@@ -162,70 +162,137 @@ const SalesReceiptPage: React.FC = () => {
 
     return (
         <DashboardLayout>
-            <div className="flex flex-col items-center py-8 bg-gray-50">
-                <Receipt
-                    sale={enhancedSale}
-                    drugs={drugs}
-                    pharmacyInfo={pharmacyInfo?.pharmacyInfo}
-                />
-                {canFinalize ? (
-                    <div className="mt-6 p-4 bg-blue-50 border border-blue-300 rounded text-center w-full max-w-md">
-                        <div className="text-lg font-bold text-blue-800 mb-2">
-                            Enter Sale Short Code to Finalize & Print
-                        </div>
-                        <input
-                            type="text"
-                            value={shortCodeInput}
-                            onChange={(e) =>
-                                setShortCodeInput(e.target.value.toUpperCase())
-                            }
-                            className="border rounded px-3 py-2 w-full text-center font-mono text-xl mb-2"
-                            placeholder="Enter short code"
-                            maxLength={8}
-                            disabled={finalizing}
-                        />
-                        {finalizeError && (
-                            <div className="text-red-600 text-sm mb-2">
-                                {finalizeError}
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+                <div className="container mx-auto px-4">
+                    <Receipt
+                        sale={enhancedSale}
+                        drugs={drugs}
+                        pharmacyInfo={pharmacyInfo?.pharmacyInfo}
+                    />
+                    {canFinalize ? (
+                        <div className="mt-8 mx-auto max-w-md">
+                            <div className="bg-white p-6 rounded-xl shadow-lg border border-blue-100">
+                                <div className="text-center mb-6">
+                                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <svg
+                                            className="w-8 h-8 text-blue-600"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                        Finalize Sale
+                                    </h3>
+                                    <p className="text-sm text-gray-600">
+                                        Enter the sale short code to finalize
+                                        and enable printing
+                                    </p>
+                                </div>
+                                <input
+                                    type="text"
+                                    value={shortCodeInput}
+                                    onChange={(e) =>
+                                        setShortCodeInput(
+                                            e.target.value.toUpperCase(),
+                                        )
+                                    }
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-center font-mono text-xl tracking-wider focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                                    placeholder="Enter short code"
+                                    maxLength={8}
+                                    disabled={finalizing}
+                                />
+                                {finalizeError && (
+                                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                        <p className="text-red-600 text-sm text-center">
+                                            {finalizeError}
+                                        </p>
+                                    </div>
+                                )}
+                                <Button
+                                    onClick={async () => {
+                                        setFinalizing(true);
+                                        setFinalizeError(null);
+                                        try {
+                                            await saleApi.finalizeSaleByShortCode(
+                                                shortCodeInput,
+                                            );
+                                            notify.success(
+                                                'Sale finalized! You can now print the receipt.',
+                                            );
+                                        } catch (e) {
+                                            setFinalizeError(
+                                                (e as any)?.response?.data
+                                                    ?.message ||
+                                                    'Invalid or expired code',
+                                            );
+                                        } finally {
+                                            setFinalizing(false);
+                                        }
+                                    }}
+                                    isLoading={finalizing}
+                                    className="w-full mt-4 bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
+                                    disabled={
+                                        !shortCodeInput.trim() || finalizing
+                                    }
+                                >
+                                    {finalizing
+                                        ? 'Finalizing...'
+                                        : 'Finalize & Enable Print'}
+                                </Button>
                             </div>
-                        )}
-                        <Button
-                            onClick={async () => {
-                                setFinalizing(true);
-                                setFinalizeError(null);
-                                try {
-                                    await saleApi.finalizeSaleByShortCode(
-                                        shortCodeInput,
-                                    );
-                                    notify.success(
-                                        'Sale finalized! You can now print the receipt.',
-                                    );
-                                } catch (e) {
-                                    setFinalizeError(
-                                        (e as any)?.response?.data?.message ||
-                                            'Invalid or expired code',
-                                    );
-                                } finally {
-                                    setFinalizing(false);
-                                }
-                            }}
-                            isLoading={finalizing}
-                            className="w-full mt-2"
-                        >
-                            Finalize & Print
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="mt-6 flex gap-4 print:hidden">
-                        <Button onClick={handlePrint}>Print Receipt</Button>
-                        <Button
-                            variant="secondary"
-                            onClick={() => navigate('/sales')}
-                        >
-                            Back to Sales
-                        </Button>
-                    </div>
-                )}
+                        </div>
+                    ) : (
+                        <div className="mt-8 flex justify-center gap-4 print:hidden">
+                            <Button
+                                onClick={handlePrint}
+                                className="bg-green-600 hover:bg-green-700 focus:ring-green-500 px-8 py-3"
+                            >
+                                <svg
+                                    className="w-5 h-5 mr-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                                    />
+                                </svg>
+                                Print Receipt
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                onClick={() => navigate('/sales')}
+                                className="px-8 py-3"
+                            >
+                                <svg
+                                    className="w-5 h-5 mr-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                                    />
+                                </svg>
+                                Back to Sales
+                            </Button>
+                        </div>
+                    )}
+                </div>
             </div>
         </DashboardLayout>
     );
