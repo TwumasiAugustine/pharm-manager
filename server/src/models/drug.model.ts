@@ -159,7 +159,13 @@ drugSchema.pre<IDrug>('save', function (next) {
         this.pricePerCarton = this.pricePerPack * this.packsPerCarton;
     }
     // Auto-calculate quantity based on carton and unit data
-    if (this.drugsInCarton && this.unitsPerCarton && this.packsPerCarton) {
+    // ONLY on initial creation (when isNew is true), not on quantity updates
+    if (
+        this.isNew &&
+        this.drugsInCarton &&
+        this.unitsPerCarton &&
+        this.packsPerCarton
+    ) {
         this.quantity =
             this.drugsInCarton * this.unitsPerCarton * this.packsPerCarton;
     }

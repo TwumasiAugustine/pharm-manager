@@ -19,12 +19,7 @@ const saleApi = {
     },
 
     async createSale(data: CreateSaleRequest): Promise<Sale> {
-        const payload: any = { ...data };
-        if ((payload as any).branchId) {
-            payload.branch = (payload as any).branchId;
-            delete payload.branchId;
-        }
-        const res = await api.post('/sales', payload);
+        const res = await api.post('/sales', data);
         return res.data.data;
     },
 

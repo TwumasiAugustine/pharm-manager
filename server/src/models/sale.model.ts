@@ -54,7 +54,7 @@ const saleItemSchema = new Schema<ISaleItem>(
         profit: {
             type: Number,
             required: true,
-            min: 0,
+            min: 0, // Restored profit validation
         },
     },
     { _id: false },
@@ -79,7 +79,7 @@ const saleSchema = new Schema<ISale>(
         totalProfit: {
             type: Number,
             required: true,
-            min: 0,
+            min: 0, // Restored total profit validation
         },
         soldBy: {
             type: Schema.Types.ObjectId,

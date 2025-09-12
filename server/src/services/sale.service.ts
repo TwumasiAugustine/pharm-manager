@@ -1,6 +1,7 @@
 import { Sale, ISale } from '../models/sale.model';
 import { Drug } from '../models/drug.model';
 import Customer from '../models/customer.model';
+import Branch from '../models/branch.model';
 import { Types } from 'mongoose';
 import mongoose from 'mongoose';
 import { BadRequestError, NotFoundError } from '../utils/errors';
@@ -36,6 +37,45 @@ export class SaleService {
     }
 
     /**
+     * Get default branch ID if no branchId is provided
+     * @returns The first available branch ID or throws error if no branches exist
+     */
+    private async getDefaultBranchId(): Promise<string> {
+        const defaultBranch = await Branch.findOne().sort({ createdAt: 1 });
+        if (!defaultBranch) {
+            throw new BadRequestError(
+                'No branches available. Please create a branch first.',
+            );
+        }
+        return (defaultBranch._id as Types.ObjectId).toString();
+    }
+
+    /**
+     * Check if MongoDB supports transactions (replica set or sharded cluster)
+     * @returns True if transactions are supported, false otherwise
+     */
+    private async supportsTransactions(): Promise<boolean> {
+        try {
+            const connection = mongoose.connection;
+            if (connection.readyState !== 1 || !connection.db) {
+                console.warn(
+                    'MongoDB connection not ready or db not available',
+                );
+                return false;
+            }
+
+            const adminDb = connection.db.admin();
+            const isMaster = await adminDb.command({ isMaster: 1 });
+
+            // Check if this is a replica set member or mongos (sharded cluster)
+            return !!(isMaster.setName || isMaster.msg === 'isdbgrid');
+        } catch (error) {
+            console.warn('Could not check transaction support:', error);
+            return false;
+        }
+    }
+
+    /**
      * Create a new sale, update drug stock, and return the created sale
      * @param data - Sale data including items, payment info, and customer details
      * @returns The newly created sale object
@@ -54,8 +94,28 @@ export class SaleService {
         customerId?: string;
         shortCode?: string;
         finalized?: boolean;
-    branchId?: string;
+        branchId?: string;
     }) {
+        // Resolve branch ID - use provided branchId or get default
+        const resolvedBranchId =
+            data.branchId || (await this.getDefaultBranchId());
+
+        // Check if transactions are supported before attempting to use them
+        const canUseTransactions = await this.supportsTransactions();
+
+        // Force non-transactional in development if NODE_ENV is not production
+        const forceNonTransactional = process.env.NODE_ENV !== 'production';
+
+        if (!canUseTransactions || forceNonTransactional) {
+            console.log(
+                'Using non-transactional approach (development mode or no transaction support)',
+            );
+            return await this.createSaleWithoutTransaction({
+                ...data,
+                branchId: resolvedBranchId,
+            });
+        }
+
         // Try to use transactions, fall back to non-transactional approach if needed
         let session: mongoose.ClientSession | null = null;
         let createdSale: any = null;
@@ -90,10 +150,9 @@ export class SaleService {
                             }
                             let price = 0;
                             let cost = 0;
-                            let stockToDeduct = item.quantity;
                             if (item.saleType === 'unit') {
                                 price = drug.pricePerUnit;
-                                cost = drug.costPrice;
+                                cost = drug.costPrice; // Cost per unit
                                 if (drug.quantity < item.quantity)
                                     throw new BadRequestError(
                                         'Insufficient unit stock',
@@ -101,9 +160,12 @@ export class SaleService {
                                 drug.quantity -= item.quantity;
                             } else if (item.saleType === 'pack') {
                                 price = drug.pricePerPack;
-                                cost = drug.costPrice * drug.unitsPerCarton;
+                                // Derive actual units per pack from price ratio (respecting actual DB prices)
+                                const actualUnitsPerPack =
+                                    drug.pricePerPack / drug.pricePerUnit;
+                                cost = drug.costPrice * actualUnitsPerPack;
                                 const packUnits =
-                                    drug.unitsPerCarton * item.quantity;
+                                    actualUnitsPerPack * item.quantity;
                                 if (drug.quantity < packUnits)
                                     throw new BadRequestError(
                                         'Insufficient pack stock',
@@ -111,14 +173,12 @@ export class SaleService {
                                 drug.quantity -= packUnits;
                             } else if (item.saleType === 'carton') {
                                 price = drug.pricePerCarton;
-                                cost =
-                                    drug.costPrice *
-                                    drug.unitsPerCarton *
-                                    drug.packsPerCarton;
+                                // Derive actual units per carton from price ratio (respecting actual DB prices)
+                                const actualUnitsPerCarton =
+                                    drug.pricePerCarton / drug.pricePerUnit;
+                                cost = drug.costPrice * actualUnitsPerCarton;
                                 const cartonUnits =
-                                    drug.unitsPerCarton *
-                                    drug.packsPerCarton *
-                                    item.quantity;
+                                    actualUnitsPerCarton * item.quantity;
                                 if (drug.quantity < cartonUnits)
                                     throw new BadRequestError(
                                         'Insufficient carton stock',
@@ -128,6 +188,12 @@ export class SaleService {
                             await drug.save({ session: session! });
                             const itemTotal = price * item.quantity;
                             const itemProfit = (price - cost) * item.quantity;
+
+                            // Debug logging for cost calculation
+                            console.log(
+                                `Drug: ${drug.name}, Sale Type: ${item.saleType}, Price: ${price}, Cost: ${cost}, Quantity: ${item.quantity}, Profit: ${itemProfit}`,
+                            );
+
                             calculatedTotal += itemTotal;
                             calculatedProfit += itemProfit;
                             return {
@@ -145,7 +211,9 @@ export class SaleService {
 
                     // Validate calculatedProfit not negative (selling below cost)
                     if (calculatedProfit < 0) {
-                        throw new BadRequestError('Calculated profit is negative. Selling below cost is not allowed.');
+                        throw new BadRequestError(
+                            `Calculated profit is negative (${calculatedProfit}). This indicates selling below cost. Please check your pricing configuration.`,
+                        );
                     }
 
                     const salePayload: any = {
@@ -161,18 +229,12 @@ export class SaleService {
                         notes: data.notes,
                         shortCode: data.shortCode,
                         finalized: data.finalized,
+                        branch: new Types.ObjectId(resolvedBranchId),
                     };
-                    // Attach branch if provided
-                    if (data.branchId) {
-                        salePayload.branch = new Types.ObjectId(data.branchId);
-                    }
 
-                    const sale = await Sale.create(
-                        [
-                            salePayload,
-                        ],
-                        { session: session! },
-                    );
+                    const sale = await Sale.create([salePayload], {
+                        session: session!,
+                    });
 
                     // Update customer purchases if customerId provided - within the same transaction
                     if (data.customerId) {
@@ -188,10 +250,8 @@ export class SaleService {
                     createdSale = sale[0];
                 },
                 {
-                    // Transaction options for better reliability
-                    readConcern: { level: 'majority' },
-                    writeConcern: { w: 'majority' },
-                    maxTimeMS: 30000, // 30 second timeout
+                    // Simplified transaction options for better compatibility
+                    maxTimeMS: 10000, // Reduced to 10 second timeout
                 },
             );
 
@@ -203,14 +263,24 @@ export class SaleService {
             if (
                 err.message?.includes('Transaction') ||
                 err.message?.includes('replica set') ||
+                err.message?.includes('Transaction numbers are only allowed') ||
+                err.message?.includes('timeout') ||
+                err.message?.includes('exceeded') ||
                 err.code === 20 || // Transaction number error
-                err.codeName === 'ConflictingOperations'
+                err.code === 50 || // ExceededTimeLimit
+                err.codeName === 'IllegalOperation' ||
+                err.codeName === 'ConflictingOperations' ||
+                err.codeName === 'ExceededTimeLimit' ||
+                err.codeName === 'MaxTimeMSExpired'
             ) {
                 console.warn(
                     'Falling back to non-transactional approach due to:',
                     err.message,
                 );
-                return await this.createSaleWithoutTransaction(data);
+                return await this.createSaleWithoutTransaction({
+                    ...data,
+                    branchId: resolvedBranchId,
+                });
             }
 
             throw err;
@@ -240,6 +310,7 @@ export class SaleService {
         customerId?: string;
         shortCode?: string;
         finalized?: boolean;
+        branchId?: string;
     }) {
         try {
             let calculatedTotal = 0;
@@ -262,9 +333,10 @@ export class SaleService {
                     }
                     let price = 0;
                     let cost = 0;
+
                     if (item.saleType === 'unit') {
                         price = drug.pricePerUnit;
-                        cost = drug.costPrice;
+                        cost = drug.costPrice; // Cost per unit
                         if (drug.quantity < item.quantity)
                             throw new BadRequestError(
                                 'Insufficient unit stock',
@@ -272,8 +344,11 @@ export class SaleService {
                         drug.quantity -= item.quantity;
                     } else if (item.saleType === 'pack') {
                         price = drug.pricePerPack;
-                        cost = drug.costPrice * drug.unitsPerCarton;
-                        const packUnits = drug.unitsPerCarton * item.quantity;
+                        // Derive actual units per pack from price ratio (respecting actual DB prices)
+                        const actualUnitsPerPack =
+                            drug.pricePerPack / drug.pricePerUnit;
+                        cost = drug.costPrice * actualUnitsPerPack;
+                        const packUnits = actualUnitsPerPack * item.quantity;
                         if (drug.quantity < packUnits)
                             throw new BadRequestError(
                                 'Insufficient pack stock',
@@ -281,23 +356,24 @@ export class SaleService {
                         drug.quantity -= packUnits;
                     } else if (item.saleType === 'carton') {
                         price = drug.pricePerCarton;
-                        cost =
-                            drug.costPrice *
-                            drug.unitsPerCarton *
-                            drug.packsPerCarton;
+                        // Derive actual units per carton from price ratio (respecting actual DB prices)
+                        const actualUnitsPerCarton =
+                            drug.pricePerCarton / drug.pricePerUnit;
+                        cost = drug.costPrice * actualUnitsPerCarton;
                         const cartonUnits =
-                            drug.unitsPerCarton *
-                            drug.packsPerCarton *
-                            item.quantity;
+                            actualUnitsPerCarton * item.quantity;
                         if (drug.quantity < cartonUnits)
                             throw new BadRequestError(
                                 'Insufficient carton stock',
                             );
                         drug.quantity -= cartonUnits;
                     }
+
                     await drug.save();
+
                     const itemTotal = price * item.quantity;
                     const itemProfit = (price - cost) * item.quantity;
+
                     calculatedTotal += itemTotal;
                     calculatedProfit += itemProfit;
                     return {
@@ -313,7 +389,14 @@ export class SaleService {
             if (Math.abs(calculatedTotal - data.totalAmount) > 0.01)
                 throw new BadRequestError('Total mismatch');
 
-            const sale = await Sale.create({
+            // Validate calculatedProfit not negative (selling below cost)
+            if (calculatedProfit < 0) {
+                throw new BadRequestError(
+                    `Calculated profit is negative (${calculatedProfit}). This indicates selling below cost. Please check your pricing configuration.`,
+                );
+            }
+
+            const salePayload: any = {
                 items: saleItems,
                 totalAmount: calculatedTotal,
                 totalProfit: calculatedProfit,
@@ -326,7 +409,12 @@ export class SaleService {
                 notes: data.notes,
                 shortCode: data.shortCode,
                 finalized: data.finalized,
-            });
+            };
+
+            // Always attach branch (either provided or default)
+            salePayload.branch = new Types.ObjectId(data.branchId!);
+
+            const sale = await Sale.create(salePayload);
 
             // Update customer purchases if customerId provided
             if (data.customerId) {
@@ -392,8 +480,28 @@ export class SaleService {
         } else {
             // Default to showing today's sales (UTC)
             const now = new Date();
-            const startOfTodayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
-            const endOfTodayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
+            const startOfTodayUTC = new Date(
+                Date.UTC(
+                    now.getUTCFullYear(),
+                    now.getUTCMonth(),
+                    now.getUTCDate(),
+                    0,
+                    0,
+                    0,
+                    0,
+                ),
+            );
+            const endOfTodayUTC = new Date(
+                Date.UTC(
+                    now.getUTCFullYear(),
+                    now.getUTCMonth(),
+                    now.getUTCDate(),
+                    23,
+                    59,
+                    59,
+                    999,
+                ),
+            );
             query.createdAt = { $gte: startOfTodayUTC, $lte: endOfTodayUTC };
         }
 
@@ -448,7 +556,12 @@ export class SaleService {
             (acc, sale) => {
                 const d = new Date(sale.createdAt);
                 // Always use UTC for grouping
-                const dateStr = d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
+                const dateStr =
+                    d.getUTCFullYear() +
+                    '-' +
+                    String(d.getUTCMonth() + 1).padStart(2, '0') +
+                    '-' +
+                    String(d.getUTCDate()).padStart(2, '0');
                 if (!acc[dateStr]) acc[dateStr] = [];
                 acc[dateStr].push(sale);
                 return acc;

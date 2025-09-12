@@ -67,6 +67,7 @@ export interface CreateSaleRequest {
     customerId?: string;
     transactionId?: string;
     notes?: string;
+    branchId?: string;
 }
 
 // For react-hook-form (frontend only)
