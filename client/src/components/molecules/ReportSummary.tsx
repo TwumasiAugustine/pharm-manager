@@ -1,5 +1,11 @@
 import React from 'react';
-import { FiTrendingUp, FiPackage, FiPercent } from 'react-icons/fi';
+import {
+    FiTrendingUp,
+    FiPackage,
+    FiPercent,
+    FiDollarSign,
+    FiBarChart,
+} from 'react-icons/fi';
 import { useNumberFormatter } from '../../hooks/useDisplayMode';
 import type { ReportSummaryData } from '../../types/report.types';
 
@@ -47,14 +53,21 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
         {
             label: 'Total Revenue',
             value: formatCurrency(summary.totalRevenue),
-            icon: () => <span className="font-bold text-lg">₵</span>,
+            icon: FiTrendingUp,
             color: 'text-green-600',
             bgColor: 'bg-green-100',
         },
         {
+            label: 'Total Cost',
+            value: formatCurrency(summary.totalCost || 0),
+            icon: FiBarChart,
+            color: 'text-red-600',
+            bgColor: 'bg-red-100',
+        },
+        {
             label: 'Total Profit',
-            value: formatCurrency((summary as any).totalProfit ?? 0),
-            icon: () => <span className="font-bold text-lg">₵</span>,
+            value: formatCurrency(summary.totalProfit || 0),
+            icon: FiDollarSign,
             color: 'text-orange-600',
             bgColor: 'bg-orange-100',
         },
@@ -87,7 +100,7 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
     return (
         <div className="space-y-6">
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4">
                 {stats.map((stat, index) => (
                     <div
                         key={index}

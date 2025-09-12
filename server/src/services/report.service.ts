@@ -1,4 +1,4 @@
-import { Drug as DrugModel } from '../models/drug.model';
+import { Drug as DrugModel, type IDrug } from '../models/drug.model';
 import type { IDrugResponse } from '../types/drug.types';
 import { Sale } from '../models/sale.model';
 import Customer from '../models/customer.model';
@@ -80,7 +80,7 @@ export class ReportService {
     }
 
     /**
-     * Generate sales report
+     * Generate sales report with enhanced profit and sale type analysis
      */
     private async generateSalesReport(dateRange: {
         start: string;
@@ -96,8 +96,10 @@ export class ReportService {
         }
 
         const sales = await Sale.find(query)
-            .populate('customer', 'name')
-            .populate('items.drug', 'name category brand')
+            .populate('customer', 'name phone')
+            .populate('branch', 'name address')
+            .populate('soldBy', 'name')
+            .populate('items.drug', 'name category brand costPrice')
             .sort({ createdAt: -1 });
 
         const reportData: ReportDataItem[] = [];
@@ -106,19 +108,35 @@ export class ReportService {
             sale.items.forEach((drugItem) => {
                 const drug = drugItem.drug as any;
                 const customer = sale.customer as any;
+                const branch = sale.branch as any;
+                const soldBy = sale.soldBy as any;
 
                 reportData.push({
                     id: `${sale._id}-${drug._id}`,
                     date: sale.createdAt.toISOString(),
                     drugName: drug.name,
                     category: drug.category,
+                    brand: drug.brand,
                     quantity: drugItem.quantity,
+                    saleType: drugItem.saleType,
                     unitPrice: drugItem.priceAtSale,
                     totalPrice: drugItem.quantity * drugItem.priceAtSale,
-                    profit:
-                        (drugItem.priceAtSale - drug.price * 0.7) *
-                        drugItem.quantity, // Assuming 30% markup
+                    costPrice: drug.costPrice,
+                    profit: drugItem.profit,
+                    profitMargin:
+                        drugItem.priceAtSale > 0
+                            ? (drugItem.profit /
+                                  drugItem.quantity /
+                                  drugItem.priceAtSale) *
+                              100
+                            : 0,
                     customer: customer?.name || 'Walk-in',
+                    customerPhone: customer?.phone || '',
+                    branchName: branch?.name || '',
+                    soldBy: soldBy?.name || '',
+                    paymentMethod: sale.paymentMethod,
+                    transactionId: sale.transactionId,
+                    finalized: sale.finalized,
                 });
             });
         });
@@ -127,63 +145,122 @@ export class ReportService {
     }
 
     /**
-     * Generate inventory report
+     * Generate inventory report with enhanced pricing information
      */
     private async generateInventoryReport(): Promise<ReportDataItem[]> {
-        const drugs: IDrugResponse[] = await DrugModel.find({});
-        return drugs.map((drug) => ({
-            id: drug.id || drug._id?.toString() || '',
-            date:
-                typeof drug.createdAt === 'string'
-                    ? drug.createdAt
-                    : drug.createdAt?.toISOString() || '',
-            drugName: drug.name,
-            category: drug.category,
-            quantity: drug.quantity,
-            unitPrice: drug.pricePerUnit,
-            totalPrice: drug.quantity * drug.pricePerUnit,
-            costPrice: drug.costPrice,
-            profit: 0, // Cannot calculate profit for inventory
-            batchNumber: drug.batchNumber,
-            expiryDate:
-                typeof drug.expiryDate === 'string'
-                    ? drug.expiryDate
-                    : drug.expiryDate?.toISOString() || '',
-        }));
+        const drugs = await DrugModel.find({}).populate(
+            'branch',
+            'name address',
+        );
+
+        return drugs.map((drug: any) => {
+            const branch = drug.branch;
+            const totalValueUnit = drug.quantity * drug.pricePerUnit;
+            const totalCostValue = drug.quantity * drug.costPrice;
+            const potentialProfit = totalValueUnit - totalCostValue;
+
+            return {
+                id: drug._id?.toString() || '',
+                date:
+                    typeof drug.createdAt === 'string'
+                        ? drug.createdAt
+                        : drug.createdAt?.toISOString() || '',
+                drugName: drug.name,
+                category: drug.category,
+                brand: drug.brand,
+                quantity: drug.quantity,
+                unitPrice: drug.pricePerUnit,
+                packPrice: drug.pricePerPack,
+                cartonPrice: drug.pricePerCarton,
+                totalPrice: totalValueUnit,
+                costPrice: drug.costPrice,
+                totalCostValue: totalCostValue,
+                profit: potentialProfit,
+                profitMargin:
+                    totalValueUnit > 0
+                        ? (potentialProfit / totalValueUnit) * 100
+                        : 0,
+                batchNumber: drug.batchNumber,
+                expiryDate:
+                    typeof drug.expiryDate === 'string'
+                        ? drug.expiryDate
+                        : drug.expiryDate?.toISOString() || '',
+                branchName: branch?.name || '',
+                unitsPerCarton: drug.unitsPerCarton,
+                packsPerCarton: drug.packsPerCarton,
+                requiresPrescription: drug.requiresPrescription,
+                supplier: drug.supplier,
+                location: drug.location,
+            };
+        });
     }
 
     /**
-     * Generate expiry report
+     * Generate expiry report with enhanced drug information
      */
     private async generateExpiryReport(): Promise<ReportDataItem[]> {
         const now = new Date();
-        const drugs: IDrugResponse[] = await DrugModel.find({});
+        const drugs = await DrugModel.find({}).populate(
+            'branch',
+            'name address',
+        );
+
         return drugs
-            .map((drug) => {
+            .map((drug: any) => {
+                const branch = drug.branch;
                 const expiryDateObj = new Date(drug.expiryDate);
                 const daysUntilExpiry = Math.ceil(
                     (expiryDateObj.getTime() - now.getTime()) /
                         (1000 * 60 * 60 * 24),
                 );
+
+                // Calculate potential loss values
+                const unitValueLoss = drug.quantity * drug.pricePerUnit;
+                const costLoss = drug.quantity * drug.costPrice;
+
+                // Determine expiry status with proper typing
+                let expiryStatus: 'expired' | 'critical' | 'warning' | 'notice';
+                if (daysUntilExpiry < 0) {
+                    expiryStatus = 'expired';
+                } else if (daysUntilExpiry <= 7) {
+                    expiryStatus = 'critical';
+                } else if (daysUntilExpiry <= 30) {
+                    expiryStatus = 'warning';
+                } else {
+                    expiryStatus = 'notice';
+                }
+
                 return {
-                    id: drug.id || drug._id?.toString() || '',
+                    id: drug._id?.toString() || '',
                     date:
                         typeof drug.createdAt === 'string'
                             ? drug.createdAt
                             : drug.createdAt?.toISOString() || '',
                     drugName: drug.name,
                     category: drug.category,
+                    brand: drug.brand,
                     quantity: drug.quantity,
                     unitPrice: drug.pricePerUnit,
-                    totalPrice: drug.quantity * drug.pricePerUnit,
+                    packPrice: drug.pricePerPack,
+                    cartonPrice: drug.pricePerCarton,
+                    totalPrice: unitValueLoss,
                     costPrice: drug.costPrice,
+                    totalCostValue: costLoss,
                     profit: 0,
+                    profitLoss: unitValueLoss - costLoss,
                     batchNumber: drug.batchNumber,
                     expiryDate:
                         typeof drug.expiryDate === 'string'
                             ? drug.expiryDate
                             : drug.expiryDate?.toISOString() || '',
                     daysUntilExpiry,
+                    branchName: branch?.name || '',
+                    unitsPerCarton: drug.unitsPerCarton,
+                    packsPerCarton: drug.packsPerCarton,
+                    requiresPrescription: drug.requiresPrescription,
+                    supplier: drug.supplier,
+                    location: drug.location,
+                    expiryStatus,
                 };
             })
             .sort(

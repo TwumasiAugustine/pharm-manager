@@ -5,6 +5,9 @@ import {
     FiUsers,
     FiPackage,
     FiAlertTriangle,
+    FiDollarSign,
+    FiPercent,
+    FiTarget,
 } from 'react-icons/fi';
 import type { DashboardOverview } from '../../types/dashboard.types';
 import { formatGHSDisplayAmount } from '../../utils/currency';
@@ -80,6 +83,24 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
             color: 'green' as const,
         },
         {
+            title: 'Total Profit',
+            value: formatGHSDisplayAmount(overview.totalProfit || 0),
+            icon: <FiDollarSign />,
+            color: 'blue' as const,
+        },
+        {
+            title: 'Profit Margin',
+            value: `${(overview.profitMargin || 0).toFixed(1)}%`,
+            icon: <FiPercent />,
+            color: 'purple' as const,
+        },
+        {
+            title: 'Avg Order Value',
+            value: formatGHSDisplayAmount(overview.averageOrderValue || 0),
+            icon: <FiTarget />,
+            color: 'orange' as const,
+        },
+        {
             title: 'Total Sales',
             value: overview.totalSales.toLocaleString(),
             icon: <FiShoppingBag />,
@@ -106,7 +127,7 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
     ];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-8 gap-4 sm:gap-6">
             {stats.map((stat, index) => (
                 <StatCard
                     key={index}

@@ -5,11 +5,31 @@ export interface ExpiryDrug {
     drugName: string;
     brand: string;
     category: string;
+    dosageForm?: string;
     expiryDate: string;
     daysUntilExpiry: number;
     quantity: number;
-    price: number;
+    price: number; // Legacy compatibility
+    costPrice?: number;
+    pricePerUnit: number;
+    pricePerPack?: number;
+    pricePerCarton?: number;
+    unitsPerCarton?: number;
+    packsPerCarton?: number;
     batchNumber: string;
+    // Financial impact
+    unitValueLoss?: number;
+    packValueLoss?: number;
+    cartonValueLoss?: number;
+    costLoss?: number;
+    profitLoss?: number;
+    // Branch information
+    branchId?: string;
+    branchName?: string;
+    // Additional drug info
+    requiresPrescription?: boolean;
+    supplier?: string;
+    location?: string;
     alertLevel: 'expired' | 'critical' | 'warning' | 'notice';
     isAcknowledged: boolean;
     acknowledgedBy?: string;
@@ -24,14 +44,32 @@ export interface ExpiryStats {
     totalWarningDrugs: number;
     totalNoticeDrugs: number;
     totalValue: number;
+    totalCostValue: number;
     expiredValue: number;
+    expiredCostValue: number;
     criticalValue: number;
+    criticalCostValue: number;
+    warningValue: number;
+    warningCostValue: number;
+    totalPotentialLoss: number;
+    profitLoss: number;
     upcomingExpiries: {
         next7Days: number;
         next30Days: number;
         next60Days: number;
         next90Days: number;
     };
+    categoryBreakdown: Record<
+        string,
+        {
+            expired: number;
+            critical: number;
+            warning: number;
+            notice: number;
+            totalValue: number;
+            costValue: number;
+        }
+    >;
 }
 
 export interface ExpiryNotification {
@@ -53,6 +91,7 @@ export interface ExpiryFilters {
     alertLevel?: 'expired' | 'critical' | 'warning' | 'notice';
     isAcknowledged?: boolean;
     category?: string;
+    branchId?: string;
 }
 
 export interface ExpiryDrugsResponse {

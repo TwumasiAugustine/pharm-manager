@@ -5,6 +5,9 @@ import {
     FiClock,
     FiInfo,
     FiPackage,
+    FiMapPin,
+    FiBox,
+    FiTrendingDown,
 } from 'react-icons/fi';
 import type { ExpiryDrug } from '../../types/expiry.types';
 import { formatGHSDisplayAmount } from '../../utils/currency';
@@ -83,11 +86,24 @@ const DrugCard: React.FC<DrugCardProps> = ({ drug }) => {
                                 <span>{drug.brand}</span>
                                 <span className="hidden sm:inline">•</span>
                                 <span>{drug.category}</span>
+                                {drug.dosageForm && (
+                                    <>
+                                        <span className="hidden sm:inline">
+                                            •
+                                        </span>
+                                        <span>{drug.dosageForm}</span>
+                                    </>
+                                )}
+                                {drug.requiresPrescription && (
+                                    <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium">
+                                        Prescription Required
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                         <div>
                             <p className="text-gray-500">Batch Number</p>
                             <p className="font-medium text-gray-900">
@@ -101,19 +117,93 @@ const DrugCard: React.FC<DrugCardProps> = ({ drug }) => {
                             </p>
                         </div>
                         <div>
-                            <p className="text-gray-500">Price</p>
+                            <p className="text-gray-500">Unit Price</p>
                             <p className="font-medium text-gray-900">
-                                {formatGHSDisplayAmount(drug.price)}
+                                {formatGHSDisplayAmount(
+                                    drug.pricePerUnit || drug.price,
+                                )}
                             </p>
                         </div>
+                        {drug.pricePerPack && (
+                            <div>
+                                <p className="text-gray-500 flex items-center">
+                                    <FiBox className="h-3 w-3 mr-1" />
+                                    Pack Price
+                                </p>
+                                <p className="font-medium text-gray-900">
+                                    {formatGHSDisplayAmount(drug.pricePerPack)}
+                                </p>
+                            </div>
+                        )}
+                        {drug.pricePerCarton && (
+                            <div>
+                                <p className="text-gray-500 flex items-center">
+                                    <FiPackage className="h-3 w-3 mr-1" />
+                                    Carton Price
+                                </p>
+                                <p className="font-medium text-gray-900">
+                                    {formatGHSDisplayAmount(
+                                        drug.pricePerCarton,
+                                    )}
+                                </p>
+                            </div>
+                        )}
                         <div>
                             <p className="text-gray-500">Total Value</p>
                             <p className="font-medium text-gray-900">
                                 {formatGHSDisplayAmount(
-                                    drug.quantity * drug.price,
+                                    drug.unitValueLoss ||
+                                        drug.quantity *
+                                            (drug.pricePerUnit || drug.price),
                                 )}
                             </p>
                         </div>
+                        {drug.costLoss && (
+                            <div>
+                                <p className="text-gray-500">Cost Loss</p>
+                                <p className="font-medium text-red-600">
+                                    {formatGHSDisplayAmount(drug.costLoss)}
+                                </p>
+                            </div>
+                        )}
+                        {drug.profitLoss && (
+                            <div>
+                                <p className="text-gray-500 flex items-center">
+                                    <FiTrendingDown className="h-3 w-3 mr-1" />
+                                    Profit Loss
+                                </p>
+                                <p className="font-medium text-red-600">
+                                    {formatGHSDisplayAmount(drug.profitLoss)}
+                                </p>
+                            </div>
+                        )}
+                        {drug.location && (
+                            <div>
+                                <p className="text-gray-500">Location</p>
+                                <p className="font-medium text-gray-900">
+                                    {drug.location}
+                                </p>
+                            </div>
+                        )}
+                        {drug.supplier && (
+                            <div>
+                                <p className="text-gray-500">Supplier</p>
+                                <p className="font-medium text-gray-900">
+                                    {drug.supplier}
+                                </p>
+                            </div>
+                        )}
+                        {drug.branchName && (
+                            <div>
+                                <p className="text-gray-500 flex items-center">
+                                    <FiMapPin className="h-3 w-3 mr-1" />
+                                    Branch
+                                </p>
+                                <p className="font-medium text-gray-900">
+                                    {drug.branchName}
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
 

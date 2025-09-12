@@ -37,10 +37,10 @@ export const useExpiringDrugs = (
 };
 
 // Hook to get expiry statistics
-export const useExpiryStats = () => {
+export const useExpiryStats = (branchId?: string) => {
     return useQuery({
-        queryKey: EXPIRY_QUERY_KEYS.stats(),
-        queryFn: expiryApi.getExpiryStats,
+        queryKey: [...EXPIRY_QUERY_KEYS.stats(), branchId],
+        queryFn: () => expiryApi.getExpiryStats(branchId),
         staleTime: 10 * 60 * 1000, // 10 minutes
     });
 };

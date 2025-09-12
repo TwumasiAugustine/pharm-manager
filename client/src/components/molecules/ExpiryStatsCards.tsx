@@ -4,6 +4,9 @@ import {
     FiAlertCircle,
     FiClock,
     FiInfo,
+    FiDollarSign,
+    FiBarChart,
+    FiTrendingDown,
 } from 'react-icons/fi';
 import type { ExpiryStats } from '../../types/expiry.types';
 
@@ -107,15 +110,37 @@ export const ExpiryStatsCards: React.FC<ExpiryStatsCardsProps> = ({
             color: 'blue' as const,
         },
         {
-            title: 'Risk Value',
-            value: formatCurrency(stats.expiredValue + stats.criticalValue),
-            icon: <span className="font-bold text-lg">₵</span>,
+            title: 'Total Value at Risk',
+            value: formatCurrency(stats.totalPotentialLoss || 0),
+            icon: <FiDollarSign />,
+            color: 'red' as const,
+        },
+        {
+            title: 'Cost Value Loss',
+            value: formatCurrency(
+                (stats.expiredCostValue || 0) +
+                    (stats.criticalCostValue || 0) +
+                    (stats.warningCostValue || 0),
+            ),
+            icon: <FiBarChart />,
+            color: 'orange' as const,
+        },
+        {
+            title: 'Profit Loss',
+            value: formatCurrency(stats.profitLoss || 0),
+            icon: <FiTrendingDown />,
+            color: 'red' as const,
+        },
+        {
+            title: 'Total Inventory Value',
+            value: formatCurrency(stats.totalValue || 0),
+            icon: <FiDollarSign />,
             color: 'green' as const,
         },
     ];
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-8 gap-4 sm:gap-6">
             {statsData.map((stat, index) => (
                 <StatCard
                     key={index}

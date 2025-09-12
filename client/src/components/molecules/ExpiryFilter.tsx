@@ -1,5 +1,6 @@
 import React from 'react';
 import type { ExpiryFilters } from '../../types/expiry.types';
+import { BranchSelect } from './BranchSelect';
 
 interface ExpiryFilterProps {
     filters: ExpiryFilters;
@@ -33,6 +34,13 @@ export const ExpiryFilter: React.FC<ExpiryFilterProps> = ({
         onFiltersChange({
             ...filters,
             category: category.trim() || undefined,
+        });
+    };
+
+    const handleBranchChange = (branchId: string) => {
+        onFiltersChange({
+            ...filters,
+            branchId: branchId || undefined,
         });
     };
 
@@ -128,6 +136,17 @@ export const ExpiryFilter: React.FC<ExpiryFilterProps> = ({
                         />
                     </div>
 
+                    {/* Branch Filter */}
+                    <div>
+                        <label className="text-sm font-semibold text-gray-900 mb-2 block">
+                            Branch
+                        </label>
+                        <BranchSelect
+                            value={filters.branchId || ''}
+                            onChange={handleBranchChange}
+                        />
+                    </div>
+
                     {/* Actions Row */}
                     <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                         <button
@@ -140,6 +159,7 @@ export const ExpiryFilter: React.FC<ExpiryFilterProps> = ({
                         {/* Current Filters Count */}
                         {(filters.alertLevel ||
                             filters.category ||
+                            filters.branchId ||
                             filters.daysRange !== 90) && (
                             <div className="flex items-center gap-1.5">
                                 <span className="text-xs text-gray-600">
@@ -171,6 +191,11 @@ export const ExpiryFilter: React.FC<ExpiryFilterProps> = ({
                                     {filters.category && (
                                         <span className="bg-green-100 text-green-800 px-1.5 py-0.5 rounded text-xs font-medium">
                                             {filters.category}
+                                        </span>
+                                    )}
+                                    {filters.branchId && (
+                                        <span className="bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded text-xs font-medium">
+                                            branch
                                         </span>
                                     )}
                                 </div>
@@ -247,6 +272,17 @@ export const ExpiryFilter: React.FC<ExpiryFilterProps> = ({
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                             />
                         </div>
+
+                        {/* Branch Filter */}
+                        <div className="flex flex-col w-full sm:w-auto">
+                            <label className="text-sm font-medium text-gray-700 mb-2">
+                                Branch
+                            </label>
+                            <BranchSelect
+                                value={filters.branchId || ''}
+                                onChange={handleBranchChange}
+                            />
+                        </div>
                     </div>
 
                     {/* Clear Filters */}
@@ -261,6 +297,7 @@ export const ExpiryFilter: React.FC<ExpiryFilterProps> = ({
                 {/* Current Filters Display */}
                 {(filters.alertLevel ||
                     filters.category ||
+                    filters.branchId ||
                     filters.daysRange !== 90) && (
                     <div className="mt-4 pt-4 border-t border-gray-200">
                         <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
@@ -288,6 +325,11 @@ export const ExpiryFilter: React.FC<ExpiryFilterProps> = ({
                             {filters.category && (
                                 <span className="bg-green-100 text-green-800 px-2 py-1 rounded-md">
                                     Category: {filters.category}
+                                </span>
+                            )}
+                            {filters.branchId && (
+                                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md">
+                                    Branch
                                 </span>
                             )}
                         </div>

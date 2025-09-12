@@ -24,10 +24,12 @@ export class DashboardController {
                 startDate,
                 endDate,
                 period = 'month',
+                branchId,
             } = req.query as {
                 startDate?: string;
                 endDate?: string;
                 period?: 'day' | 'week' | 'month' | 'year';
+                branchId?: string;
             };
 
             const analytics = await this.dashboardService.getDashboardAnalytics(
@@ -35,6 +37,7 @@ export class DashboardController {
                     startDate,
                     endDate,
                     period,
+                    branchId,
                 },
             );
 

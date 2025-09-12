@@ -4,6 +4,8 @@ import { DashboardFilter } from '../components/molecules/DashboardFilter';
 import { OverviewCards } from '../components/molecules/OverviewCards';
 import { SalesTrendsChart } from '../components/molecules/SalesTrendsChart';
 import { TopSellingDrugsChart } from '../components/molecules/TopSellingDrugsChart';
+import { SaleTypeDistributionChart } from '../components/molecules/SaleTypeDistributionChart';
+import { ProfitMarginAnalysisChart } from '../components/molecules/ProfitMarginAnalysisChart';
 import { LowStockDrugs } from '../components/molecules/LowStockDrugs';
 import { useDashboardAnalytics } from '../hooks/useDashboard';
 import type { DashboardFilters } from '../types/dashboard.types';
@@ -56,16 +58,19 @@ const DashboardPage: React.FC = () => {
                     overview={
                         dashboardData?.overview || {
                             totalRevenue: 0,
+                            totalProfit: 0,
                             totalSales: 0,
                             totalCustomers: 0,
                             totalDrugs: 0,
                             lowStockCount: 0,
+                            profitMargin: 0,
+                            averageOrderValue: 0,
                         }
                     }
                     isLoading={isLoading}
                 />
 
-                {/* Charts Section - Responsive Grid */}
+                {/* Main Charts Section - Responsive Grid */}
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
                     <SalesTrendsChart
                         data={dashboardData?.charts?.salesByPeriod || []}
@@ -73,6 +78,18 @@ const DashboardPage: React.FC = () => {
                     />
                     <TopSellingDrugsChart
                         data={dashboardData?.charts?.topSellingDrugs || []}
+                        isLoading={isLoading}
+                    />
+                </div>
+
+                {/* Analytics Charts Section */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+                    <SaleTypeDistributionChart
+                        data={dashboardData?.charts?.saleTypeDistribution || []}
+                        isLoading={isLoading}
+                    />
+                    <ProfitMarginAnalysisChart
+                        data={dashboardData?.charts?.profitMarginAnalysis || []}
                         isLoading={isLoading}
                     />
                 </div>

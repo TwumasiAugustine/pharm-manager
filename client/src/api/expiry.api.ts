@@ -18,8 +18,9 @@ export const expiryApi = {
     },
 
     // Get expiry statistics
-    getExpiryStats: async (): Promise<ExpiryStats> => {
-        const response = await api.get('/expiry/stats');
+    getExpiryStats: async (branchId?: string): Promise<ExpiryStats> => {
+        const params = branchId ? { branchId } : {};
+        const response = await api.get('/expiry/stats', { params });
         return response.data.data;
     },
 

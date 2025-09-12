@@ -1,4 +1,5 @@
 import React from 'react';
+import { BranchSelect } from './BranchSelect';
 import type { DashboardFilters } from '../../types/dashboard.types';
 
 interface DashboardFilterProps {
@@ -27,6 +28,13 @@ export const DashboardFilter: React.FC<DashboardFilterProps> = ({
             ...filters,
             [field]: value,
             period: undefined,
+        });
+    };
+
+    const handleBranchChange = (branchId: string) => {
+        onFiltersChange({
+            ...filters,
+            branchId: branchId || undefined,
         });
     };
 
@@ -96,6 +104,19 @@ export const DashboardFilter: React.FC<DashboardFilterProps> = ({
                             />
                         </div>
                     </div>
+
+                    {/* Branch Filter */}
+                    <div className="flex flex-col">
+                        <label className="text-sm font-medium text-gray-700 mb-2">
+                            Branch
+                        </label>
+                        <div className="w-48">
+                            <BranchSelect
+                                value={filters.branchId || ''}
+                                onChange={handleBranchChange}
+                            />
+                        </div>
+                    </div>
                 </div>
 
                 {/* Clear Filters */}
@@ -108,9 +129,12 @@ export const DashboardFilter: React.FC<DashboardFilterProps> = ({
             </div>
 
             {/* Current Filter Display */}
-            {(filters.startDate || filters.endDate || filters.period) && (
+            {(filters.startDate ||
+                filters.endDate ||
+                filters.period ||
+                filters.branchId) && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm text-gray-600 flex-wrap">
                         <span className="font-medium">Current Filter:</span>
                         {filters.period && (
                             <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md">
@@ -126,6 +150,11 @@ export const DashboardFilter: React.FC<DashboardFilterProps> = ({
                         {filters.endDate && (
                             <span className="bg-green-100 text-green-800 px-2 py-1 rounded-md">
                                 To: {filters.endDate}
+                            </span>
+                        )}
+                        {filters.branchId && (
+                            <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md">
+                                Branch Selected
                             </span>
                         )}
                     </div>

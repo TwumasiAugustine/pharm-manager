@@ -1,5 +1,11 @@
 import React from 'react';
-import { FiPackage, FiCalendar, FiTrendingUp } from 'react-icons/fi';
+import {
+    FiPackage,
+    FiCalendar,
+    FiTrendingUp,
+    FiMapPin,
+    FiShoppingBag,
+} from 'react-icons/fi';
 import { useNumberFormatter } from '../../hooks/useDisplayMode';
 import type { ReportDataItem, ReportFilters } from '../../types/report.types';
 
@@ -14,7 +20,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     reportType,
     isLoading,
 }) => {
-    const { formatNumber, formatCurrency } = useNumberFormatter();
+    const {  formatCurrency } = useNumberFormatter();
 
     if (isLoading) {
         return (
@@ -57,39 +63,50 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                     'Date',
                     'Drug Name',
                     'Customer',
+                    'Sale Type',
                     'Quantity',
                     'Unit Price',
                     'Total',
                     'Profit',
+                    'Branch',
                 ];
             case 'inventory':
                 return [
                     'Drug Name',
                     'Category',
+                    'Brand',
                     'Batch Number',
                     'Quantity',
                     'Unit Price',
+                    'Pack Price',
                     'Total Value',
+                    'Branch',
                     'Expiry Date',
                 ];
             case 'expiry':
                 return [
                     'Drug Name',
                     'Category',
+                    'Brand',
                     'Batch Number',
                     'Expiry Date',
+                    'Status',
                     'Days Left',
                     'Quantity',
                     'Value at Risk',
+                    'Branch',
                 ];
             case 'financial':
                 return [
                     'Date',
                     'Type',
                     'Description',
+                    'Sale Type',
                     'Amount',
+                    'Cost',
                     'Profit',
-                    'Running Total',
+                    'Margin %',
+                    'Branch',
                 ];
             default:
                 return ['Date', 'Description', 'Amount'];
@@ -111,13 +128,43 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                         <td className="px-6 py-4">
                             <div className="flex items-center">
                                 <FiPackage className="h-4 w-4 text-gray-400 mr-2" />
-                                <span className="text-sm font-medium text-gray-900">
-                                    {item.drugName}
-                                </span>
+                                <div>
+                                    <span className="text-sm font-medium text-gray-900">
+                                        {item.drugName}
+                                    </span>
+                                    {item.brand && (
+                                        <p className="text-xs text-gray-500">
+                                            {item.brand}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
-                            {item.customer || 'Walk-in'}
+                            <div>
+                                {item.customer || 'Walk-in'}
+                                {item.customerPhone && (
+                                    <p className="text-xs text-gray-500">
+                                        {item.customerPhone}
+                                    </p>
+                                )}
+                            </div>
+                        </td>
+                        <td className="px-6 py-4">
+                            <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    item.saleType === 'unit'
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : item.saleType === 'pack'
+                                        ? 'bg-green-100 text-green-800'
+                                        : item.saleType === 'carton'
+                                        ? 'bg-purple-100 text-purple-800'
+                                        : 'bg-gray-100 text-gray-800'
+                                }`}
+                            >
+                                <FiShoppingBag className="h-3 w-3 mr-1" />
+                                {item.saleType?.toUpperCase() || 'UNIT'}
+                            </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
                             {item.quantity}
@@ -129,12 +176,25 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                             {formatCurrency(item.totalPrice)}
                         </td>
                         <td className="px-6 py-4">
-                            <span className="inline-flex items-center text-sm font-medium text-green-600">
-                                <FiTrendingUp className="h-4 w-4 mr-1" />
-                                {item.profit !== null
-                                    ? formatCurrency(item.profit)
-                                    : 'N/A'}
-                            </span>
+                            <div className="flex flex-col">
+                                <span className="inline-flex items-center text-sm font-medium text-green-600">
+                                    <FiTrendingUp className="h-4 w-4 mr-1" />
+                                    {item.profit !== null
+                                        ? formatCurrency(item.profit)
+                                        : 'N/A'}
+                                </span>
+                                {item.profitMargin !== undefined && (
+                                    <span className="text-xs text-gray-500">
+                                        {item.profitMargin.toFixed(1)}%
+                                    </span>
+                                )}
+                            </div>
+                        </td>
+                        <td className="px-6 py-4">
+                            <div className="flex items-center text-sm text-gray-900">
+                                <FiMapPin className="h-4 w-4 text-gray-400 mr-2" />
+                                {item.branchName || 'N/A'}
+                            </div>
                         </td>
                     </>
                 );
@@ -153,6 +213,9 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                         <td className="px-6 py-4 text-sm text-gray-600">
                             {item.category}
                         </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                            {item.brand || 'N/A'}
+                        </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
                             {item.batchNumber || 'N/A'}
                         </td>
@@ -162,8 +225,19 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                         <td className="px-6 py-4 text-sm text-gray-900">
                             {formatCurrency(item.unitPrice)}
                         </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                            {item.packPrice
+                                ? formatCurrency(item.packPrice)
+                                : 'N/A'}
+                        </td>
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
                             {formatCurrency(item.totalPrice)}
+                        </td>
+                        <td className="px-6 py-4">
+                            <div className="flex items-center text-sm text-gray-900">
+                                <FiMapPin className="h-4 w-4 text-gray-400 mr-2" />
+                                {item.branchName || 'N/A'}
+                            </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
                             {item.expiryDate
@@ -184,18 +258,44 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                                   (1000 * 60 * 60 * 24),
                           )
                         : 0;
+
+                const getStatusColor = (status?: string) => {
+                    switch (status) {
+                        case 'expired':
+                            return 'bg-red-100 text-red-800';
+                        case 'critical':
+                            return 'bg-red-100 text-red-800';
+                        case 'warning':
+                            return 'bg-yellow-100 text-yellow-800';
+                        case 'notice':
+                            return 'bg-orange-100 text-orange-800';
+                        default:
+                            return 'bg-green-100 text-green-800';
+                    }
+                };
+
                 return (
                     <>
                         <td className="px-6 py-4">
                             <div className="flex items-center">
                                 <FiPackage className="h-4 w-4 text-gray-400 mr-2" />
-                                <span className="text-sm font-medium text-gray-900">
-                                    {item.drugName}
-                                </span>
+                                <div>
+                                    <span className="text-sm font-medium text-gray-900">
+                                        {item.drugName}
+                                    </span>
+                                    {item.location && (
+                                        <p className="text-xs text-gray-500">
+                                            Location: {item.location}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
                             {item.category}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                            {item.brand || 'N/A'}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
                             {item.batchNumber || 'N/A'}
@@ -207,6 +307,16 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                                     ? formatDate(item.expiryDate)
                                     : 'N/A'}
                             </div>
+                        </td>
+                        <td className="px-6 py-4">
+                            <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                                    item.expiryStatus,
+                                )}`}
+                            >
+                                {item.expiryStatus?.toUpperCase() ||
+                                    (daysLeft <= 0 ? 'EXPIRED' : 'GOOD')}
+                            </span>
                         </td>
                         <td className="px-6 py-4">
                             <span
@@ -227,7 +337,20 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                             {item.quantity}
                         </td>
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                            {formatCurrency(item.totalPrice)}
+                            <div className="flex flex-col">
+                                <span>{formatCurrency(item.totalPrice)}</span>
+                                {item.profitLoss !== undefined && (
+                                    <span className="text-xs text-red-500">
+                                        Loss: {formatCurrency(item.profitLoss)}
+                                    </span>
+                                )}
+                            </div>
+                        </td>
+                        <td className="px-6 py-4">
+                            <div className="flex items-center text-sm text-gray-900">
+                                <FiMapPin className="h-4 w-4 text-gray-400 mr-2" />
+                                {item.branchName || 'N/A'}
+                            </div>
                         </td>
                     </>
                 );

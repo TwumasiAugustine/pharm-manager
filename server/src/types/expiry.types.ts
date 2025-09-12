@@ -32,14 +32,32 @@ export interface IExpiryStats {
     totalWarningDrugs: number;
     totalNoticeDrugs: number;
     totalValue: number;
+    totalCostValue: number;
     expiredValue: number;
+    expiredCostValue: number;
     criticalValue: number;
+    criticalCostValue: number;
+    warningValue: number;
+    warningCostValue: number;
+    totalPotentialLoss: number;
+    profitLoss: number;
     upcomingExpiries: {
         next7Days: number;
         next30Days: number;
         next60Days: number;
         next90Days: number;
     };
+    categoryBreakdown: Record<
+        string,
+        {
+            expired: number;
+            critical: number;
+            warning: number;
+            notice: number;
+            totalValue: number;
+            costValue: number;
+        }
+    >;
 }
 
 export interface IExpiryNotification {

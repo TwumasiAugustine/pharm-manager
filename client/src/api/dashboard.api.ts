@@ -20,6 +20,7 @@ export const dashboardApi = {
         if (filters.startDate) params.append('startDate', filters.startDate);
         if (filters.endDate) params.append('endDate', filters.endDate);
         if (filters.period) params.append('period', filters.period);
+        if (filters.branchId) params.append('branchId', filters.branchId);
 
         const response = await api.get(`/dashboard/analytics?${params}`);
         return response.data;
@@ -38,6 +39,7 @@ export const dashboardApi = {
         if (filters.startDate) params.append('startDate', filters.startDate);
         if (filters.endDate) params.append('endDate', filters.endDate);
         if (filters.period) params.append('period', filters.period);
+        if (filters.branchId) params.append('branchId', filters.branchId);
 
         const response = await api.get(`/dashboard/trends?${params}`);
         return response.data;

@@ -58,7 +58,10 @@ export class ExpiryController {
         next: NextFunction,
     ): Promise<void> {
         try {
-            const stats = await this.expiryService.getExpiryStats();
+            const { branchId } = req.query;
+            const stats = await this.expiryService.getExpiryStats(
+                branchId as string,
+            );
 
             res.status(200).json(
                 successResponse(

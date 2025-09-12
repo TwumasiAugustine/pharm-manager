@@ -9,16 +9,17 @@ import type {
 
 export class ExpiryService {
     /**
-     * Get drugs expiring within specified days with alert levels
+     * Get drugs expiring within specified days with alert levels and branch filtering
      */
     async getExpiringDrugs({
         daysRange = 90,
         alertLevel,
         isAcknowledged = false,
         category,
+        branchId,
         page = 1,
         limit = 20,
-    }: IExpiryFilters & { page?: number; limit?: number }) {
+    }: IExpiryFilters & { page?: number; limit?: number; branchId?: string }) {
         const today = new Date();
         const futureDate = new Date();
         futureDate.setDate(today.getDate() + daysRange);
@@ -33,14 +34,19 @@ export class ExpiryService {
             query.category = { $regex: category, $options: 'i' };
         }
 
+        if (branchId) {
+            query.branch = branchId;
+        }
+
         const drugs = await Drug.find(query)
+            .populate('branch', 'name address')
             .sort({ expiryDate: 1 })
             .skip((page - 1) * limit)
             .limit(limit);
 
         const total = await Drug.countDocuments(query);
 
-        // Process drugs and add alert levels
+        // Process drugs and add alert levels with enhanced pricing information
         const expiringDrugs: IExpiryAlert[] = drugs.map((drug) => {
             const daysUntilExpiry = Math.ceil(
                 (drug.expiryDate.getTime() - today.getTime()) /
@@ -53,24 +59,48 @@ export class ExpiryService {
             else if (daysUntilExpiry <= 30) alertLevel = 'warning';
             else alertLevel = 'notice';
 
+            // Calculate potential financial impact
+            const unitValueLoss = drug.quantity * drug.pricePerUnit;
+            const packValueLoss =
+                Math.floor(drug.quantity / drug.unitsPerCarton) *
+                drug.pricePerPack;
+            const cartonValueLoss =
+                Math.floor(
+                    drug.quantity / (drug.unitsPerCarton * drug.packsPerCarton),
+                ) * drug.pricePerCarton;
+            const costLoss = drug.quantity * drug.costPrice;
+            const profitLoss = unitValueLoss - costLoss;
+
+            const branch = drug.branch as any;
+
             return {
                 _id: drug._id,
                 drugId: drug._id,
                 drugName: drug.name,
                 brand: drug.brand,
                 category: drug.category,
+                dosageForm: drug.dosageForm,
                 expiryDate: drug.expiryDate,
                 daysUntilExpiry,
                 quantity: drug.quantity,
-                price: drug.pricePerUnit,
+                price: drug.pricePerUnit, // Legacy compatibility
                 costPrice: drug.costPrice,
                 pricePerUnit: drug.pricePerUnit,
                 pricePerPack: drug.pricePerPack,
                 pricePerCarton: drug.pricePerCarton,
-                batchNumber: drug.batchNumber,
-                drugsInCarton: drug.drugsInCarton,
                 unitsPerCarton: drug.unitsPerCarton,
                 packsPerCarton: drug.packsPerCarton,
+                batchNumber: drug.batchNumber,
+                // Financial impact analysis
+                unitValueLoss,
+                packValueLoss,
+                cartonValueLoss,
+                costLoss,
+                profitLoss,
+                // Branch information
+                branchId: branch?._id || drug.branch,
+                branchName: branch?.name || '',
+                // Additional drug info
                 requiresPrescription: drug.requiresPrescription,
                 supplier: drug.supplier,
                 location: drug.location,
@@ -98,9 +128,9 @@ export class ExpiryService {
     }
 
     /**
-     * Get expiry statistics
+     * Get expiry statistics with enhanced financial impact analysis
      */
-    async getExpiryStats(): Promise<IExpiryStats> {
+    async getExpiryStats(branchId?: string): Promise<IExpiryStats> {
         const today = new Date();
         const next7Days = new Date();
         next7Days.setDate(today.getDate() + 7);
@@ -111,16 +141,27 @@ export class ExpiryService {
         const next90Days = new Date();
         next90Days.setDate(today.getDate() + 90);
 
+        // Build query with optional branch filtering
+        const query: any = { quantity: { $gt: 0 } };
+        if (branchId) {
+            query.branch = branchId;
+        }
+
         // Get all drugs for calculations
-        const allDrugs = await Drug.find({ quantity: { $gt: 0 } });
+        const allDrugs = await Drug.find(query).populate('branch', 'name');
 
         let totalExpiredDrugs = 0;
         let totalCriticalDrugs = 0;
         let totalWarningDrugs = 0;
         let totalNoticeDrugs = 0;
         let totalValue = 0;
+        let totalCostValue = 0;
         let expiredValue = 0;
+        let expiredCostValue = 0;
         let criticalValue = 0;
+        let criticalCostValue = 0;
+        let warningValue = 0;
+        let warningCostValue = 0;
 
         const upcomingExpiries = {
             next7Days: 0,
@@ -129,31 +170,75 @@ export class ExpiryService {
             next90Days: 0,
         };
 
+        const categoryBreakdown: Record<
+            string,
+            {
+                expired: number;
+                critical: number;
+                warning: number;
+                notice: number;
+                totalValue: number;
+                costValue: number;
+            }
+        > = {};
+
         allDrugs.forEach((drug) => {
             const daysUntilExpiry = Math.ceil(
                 (drug.expiryDate.getTime() - today.getTime()) /
                     (1000 * 60 * 60 * 24),
             );
             const drugValue = drug.quantity * drug.pricePerUnit;
+            const drugCostValue = drug.quantity * drug.costPrice;
+
             totalValue += drugValue;
+            totalCostValue += drugCostValue;
+
+            // Initialize category if not exists
+            if (!categoryBreakdown[drug.category]) {
+                categoryBreakdown[drug.category] = {
+                    expired: 0,
+                    critical: 0,
+                    warning: 0,
+                    notice: 0,
+                    totalValue: 0,
+                    costValue: 0,
+                };
+            }
+
+            categoryBreakdown[drug.category].totalValue += drugValue;
+            categoryBreakdown[drug.category].costValue += drugCostValue;
 
             if (daysUntilExpiry < 0) {
                 totalExpiredDrugs++;
                 expiredValue += drugValue;
+                expiredCostValue += drugCostValue;
+                categoryBreakdown[drug.category].expired++;
             } else if (daysUntilExpiry <= 7) {
                 totalCriticalDrugs++;
                 criticalValue += drugValue;
+                criticalCostValue += drugCostValue;
                 upcomingExpiries.next7Days++;
+                categoryBreakdown[drug.category].critical++;
             } else if (daysUntilExpiry <= 30) {
                 totalWarningDrugs++;
+                warningValue += drugValue;
+                warningCostValue += drugCostValue;
                 upcomingExpiries.next30Days++;
+                categoryBreakdown[drug.category].warning++;
             } else if (daysUntilExpiry <= 60) {
                 totalNoticeDrugs++;
                 upcomingExpiries.next60Days++;
+                categoryBreakdown[drug.category].notice++;
             } else if (daysUntilExpiry <= 90) {
                 upcomingExpiries.next90Days++;
             }
         });
+
+        // Calculate financial impact
+        const totalPotentialLoss = expiredValue + criticalValue + warningValue;
+        const totalCostLoss =
+            expiredCostValue + criticalCostValue + warningCostValue;
+        const profitLoss = totalPotentialLoss - totalCostLoss;
 
         return {
             totalExpiredDrugs,
@@ -161,9 +246,17 @@ export class ExpiryService {
             totalWarningDrugs,
             totalNoticeDrugs,
             totalValue,
+            totalCostValue,
             expiredValue,
+            expiredCostValue,
             criticalValue,
+            criticalCostValue,
+            warningValue,
+            warningCostValue,
+            totalPotentialLoss,
+            profitLoss,
             upcomingExpiries,
+            categoryBreakdown,
         };
     }
 

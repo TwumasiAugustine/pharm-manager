@@ -9,54 +9,78 @@ export class DashboardService {
      * @param startDate - Start date for filtering (optional)
      * @param endDate - End date for filtering (optional)
      * @param period - Time period filter ('day', 'week', 'month', 'year')
+     * @param branchId - Branch ID for filtering (optional)
      * @returns Dashboard analytics data
      */
     async getDashboardAnalytics({
         startDate,
         endDate,
         period = 'month',
+        branchId,
     }: {
         startDate?: string;
         endDate?: string;
         period?: 'day' | 'week' | 'month' | 'year';
+        branchId?: string;
     }) {
         // Build date filter query
-        const dateQuery = this.buildDateQuery(startDate, endDate, period);
+        const dateQuery = this.buildDateQuery(
+            startDate,
+            endDate,
+            period,
+            branchId,
+        );
 
         // Run all analytics queries in parallel
         const [
             totalSales,
             totalRevenue,
+            totalProfit,
             topSellingDrugs,
             lowStockDrugs,
             totalCustomers,
             totalDrugs,
             salesByPeriod,
             revenueByPeriod,
+            profitByPeriod,
+            saleTypeDistribution,
+            profitMarginAnalysis,
         ] = await Promise.all([
             this.getTotalSales(dateQuery),
             this.getTotalRevenue(dateQuery),
+            this.getTotalProfit(dateQuery),
             this.getTopSellingDrugs(dateQuery),
-            this.getLowStockDrugs(),
+            this.getLowStockDrugs(branchId),
             this.getTotalCustomers(),
-            this.getTotalDrugs(),
+            this.getTotalDrugs(branchId),
             this.getSalesByPeriod(dateQuery, period),
             this.getRevenueByPeriod(dateQuery, period),
+            this.getProfitByPeriod(dateQuery, period),
+            this.getSaleTypeDistribution(dateQuery),
+            this.getProfitMarginAnalysis(dateQuery),
         ]);
 
         return {
             overview: {
                 totalSales,
                 totalRevenue,
+                totalProfit,
                 totalCustomers,
                 totalDrugs,
                 lowStockCount: lowStockDrugs.length,
+                profitMargin:
+                    totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0,
+                averageOrderValue:
+                    totalSales > 0 ? totalRevenue / totalSales : 0,
             },
             charts: {
                 topSellingDrugs,
                 lowStockDrugs,
                 salesByPeriod,
                 revenueByPeriod,
+                profitByPeriod,
+                saleTypeDistribution,
+                profitMarginAnalysis,
             },
         };
     }
@@ -97,8 +121,14 @@ export class DashboardService {
         startDate?: string,
         endDate?: string,
         period?: string,
+        branchId?: string,
     ) {
         const query: any = {};
+
+        // Add branch filter if provided
+        if (branchId) {
+            query.branch = new Types.ObjectId(branchId);
+        }
 
         if (startDate || endDate) {
             query.createdAt = {};
@@ -157,7 +187,18 @@ export class DashboardService {
     }
 
     /**
-     * Get top-selling drugs
+     * Get total profit from sales
+     */
+    private async getTotalProfit(dateQuery: any): Promise<number> {
+        const result = await Sale.aggregate([
+            { $match: dateQuery },
+            { $group: { _id: null, total: { $sum: '$totalProfit' } } },
+        ]);
+        return result[0]?.total || 0;
+    }
+
+    /**
+     * Get top-selling drugs with enhanced metrics
      */
     private async getTopSellingDrugs(dateQuery: any, limit = 10) {
         const result = await Sale.aggregate([
@@ -173,6 +214,13 @@ export class DashboardService {
                                 '$items.quantity',
                                 '$items.priceAtSale',
                             ],
+                        },
+                    },
+                    totalProfit: { $sum: '$items.profit' },
+                    salesByType: {
+                        $push: {
+                            saleType: '$items.saleType',
+                            quantity: '$items.quantity',
                         },
                     },
                 },
@@ -196,6 +244,25 @@ export class DashboardService {
                     category: '$drug.category',
                     totalQuantity: 1,
                     totalRevenue: 1,
+                    totalProfit: 1,
+                    profitMargin: {
+                        $cond: [
+                            { $gt: ['$totalRevenue', 0] },
+                            {
+                                $multiply: [
+                                    {
+                                        $divide: [
+                                            '$totalProfit',
+                                            '$totalRevenue',
+                                        ],
+                                    },
+                                    100,
+                                ],
+                            },
+                            0,
+                        ],
+                    },
+                    salesByType: 1,
                 },
             },
         ]);
@@ -207,12 +274,15 @@ export class DashboardService {
     }
 
     /**
-     * Get drugs with low stock (quantity < 10)
+     * Get drugs with low stock (quantity < 10) with branch filtering
      */
-    private async getLowStockDrugs(threshold = 10) {
-        const drugs = await Drug.find({ quantity: { $lt: threshold } })
-            .sort({ quantity: 1 })
-            .limit(20);
+    private async getLowStockDrugs(branchId?: string, threshold = 10) {
+        const query: any = { quantity: { $lt: threshold } };
+        if (branchId) {
+            query.branch = new Types.ObjectId(branchId);
+        }
+
+        const drugs = await Drug.find(query).sort({ quantity: 1 }).limit(20);
 
         return drugs.map((drug) => ({
             id: (drug._id as Types.ObjectId).toString(),
@@ -223,6 +293,8 @@ export class DashboardService {
             pricePerUnit: drug.pricePerUnit,
             pricePerPack: drug.pricePerPack,
             pricePerCarton: drug.pricePerCarton,
+            costPrice: drug.costPrice,
+            profitPerUnit: drug.pricePerUnit - drug.costPrice,
             expiryDate: drug.expiryDate,
             batchNumber: drug.batchNumber,
             requiresPrescription: drug.requiresPrescription,
@@ -237,14 +309,18 @@ export class DashboardService {
     }
 
     /**
-     * Get total number of drugs
+     * Get total number of drugs with branch filtering
      */
-    private async getTotalDrugs(): Promise<number> {
-        return await Drug.countDocuments();
+    private async getTotalDrugs(branchId?: string): Promise<number> {
+        const query: any = {};
+        if (branchId) {
+            query.branch = new Types.ObjectId(branchId);
+        }
+        return await Drug.countDocuments(query);
     }
 
     /**
-     * Get sales grouped by period
+     * Get sales grouped by period with enhanced metrics
      */
     private async getSalesByPeriod(dateQuery: any, period: string) {
         const groupFormat = this.getGroupFormat(period);
@@ -256,6 +332,7 @@ export class DashboardService {
                     _id: groupFormat,
                     count: { $sum: 1 },
                     revenue: { $sum: '$totalAmount' },
+                    profit: { $sum: '$totalProfit' },
                 },
             },
             { $sort: { _id: 1 } },
@@ -265,6 +342,9 @@ export class DashboardService {
             period: this.formatPeriodLabel(item._id, period),
             sales: item.count,
             revenue: item.revenue,
+            profit: item.profit,
+            profitMargin:
+                item.revenue > 0 ? (item.profit / item.revenue) * 100 : 0,
         }));
     }
 
@@ -273,6 +353,146 @@ export class DashboardService {
      */
     private async getRevenueByPeriod(dateQuery: any, period: string) {
         return await this.getSalesByPeriod(dateQuery, period);
+    }
+
+    /**
+     * Get profit trends by period
+     */
+    private async getProfitByPeriod(dateQuery: any, period: string) {
+        const groupFormat = this.getGroupFormat(period);
+
+        const result = await Sale.aggregate([
+            { $match: dateQuery },
+            {
+                $group: {
+                    _id: groupFormat,
+                    totalProfit: { $sum: '$totalProfit' },
+                    totalRevenue: { $sum: '$totalAmount' },
+                    salesCount: { $sum: 1 },
+                },
+            },
+            { $sort: { _id: 1 } },
+        ]);
+
+        return result.map((item) => ({
+            period: this.formatPeriodLabel(item._id, period),
+            profit: item.totalProfit,
+            revenue: item.totalRevenue,
+            margin:
+                item.totalRevenue > 0
+                    ? (item.totalProfit / item.totalRevenue) * 100
+                    : 0,
+            averageProfitPerSale:
+                item.salesCount > 0 ? item.totalProfit / item.salesCount : 0,
+        }));
+    }
+
+    /**
+     * Get sale type distribution analysis
+     */
+    private async getSaleTypeDistribution(dateQuery: any) {
+        const result = await Sale.aggregate([
+            { $match: dateQuery },
+            { $unwind: '$items' },
+            // Filter out items where saleType is null or undefined
+            { $match: { 'items.saleType': { $exists: true, $ne: null } } },
+            {
+                $group: {
+                    _id: '$items.saleType',
+                    count: { $sum: 1 },
+                    totalQuantity: { $sum: '$items.quantity' },
+                    totalRevenue: {
+                        $sum: {
+                            $multiply: [
+                                '$items.quantity',
+                                '$items.priceAtSale',
+                            ],
+                        },
+                    },
+                    totalProfit: { $sum: '$items.profit' },
+                },
+            },
+            { $sort: { totalRevenue: -1 } },
+        ]);
+
+        const total = result.reduce((sum, item) => sum + item.totalRevenue, 0);
+
+        return result.map((item) => ({
+            type: item._id || 'unit', // Map to 'type' field and provide default
+            count: item.count,
+            totalQuantity: item.totalQuantity,
+            revenue: item.totalRevenue, // Map to 'revenue' field
+            profit: item.totalProfit, // Map to 'profit' field
+            profitMargin:
+                item.totalRevenue > 0
+                    ? (item.totalProfit / item.totalRevenue) * 100
+                    : 0,
+            percentage: total > 0 ? (item.totalRevenue / total) * 100 : 0,
+        }));
+    }
+
+    /**
+     * Get profit margin analysis by category
+     */
+    private async getProfitMarginAnalysis(dateQuery: any) {
+        const result = await Sale.aggregate([
+            { $match: dateQuery },
+            { $unwind: '$items' },
+            {
+                $lookup: {
+                    from: 'drugs',
+                    localField: 'items.drug',
+                    foreignField: '_id',
+                    as: 'drugData',
+                },
+            },
+            { $unwind: '$drugData' },
+            {
+                $group: {
+                    _id: '$drugData.category',
+                    totalRevenue: {
+                        $sum: {
+                            $multiply: [
+                                '$items.quantity',
+                                '$items.priceAtSale',
+                            ],
+                        },
+                    },
+                    totalProfit: { $sum: '$items.profit' },
+                    salesCount: { $sum: 1 },
+                    averagePrice: { $avg: '$items.priceAtSale' },
+                },
+            },
+            {
+                $project: {
+                    category: '$_id',
+                    totalRevenue: 1,
+                    totalProfit: 1,
+                    salesCount: 1,
+                    averagePrice: 1,
+                    profitMargin: {
+                        $cond: [
+                            { $gt: ['$totalRevenue', 0] },
+                            {
+                                $multiply: [
+                                    {
+                                        $divide: [
+                                            '$totalProfit',
+                                            '$totalRevenue',
+                                        ],
+                                    },
+                                    100,
+                                ],
+                            },
+                            0,
+                        ],
+                    },
+                },
+            },
+            { $sort: { profitMargin: -1 } },
+        ]);
+
+        return result;
     }
 
     /**

@@ -1,5 +1,13 @@
 import React from 'react';
-import { FiCalendar, FiFilter, FiGrid } from 'react-icons/fi';
+import {
+    FiCalendar,
+    FiFilter,
+    FiGrid,
+    FiMapPin,
+    FiPackage,
+    FiAlertTriangle,
+} from 'react-icons/fi';
+import { BranchSelect } from './BranchSelect';
 import type { ReportFilters } from '../../types/report.types';
 
 interface ReportFilterProps {
@@ -46,6 +54,28 @@ export const ReportFilter: React.FC<ReportFilterProps> = ({
         });
     };
 
+    const handleBranchChange = (branchId: string) => {
+        onFiltersChange({
+            ...filters,
+            branchId: branchId || undefined,
+        });
+    };
+
+    const handleSaleTypeChange = (saleType: string) => {
+        onFiltersChange({
+            ...filters,
+            saleType: (saleType as ReportFilters['saleType']) || undefined,
+        });
+    };
+
+    const handleExpiryStatusChange = (expiryStatus: string) => {
+        onFiltersChange({
+            ...filters,
+            expiryStatus:
+                (expiryStatus as ReportFilters['expiryStatus']) || undefined,
+        });
+    };
+
     return (
         <div className={`space-y-6 ${className}`}>
             <div>
@@ -56,7 +86,7 @@ export const ReportFilter: React.FC<ReportFilterProps> = ({
 
                 {/* Date Range */}
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                    <label className="text-sm font-medium text-gray-700 mb-2 flex items-center">
                         <FiCalendar className="mr-2" />
                         Date Range
                     </label>
@@ -139,7 +169,7 @@ export const ReportFilter: React.FC<ReportFilterProps> = ({
 
                 {/* Display Format */}
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                    <label className="text-sm font-medium text-gray-700 mb-2 flex items-center">
                         <FiGrid className="mr-2" />
                         Display Format
                     </label>
@@ -195,6 +225,63 @@ export const ReportFilter: React.FC<ReportFilterProps> = ({
                         <option value="otc">Over-the-counter</option>
                     </select>
                 </div>
+
+                {/* Branch Filter */}
+                <div className="mb-6">
+                    <label className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                        <FiMapPin className="mr-2" />
+                        Branch
+                    </label>
+                    <BranchSelect
+                        value={filters.branchId || ''}
+                        onChange={handleBranchChange}
+                    />
+                </div>
+
+                {/* Sale Type Filter - Show only for sales reports */}
+                {filters.reportType === 'sales' && (
+                    <div className="mb-6">
+                        <label className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                            <FiPackage className="mr-2" />
+                            Sale Type
+                        </label>
+                        <select
+                            value={filters.saleType || ''}
+                            onChange={(e) =>
+                                handleSaleTypeChange(e.target.value)
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="">All Types</option>
+                            <option value="unit">Unit Sales</option>
+                            <option value="pack">Pack Sales</option>
+                            <option value="carton">Carton Sales</option>
+                        </select>
+                    </div>
+                )}
+
+                {/* Expiry Status Filter - Show only for expiry reports */}
+                {filters.reportType === 'expiry' && (
+                    <div className="mb-6">
+                        <label className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                            <FiAlertTriangle className="mr-2" />
+                            Expiry Status
+                        </label>
+                        <select
+                            value={filters.expiryStatus || ''}
+                            onChange={(e) =>
+                                handleExpiryStatusChange(e.target.value)
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="">All Status</option>
+                            <option value="expired">Expired</option>
+                            <option value="critical">Critical (≤7 days)</option>
+                            <option value="warning">Warning (≤30 days)</option>
+                            <option value="notice">Notice (≤60 days)</option>
+                        </select>
+                    </div>
+                )}
 
                 {/* Quick Date Filters */}
                 <div className="mb-4">
