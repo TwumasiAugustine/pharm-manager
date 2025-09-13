@@ -4,6 +4,7 @@ import { ReportsPageHeader } from '../components/organisms/ReportsPageHeader';
 import { ReportsPageFilters } from '../components/organisms/ReportsPageFilters';
 import { ReportsPageContent } from '../components/organisms/ReportsPageContent';
 import { ReportsPageSkeleton } from '../components/organisms/ReportsPageSkeleton';
+import { BranchSelect } from '../components/molecules/BranchSelect';
 import { useReportsPage } from '../hooks/useReportsPage';
 
 export const ReportsPage: React.FC = () => {
@@ -12,6 +13,7 @@ export const ReportsPage: React.FC = () => {
         showFilters,
         showActionsDropdown,
         filters,
+        branchId,
         reportData,
         reportSummary,
         totalRecords,
@@ -26,6 +28,7 @@ export const ReportsPage: React.FC = () => {
         // Actions
         setShowFilters,
         setShowActionsDropdown,
+        setBranchId,
         handleFilterChange,
         handlePageChange,
         handleExportReport,
@@ -59,6 +62,13 @@ export const ReportsPage: React.FC = () => {
                     onGenerateReport={handleGenerateReport}
                     onExportReport={handleExportReport}
                 />
+
+                {/* Branch Filter */}
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 bg-white border-b">
+                    <div className="flex items-center gap-3">
+                        <BranchSelect value={branchId} onChange={setBranchId} />
+                    </div>
+                </div>
 
                 {/* Main Content */}
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

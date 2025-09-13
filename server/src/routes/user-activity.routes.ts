@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import { UserActivityController } from '../controllers/user-activity.controller';
 import { authenticate } from '../middlewares/auth.middleware';
-import { authorize } from '../middlewares/authorize.middleware';
-import { UserRole } from '../types/auth.types';
+import { authorizeAdminLevel } from '../middlewares/authorize.middleware';
 import { csrfProtection } from '../middlewares/csrf.middleware';
 
 const router = Router();
@@ -13,25 +12,25 @@ router.use(authenticate);
 
 /**
  * @route   GET /api/user-activities
- * @desc    Get user activities with filtering and pagination (Admin only)
- * @access  Private (Admin only)
+ * @desc    Get user activities with filtering and pagination (Admin level access)
+ * @access  Private (Admin level: admin or super_admin)
  * @query   page, limit, userId, sessionId, activityType, resource, startDate, endDate, isActive, userRole, ipAddress
  */
 router.get(
     '/',
-    authorize([UserRole.ADMIN]),
+    authorizeAdminLevel(),
     userActivityController.getUserActivities,
 );
 
 /**
  * @route   GET /api/user-activities/stats
- * @desc    Get user activity statistics (Admin only)
- * @access  Private (Admin only)
+ * @desc    Get user activity statistics (Admin level access)
+ * @access  Private (Admin level: admin or super_admin)
  * @query   startDate, endDate, userId
  */
 router.get(
     '/stats',
-    authorize([UserRole.ADMIN]),
+    authorizeAdminLevel(),
     userActivityController.getUserActivityStats,
 );
 
@@ -45,25 +44,25 @@ router.get('/my-activities', userActivityController.getMyActivities);
 
 /**
  * @route   GET /api/user-activities/sessions/:sessionId
- * @desc    Get detailed session information (Admin only)
- * @access  Private (Admin only)
+ * @desc    Get detailed session information (Admin level access)
+ * @access  Private (Admin level: admin or super_admin)
  * @param   sessionId - Session ID
  */
 router.get(
     '/sessions/:sessionId',
-    authorize([UserRole.ADMIN]),
+    authorizeAdminLevel(),
     userActivityController.getUserSession,
 );
 
 /**
  * @route   DELETE /api/user-activities/cleanup
- * @desc    Clean up old activity records (Admin only)
- * @access  Private (Admin only)
+ * @desc    Clean up old activity records (Admin level access)
+ * @access  Private (Admin level: admin or super_admin)
  * @query   daysToKeep (default: 90)
  */
 router.delete(
     '/cleanup',
-    authorize([UserRole.ADMIN]),
+    authorizeAdminLevel(),
     userActivityController.cleanupOldActivities,
 );
 

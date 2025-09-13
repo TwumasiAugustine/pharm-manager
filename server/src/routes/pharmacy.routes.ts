@@ -7,29 +7,44 @@ import {
 } from '../controllers/pharmacy.controller';
 import { checkAdminFirstSetup } from '../controllers/user.controller';
 import { authenticate } from '../middlewares/auth.middleware';
-import { authorize } from '../middlewares/authorize.middleware';
+import { authorizeAdminLevel } from '../middlewares/authorize.middleware';
 import { csrfProtection } from '../middlewares/csrf.middleware';
-import { UserRole } from '../types/auth.types';
 
 const router = Router();
 
-// Admin: Toggle sale short code feature
+// Admin level: Toggle sale short code feature
 router.post(
     '/toggle-sale-shortcode',
     authenticate,
     csrfProtection,
+    authorizeAdminLevel(),
     toggleSaleShortCodeFeature,
 );
 
-// Expose pharmacy configuration status
+// Expose pharmacy configuration status (public)
 router.get('/status', checkPharmacyConfigStatus);
 
-router.get('/pharmacy-info', fetchPharmacyInfo);
-router.put('/pharmacy-info', csrfProtection, modifyPharmacyInfo);
+// Admin level: Get pharmacy info
+router.get(
+    '/pharmacy-info',
+    authenticate,
+    authorizeAdminLevel(),
+    fetchPharmacyInfo,
+);
+
+// Admin level: Update pharmacy info
+router.put(
+    '/pharmacy-info',
+    authenticate,
+    csrfProtection,
+    authorizeAdminLevel(),
+    modifyPharmacyInfo,
+);
+
 router.get(
     '/admin-first-setup',
     authenticate,
-    authorize([UserRole.ADMIN, UserRole.PHARMACIST, UserRole.CASHIER]),
+    authorizeAdminLevel(),
     checkAdminFirstSetup,
 );
 

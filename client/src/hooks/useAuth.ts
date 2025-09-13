@@ -32,8 +32,11 @@ export const useLogin = () => {
                 ? responseUser.user
                 : responseUser;
 
-            // If user is admin, check pharmacy configuration status
-            if (user.role === UserRole.ADMIN) {
+            // If user is admin level, check pharmacy configuration status
+            if (
+                user.role === UserRole.ADMIN ||
+                user.role === UserRole.SUPER_ADMIN
+            ) {
                 try {
                     const isConfigured = await pharmacyApi.checkConfigStatus();
                     setPharmacyConfigured(isConfigured);
@@ -58,9 +61,10 @@ export const useLogin = () => {
             setIsAuthenticated(true);
             queryClient.setQueryData(['currentUser'], data.user);
 
-            // If admin and pharmacy not configured, redirect to setup
+            // If admin level and pharmacy not configured, redirect to setup
             if (
-                data.user.role === UserRole.ADMIN &&
+                (data.user.role === UserRole.ADMIN ||
+                    data.user.role === UserRole.SUPER_ADMIN) &&
                 !data.isPharmacyConfigured
             ) {
                 navigate('/pharmacy-setup');

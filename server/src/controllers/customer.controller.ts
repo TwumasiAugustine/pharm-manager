@@ -12,11 +12,15 @@ export class CustomerController {
     async getCustomers(req: Request, res: Response, next: NextFunction) {
         try {
             const { page = 1, limit = 10, search } = req.query;
-            const customers = await customerService.getCustomers({
-                page: Number(page),
-                limit: Number(limit),
-                search: search as string,
-            });
+            const customers = await customerService.getCustomers(
+                {
+                    page: Number(page),
+                    limit: Number(limit),
+                    search: search as string,
+                },
+                req.user?.role,
+                req.user?.branchId,
+            );
             res.status(200).json(
                 successResponse(customers, 'Customers retrieved successfully'),
             );
@@ -50,6 +54,8 @@ export class CustomerController {
         try {
             const customer = await customerService.getCustomerById(
                 req.params.id,
+                req.user?.role,
+                req.user?.branchId,
             );
             if (!customer) {
                 throw new NotFoundError('Customer not found');
@@ -67,7 +73,11 @@ export class CustomerController {
      */
     async createCustomer(req: Request, res: Response, next: NextFunction) {
         try {
-            const newCustomer = await customerService.createCustomer(req.body);
+            const userBranchId = req.user!.branchId;
+            const newCustomer = await customerService.createCustomer(
+                req.body,
+                userBranchId,
+            );
             res.status(201).json(
                 successResponse(
                     newCustomer,

@@ -38,14 +38,16 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     // If pharmacy is not configured
     if (!isPharmacyConfigured) {
         if (
-            user.role === UserRole.ADMIN &&
+            (user.role === UserRole.ADMIN ||
+                user.role === UserRole.SUPER_ADMIN) &&
             location.pathname !== '/pharmacy-setup'
         ) {
             return <Navigate to="/pharmacy-setup" replace />;
         }
-        // Non-admins: show unauthorized page if pharmacy not configured
+        // Non-admin level users: show unauthorized page if pharmacy not configured
         if (
             user.role !== UserRole.ADMIN &&
+            user.role !== UserRole.SUPER_ADMIN &&
             location.pathname !== '/unauthorized'
         ) {
             return <Navigate to="/unauthorized" replace />;

@@ -1,4 +1,5 @@
 export enum UserRole {
+    SUPER_ADMIN = 'super_admin',
     ADMIN = 'admin',
     PHARMACIST = 'pharmacist',
     CASHIER = 'cashier',
@@ -24,6 +25,7 @@ export interface ITokenPayload {
     name: string;
     email: string;
     role: UserRole;
+    branchId?: string; // Branch assignment for branch-based access control
     isFirstSetup: boolean;
     permissions?: string[];
 }
@@ -54,6 +56,7 @@ export interface IAuthResponse {
         name: string;
         email: string;
         role: UserRole;
+        branchId?: string; // Include branch information in auth response
         isFirstSetup: boolean;
         permissions?: string[];
     };

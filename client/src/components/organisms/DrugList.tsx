@@ -7,6 +7,7 @@ import { Pagination } from '../molecules/Pagination';
 import { SearchBar } from '../molecules/SearchBar';
 import type { Drug } from '../../types/drug.types';
 import { useAuthStore } from '../../store/auth.store';
+import { UserRole } from '../../types/auth.types';
 
 /**
  * DrugList component to display and manage the list of drugs.
@@ -23,6 +24,9 @@ export const DrugList: React.FC<DrugListProps> = ({ branchId }) => {
     const navigate = useNavigate();
 
     const { user } = useAuthStore();
+
+    // Only super admin can manage (edit/delete) drugs
+    const canManageDrugs = user?.role === UserRole.SUPER_ADMIN;
 
     const {
         data: drugs,
@@ -70,10 +74,6 @@ export const DrugList: React.FC<DrugListProps> = ({ branchId }) => {
             pagination.setPage(page);
         }
     };
-
-    // Only allow create/edit/delete for users who are NOT cashier or pharmacist
-    const canManageDrugs =
-        user && user.role !== 'cashier' && user.role !== 'pharmacist';
 
     return (
         <div className="space-y-6">

@@ -2,25 +2,46 @@ import { Request, Response, NextFunction } from 'express';
 import User from '../models/user.model';
 import { UserService } from '../services/user.service';
 import { successResponse } from '../utils/response';
+import { UserRole } from '../types/auth.types';
 
-// Admin: Assign permissions to a user
+// Admin level: Assign permissions to a user
 export const assignPermissions = async (req: Request, res: Response) => {
-    if (!req.user || req.user.role !== 'admin') {
+    if (
+        !req.user ||
+        (req.user.role !== UserRole.ADMIN &&
+            req.user.role !== UserRole.SUPER_ADMIN)
+    ) {
         return res.status(403).json({
             success: false,
-            message: 'Only admin can assign permissions',
+            message: 'Only admin level users can assign permissions',
         });
     }
     const { userId, permissions } = req.body;
+
+    // Get the user to check their role
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+        return res
+            .status(404)
+            .json({ success: false, message: 'User not found' });
+    }
+
+    // Prevent assigning FINALIZE_SALE permission to super admin
+    if (
+        targetUser.role === UserRole.SUPER_ADMIN || UserRole.ADMIN &&
+        permissions.includes('FINALIZE_SALE')
+    ) {
+        return res.status(400).json({
+            success: false,
+            message: 'Super admin cannot have FINALIZE_SALE permission',
+        });
+    }
+
     const user = await User.findByIdAndUpdate(
         userId,
         { permissions },
         { new: true },
     );
-    if (!user)
-        return res
-            .status(404)
-            .json({ success: false, message: 'User not found' });
     res.json({ success: true, user });
 };
 /**
@@ -30,10 +51,14 @@ export const assignPermissions = async (req: Request, res: Response) => {
 export const checkAdminFirstSetup = async (req: Request, res: Response) => {
     try {
         // req.user is set by authenticate middleware
-        if (!req.user || req.user.role !== 'admin') {
+        if (
+            !req.user ||
+            (req.user.role !== 'admin' && req.user.role !== 'super_admin')
+        ) {
             return res.status(403).json({
                 success: false,
-                message: 'Forbidden: Only admin can check first setup status',
+                message:
+                    'Forbidden: Only admin level users can check first setup status',
             });
         }
         const user = await User.findById(req.user.id);
@@ -58,11 +83,15 @@ export class UserController {
     async getUsers(req: Request, res: Response, next: NextFunction) {
         try {
             const { page = 1, limit = 10, search = '' } = req.query;
-            const result = await this.userService.getUsers({
-                page: Number(page),
-                limit: Number(limit),
-                search: String(search),
-            });
+            const result = await this.userService.getUsers(
+                {
+                    page: Number(page),
+                    limit: Number(limit),
+                    search: String(search),
+                },
+                req.user?.role,
+                req.user?.branchId,
+            );
             res.json(successResponse(result, 'Users retrieved successfully'));
         } catch (error) {
             next(error);

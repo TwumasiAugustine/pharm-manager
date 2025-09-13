@@ -16,7 +16,11 @@ export class ReportService {
     /**
      * Generate a comprehensive report based on filters
      */
-    async generateReport(filters: ReportFilters): Promise<ReportResponse> {
+    async generateReport(
+        filters: ReportFilters,
+        userRole?: string,
+        userBranchId?: string,
+    ): Promise<ReportResponse> {
         try {
             const {
                 dateRange,
@@ -33,29 +37,37 @@ export class ReportService {
                 end: dateRange?.end || '',
             };
 
+            // Branch filtering logic - use provided branchId or user's branch
+            const filterBranchId = branchId || userBranchId;
+            const effectiveBranchId =
+                userRole && userRole !== 'super_admin' && filterBranchId
+                    ? filterBranchId
+                    : branchId;
+
             switch (reportType) {
                 case 'sales':
                     data = await this.generateSalesReport(
                         effectiveDateRange,
-                        branchId,
+                        effectiveBranchId,
                     );
                     break;
                 case 'inventory':
-                    data = await this.generateInventoryReport(branchId);
+                    data =
+                        await this.generateInventoryReport(effectiveBranchId);
                     break;
                 case 'expiry':
-                    data = await this.generateExpiryReport(branchId);
+                    data = await this.generateExpiryReport(effectiveBranchId);
                     break;
                 case 'financial':
                     data = await this.generateFinancialReport(
                         effectiveDateRange,
-                        branchId,
+                        effectiveBranchId,
                     );
                     break;
                 default:
                     data = await this.generateSalesReport(
                         effectiveDateRange,
-                        branchId,
+                        effectiveBranchId,
                     );
             }
 
@@ -482,9 +494,17 @@ export class ReportService {
     /**
      * Export report as PDF
      */
-    public async exportReportPDF(filters: ReportFilters): Promise<Buffer> {
+    public async exportReportPDF(
+        filters: ReportFilters,
+        userRole?: string,
+        userBranchId?: string,
+    ): Promise<Buffer> {
         try {
-            const reportData = await this.generateReport(filters);
+            const reportData = await this.generateReport(
+                filters,
+                userRole,
+                userBranchId,
+            );
 
             const browser = await puppeteer.launch();
             const page = await browser.newPage();
@@ -513,9 +533,17 @@ export class ReportService {
     /**
      * Export report as CSV
      */
-    async exportReportCSV(filters: ReportFilters): Promise<string> {
+    async exportReportCSV(
+        filters: ReportFilters,
+        userRole?: string,
+        userBranchId?: string,
+    ): Promise<string> {
         try {
-            const reportData = await this.generateReport(filters);
+            const reportData = await this.generateReport(
+                filters,
+                userRole,
+                userBranchId,
+            );
             const { data, summary, pharmacyInfo } = reportData;
 
             // Create header with pharmacy information
@@ -584,8 +612,16 @@ export class ReportService {
     /**
      * Get report summary only
      */
-    async getReportSummary(filters: ReportFilters): Promise<ReportSummaryData> {
-        const reportData = await this.generateReport(filters);
+    async getReportSummary(
+        filters: ReportFilters,
+        userRole?: string,
+        userBranchId?: string,
+    ): Promise<ReportSummaryData> {
+        const reportData = await this.generateReport(
+            filters,
+            userRole,
+            userBranchId,
+        );
         return reportData.summary;
     }
 

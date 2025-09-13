@@ -104,12 +104,12 @@ export const DashboardFilter: React.FC<DashboardFilterProps> = ({
                             />
                         </div>
                     </div>
+                </div>
 
+                <div className="flex items-center justify-between space-x-4">
                     {/* Branch Filter */}
                     <div className="flex flex-col">
-                        <label className="text-sm font-medium text-gray-700 mb-2">
-                            Branch
-                        </label>
+                        <label className="text-sm font-medium text-gray-700 mb-2">Branch</label>
                         <div className="w-48">
                             <BranchSelect
                                 value={filters.branchId || ''}
@@ -117,17 +117,18 @@ export const DashboardFilter: React.FC<DashboardFilterProps> = ({
                             />
                         </div>
                     </div>
+                    {/* Clear Filters */}
+                    <div className="flex flex-col">
+                        <label className="text-sm font-medium text-gray-700 mb-2">Clear</label>
+                        <button
+                            onClick={clearFilters}
+                            className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                        >
+                            Clear Filters
+                        </button>
+                    </div>
                 </div>
-
-                {/* Clear Filters */}
-                <button
-                    onClick={clearFilters}
-                    className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                >
-                    Clear Filters
-                </button>
             </div>
-
             {/* Current Filter Display */}
             {(filters.startDate ||
                 filters.endDate ||

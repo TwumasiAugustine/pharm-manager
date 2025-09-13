@@ -16,6 +16,7 @@ export const useExpiryPage = () => {
     const notificationsDropdownRef = useRef<HTMLDivElement>(null);
     const notify = useSafeNotify();
     const { triggerExpiryNotifications } = useCronTriggers();
+    const [branchId, setBranchId] = useState<string>('');
     const [filters, setFilters] = useState<ExpiryFilters>({
         daysRange: 30,
         alertLevel: undefined,
@@ -81,7 +82,7 @@ export const useExpiryPage = () => {
         isLoading: drugsLoading,
         isStatsLoading,
         refreshData,
-    } = useExpiry(filters);
+    } = useExpiry({ ...filters, branchId });
 
     // Defensive programming: ensure notifications is an array
     const safeNotifications = Array.isArray(notifications) ? notifications : [];
@@ -152,6 +153,7 @@ export const useExpiryPage = () => {
         showFilters,
         showActionsDropdown,
         filters,
+        branchId,
         expiringDrugs,
         expiryStats,
         notifications: safeNotifications,
@@ -168,6 +170,7 @@ export const useExpiryPage = () => {
         setShowNotifications,
         setShowFilters,
         setShowActionsDropdown,
+        setBranchId,
         handleFilterChange,
         handleExportData,
         refreshData,

@@ -11,15 +11,23 @@ export class ExpiryService {
     /**
      * Get drugs expiring within specified days with alert levels and branch filtering
      */
-    async getExpiringDrugs({
-        daysRange = 90,
-        alertLevel,
-        isAcknowledged = false,
-        category,
-        branchId,
-        page = 1,
-        limit = 20,
-    }: IExpiryFilters & { page?: number; limit?: number; branchId?: string }) {
+    async getExpiringDrugs(
+        {
+            daysRange = 90,
+            alertLevel,
+            isAcknowledged = false,
+            category,
+            branchId,
+            page = 1,
+            limit = 20,
+        }: IExpiryFilters & {
+            page?: number;
+            limit?: number;
+            branchId?: string;
+        },
+        userRole?: string,
+        userBranchId?: string,
+    ) {
         const today = new Date();
         const futureDate = new Date();
         futureDate.setDate(today.getDate() + daysRange);
@@ -34,7 +42,12 @@ export class ExpiryService {
             query.category = { $regex: category, $options: 'i' };
         }
 
-        if (branchId) {
+        // Branch filtering logic - use provided branchId or user's branch
+        const filterBranchId = branchId || userBranchId;
+        if (userRole && userRole !== 'super_admin' && filterBranchId) {
+            query.branch = filterBranchId;
+        } else if (branchId) {
+            // Super admin can filter by specific branch if provided
             query.branch = branchId;
         }
 

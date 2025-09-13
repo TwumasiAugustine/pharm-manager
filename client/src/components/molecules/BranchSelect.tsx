@@ -14,7 +14,7 @@ export function BranchSelect({
                 <select
                     disabled
                     aria-label="Select Branch"
-                    className="block w-full rounded-lg border border-gray-300 bg-gray-100 py-2 px-3 pr-8 text-gray-400 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all appearance-none"
+                    className="block w-full rounded-md border border-gray-300 bg-gray-100 text-sm font-semibold py-2 px-3 pr-8 text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all appearance-none"
                 >
                     <option>Loading...</option>
                 </select>
@@ -32,7 +32,7 @@ export function BranchSelect({
                 onChange={(e) => onChange(e.target.value)}
                 required
                 aria-label="Select Branch"
-                className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 pr-8 text-gray-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all appearance-none"
+                className="block w-full rounded-md border border-gray-300 bg-white text-sm font-semibold py-2 px-3 pr-8 text-gray-700  focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all appearance-none"
             >
                 <option value="">Select Branch</option>
                 {branches?.map((branch: { id: string; name: string }) => (

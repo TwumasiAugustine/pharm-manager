@@ -31,7 +31,11 @@ export class AuthService {
             email: normalizedEmail,
             password: userData.password,
             role: userData.role || UserRole.CASHIER,
+            branch: userData.branchId, // Set branch if provided
         });
+
+        // Convert to object to get branchId transformation
+        const userObj = user.toObject();
 
         // Generate tokens
         const tokenPayload: ITokenPayload = {
@@ -39,6 +43,7 @@ export class AuthService {
             name: user.name,
             email: user.email,
             role: user.role,
+            branchId: userObj.branchId, // Include branch ID
             isFirstSetup: user.isFirstSetup,
             permissions: user.permissions || [],
         };
@@ -55,6 +60,7 @@ export class AuthService {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                branchId: userObj.branchId, // Include branch ID in response
                 isFirstSetup: user.isFirstSetup,
                 permissions: user.permissions || [],
             },
@@ -77,12 +83,16 @@ export class AuthService {
             throw new UnauthorizedError('Invalid email or password');
         }
 
-        // Generate tokens (include permissions)
+        // Convert to object to get branchId transformation
+        const userObj = user.toObject();
+
+        // Generate tokens (include permissions and branch)
         const tokenPayload: ITokenPayload = {
             id: user._id,
             name: user.name,
             email: user.email,
             role: user.role,
+            branchId: userObj.branchId, // Include branch ID
             isFirstSetup: user.isFirstSetup,
             permissions: user.permissions || [],
         };
@@ -99,6 +109,7 @@ export class AuthService {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                branchId: userObj.branchId, // Include branch ID in response
                 isFirstSetup: user.isFirstSetup,
                 permissions: user.permissions || [],
             },
@@ -124,12 +135,16 @@ export class AuthService {
             throw new UnauthorizedError('Invalid refresh token');
         }
 
+        // Convert to object to get branchId transformation
+        const userObj = user.toObject();
+
         // Generate new tokens
         const tokenPayload: ITokenPayload = {
             id: user._id,
             name: user.name,
             email: user.email,
             role: user.role,
+            branchId: userObj.branchId, // Include branch ID
             isFirstSetup: user.isFirstSetup,
             permissions: user.permissions || [],
         };
@@ -146,6 +161,7 @@ export class AuthService {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                branchId: userObj.branchId, // Include branch ID in response
                 isFirstSetup: user.isFirstSetup,
                 permissions: user.permissions || [],
             },

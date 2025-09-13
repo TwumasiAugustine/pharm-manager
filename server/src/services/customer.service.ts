@@ -7,29 +7,50 @@ export class CustomerService {
     /**
      * Create a new customer
      * @param data - The data for the new customer
+     * @param userBranchId - The branch ID to assign the customer to
      * @returns The newly created customer object
      */
-    async createCustomer(data: {
-        name: string;
-        phone: string;
-        email?: string;
-        address?: string;
-    }) {
-        const customer = await Customer.create(data);
+    async createCustomer(
+        data: {
+            name: string;
+            phone: string;
+            email?: string;
+            address?: string;
+        },
+        userBranchId?: string,
+    ) {
+        const customerData = {
+            ...data,
+            branch: userBranchId ? new Types.ObjectId(userBranchId) : undefined,
+        };
+
+        const customer = await Customer.create(customerData);
         return customer;
     }
 
     /**
      * Get all customers with pagination and filtering
      * @param params - Search parameters for customers
+     * @param userRole - The role of the user requesting customers
+     * @param userBranchId - The branch ID of the user requesting customers
      * @returns A paginated list of customers
      */
-    async getCustomers(params: {
-        page?: number;
-        limit?: number;
-        search?: string;
-    }) {
+    async getCustomers(
+        params: {
+            page?: number;
+            limit?: number;
+            search?: string;
+        },
+        userRole?: string,
+        userBranchId?: string,
+    ) {
         const query: any = {};
+
+        // If not super admin, filter by branch
+        if (userRole && userRole !== 'super_admin' && userBranchId) {
+            query.branch = userBranchId;
+        }
+
         if (params.search) {
             // Search in name, phone, and email fields
             query.$or = [
@@ -55,10 +76,23 @@ export class CustomerService {
     /**
      * Get a single customer by their ID
      * @param id - The ID of the customer
+     * @param userRole - The role of the user requesting the customer
+     * @param userBranchId - The branch ID of the user requesting the customer
      * @returns The customer object or null if not found
      */
-    async getCustomerById(id: string) {
-        const customer = await Customer.findById(id).populate({
+    async getCustomerById(
+        id: string,
+        userRole?: string,
+        userBranchId?: string,
+    ) {
+        const query: any = { _id: id };
+
+        // If not super admin, filter by branch
+        if (userRole && userRole !== 'super_admin' && userBranchId) {
+            query.branch = userBranchId;
+        }
+
+        const customer = await Customer.findOne(query).populate({
             path: 'purchases',
             model: 'Sale',
             options: { sort: { createdAt: -1 } },

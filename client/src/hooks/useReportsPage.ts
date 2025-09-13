@@ -10,6 +10,7 @@ export const useReportsPage = () => {
     const actionsDropdownRef = useRef<HTMLDivElement>(null);
     const notify = useSafeNotify();
     const { setExportMode } = useDisplayMode();
+    const [branchId, setBranchId] = useState<string>('');
     const [filters, setFilters] = useState<ReportFilters>({
         dateRange: {
             start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
@@ -21,6 +22,7 @@ export const useReportsPage = () => {
         format: 'table',
         page: 1,
         limit: 5, // Set limit to 5 for screen display
+        branchId: branchId,
     });
 
     // Close actions dropdown when clicking outside
@@ -42,6 +44,11 @@ export const useReportsPage = () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [showActionsDropdown]);
+
+    // Update filters when branchId changes
+    useEffect(() => {
+        setFilters((prev) => ({ ...prev, branchId: branchId }));
+    }, [branchId]);
 
     const {
         reportData,
@@ -104,6 +111,7 @@ export const useReportsPage = () => {
         showFilters,
         showActionsDropdown,
         filters,
+        branchId,
         reportData,
         reportSummary,
         totalRecords,
@@ -118,6 +126,7 @@ export const useReportsPage = () => {
         // Actions
         setShowFilters,
         setShowActionsDropdown,
+        setBranchId,
         handleFilterChange,
         handlePageChange,
         handleExportReport,

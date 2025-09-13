@@ -1,12 +1,17 @@
 import PharmacyInfo from '../models/pharmacy-info.model';
 import { UnauthorizedError } from '../utils/errors';
-// Admin: Toggle requireSaleShortCode feature
+// Admin level: Toggle requireSaleShortCode feature
 export const toggleSaleShortCodeFeature = async (
     req: Request,
     res: Response,
 ) => {
-    if (!req.user || req.user.role !== 'admin') {
-        throw new UnauthorizedError('Only admin can toggle this feature');
+    if (
+        !req.user ||
+        (req.user.role !== 'admin' && req.user.role !== 'super_admin')
+    ) {
+        throw new UnauthorizedError(
+            'Only admin level users can toggle this feature',
+        );
     }
     const { enabled } = req.body;
     const info = await PharmacyInfo.findOneAndUpdate(
@@ -78,7 +83,7 @@ export const modifyPharmacyInfo = async (req: Request, res: Response) => {
         const updatedInfo = await updatePharmacyInfo(req.body);
 
         // Mark admin's first setup as complete
-        if (req.user?.role === 'admin') {
+        if (req.user?.role === 'admin' || req.user?.role === 'super_admin') {
             await User.findByIdAndUpdate(req.user.id, { isFirstSetup: false });
         }
 

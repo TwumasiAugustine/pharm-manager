@@ -49,9 +49,12 @@ const PharmacySetupPage: React.FC = () => {
         }
     };
 
-    // Check if user is an admin
+    // Check if user is an admin or super admin
     useEffect(() => {
-        if (!user || user.role !== UserRole.ADMIN) {
+        if (
+            !user ||
+            (user.role !== UserRole.ADMIN && user.role !== UserRole.SUPER_ADMIN)
+        ) {
             navigate('/dashboard');
         }
     }, [user, navigate]);
@@ -164,8 +167,10 @@ const PharmacySetupPage: React.FC = () => {
                                 onSubmit={handleSubmit(onSubmit)}
                             >
                                 <div className="space-y-8 divide-y divide-gray-200">
-                                    {/* Sale Short Code Feature Toggle (Admin Only) */}
-                                    {user?.role === UserRole.ADMIN && (
+                                    {/* Sale Short Code Feature Toggle (Admin Level Only) */}
+                                    {(user?.role === UserRole.ADMIN ||
+                                        user?.role ===
+                                            UserRole.SUPER_ADMIN) && (
                                         <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
                                             <div>
                                                 <div className="font-semibold text-blue-900">

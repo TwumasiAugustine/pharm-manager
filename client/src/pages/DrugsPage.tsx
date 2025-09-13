@@ -4,6 +4,8 @@ import { DrugList } from '../components/organisms/DrugList';
 import { BranchSelect } from '../components/molecules/BranchSelect';
 import { DrugForm } from '../components/organisms/DrugForm';
 import { useCreateDrug } from '../hooks/useDrugs';
+import { useAuthStore } from '../store/auth.store';
+import { UserRole } from '../types/auth.types';
 import {
     FiPlus,
     FiMoreVertical,
@@ -23,6 +25,10 @@ const DrugsPage: React.FC = () => {
     const [showActionsDropdown, setShowActionsDropdown] = useState(false);
     const actionsDropdownRef = useRef<HTMLDivElement>(null);
     const createDrug = useCreateDrug();
+    const { user } = useAuthStore();
+
+    // Only super admin can create/edit/delete drugs
+    const canManageDrugs = user?.role === UserRole.SUPER_ADMIN;
 
     // Close actions dropdown when clicking outside
     useEffect(() => {
@@ -71,23 +77,27 @@ const DrugsPage: React.FC = () => {
 
                     <div className="flex items-center gap-3 flex-wrap justify-end sm:justify-start">
                         {/* Desktop view - show all buttons */}
-                        <div className="hidden sm:flex items-center gap-3">
-                            <button
-                                onClick={() => setShowAddForm((prev) => !prev)}
-                                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                            >
-                                {showAddForm ? (
-                                    <FiArrowLeft className="h-4 w-4 mr-2" />
-                                ) : (
-                                    <FiPlus className="h-4 w-4 mr-2" />
-                                )}
-                                {showAddForm ? 'Back to List' : 'Add New Drug'}
-                            </button>
+                        <div className="hidden md:flex items-center gap-3">
+                            {canManageDrugs && (
+                                <button
+                                    onClick={() =>
+                                        setShowAddForm((prev) => !prev)
+                                    }
+                                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                >
+                                    {showAddForm ? (
+                                        <FiArrowLeft className="h-4 w-4 mr-2" />
+                                    ) : (
+                                        <FiPlus className="h-4 w-4 mr-2" />
+                                    )}
+                                    {showAddForm ? 'Back to List' : 'New Drug'}
+                                </button>
+                            )}
                         </div>
 
                         {/* Mobile view - Actions dropdown */}
                         <div
-                            className="sm:hidden relative"
+                            className="md:hidden relative"
                             ref={actionsDropdownRef}
                         >
                             <button
@@ -104,19 +114,25 @@ const DrugsPage: React.FC = () => {
                             {showActionsDropdown && (
                                 <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-40">
                                     <div className="py-1">
-                                        {/* Add Drug option */}
-                                        <button
-                                            onClick={() => {
-                                                setShowAddForm((prev) => !prev);
-                                                setShowActionsDropdown(false);
-                                            }}
-                                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                        >
-                                            <FiPlus className="h-4 w-4 mr-3" />
-                                            {showAddForm
-                                                ? 'Back to List'
-                                                : 'Add New Drug'}
-                                        </button>
+                                        {/* Add Drug option - only for super admin */}
+                                        {canManageDrugs && (
+                                            <button
+                                                onClick={() => {
+                                                    setShowAddForm(
+                                                        (prev) => !prev,
+                                                    );
+                                                    setShowActionsDropdown(
+                                                        false,
+                                                    );
+                                                }}
+                                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                            >
+                                                <FiPlus className="h-4 w-4 mr-3" />
+                                                {showAddForm
+                                                    ? 'Back to List'
+                                                    : 'New Drug'}
+                                            </button>
+                                        )}
 
                                         {/* Refresh option */}
                                         <button

@@ -3,6 +3,7 @@ import { useDebounce } from '../hooks/useDebounce';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { FaUsers, FaUserPlus } from 'react-icons/fa';
 import { Button } from '../components/atoms/Button';
+import { BranchSelect } from '../components/molecules/BranchSelect';
 import UserForm from '../components/organisms/UserForm';
 import UserFilters from '../components/organisms/UserFilters';
 import UserList from '../components/organisms/UserList';
@@ -28,12 +29,14 @@ const UserManagementPage: React.FC = () => {
         branchId: '',
     });
     const [searchTerm, setSearchTerm] = useState('');
+    const [branchId, setBranchId] = useState<string>('');
     const [editUserId, setEditUserId] = useState<string | null>(null);
     const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
     const { data: users, isLoading } = useUsers({
         limit: 5,
         search: debouncedSearchTerm,
+        branchId: branchId,
     });
 
     const createUser = useCreateUser();
@@ -113,6 +116,8 @@ const UserManagementPage: React.FC = () => {
     const [permissionUserId, setPermissionUserId] = useState<string | null>(
         null,
     );
+    const [currentPermissionUser, setCurrentPermissionUser] =
+        useState<IUser | null>(null);
     const [permissions, setPermissions] = useState<string[]>([]);
     const [assigning, setAssigning] = useState(false);
 
@@ -131,6 +136,7 @@ const UserManagementPage: React.FC = () => {
             await userApi.assignPermissions(permissionUserId, permissions);
             notify.success('Permissions updated');
             setPermissionUserId(null);
+            setCurrentPermissionUser(null);
         } catch {
             notify.error('Failed to update permissions');
         } finally {
@@ -141,6 +147,7 @@ const UserManagementPage: React.FC = () => {
     // Handler to open permission modal for a user
     const openPermissionModal = (user: IUser) => {
         setPermissionUserId(user._id);
+        setCurrentPermissionUser(user);
         setPermissions(user.permissions ?? []);
     };
 
@@ -169,6 +176,12 @@ const UserManagementPage: React.FC = () => {
                         </Button>
                     </div>
                 </div>
+
+                {/* Branch Filter */}
+                <div className="flex items-center gap-3">
+                    <BranchSelect value={branchId} onChange={setBranchId} />
+                </div>
+
                 {showForm && (
                     <UserForm
                         formData={formData}
@@ -210,15 +223,28 @@ const UserManagementPage: React.FC = () => {
                                                 'FINALIZE_SALE',
                                             )
                                         }
+                                        disabled={
+                                            currentPermissionUser?.role ===
+                                            UserRole.SUPER_ADMIN
+                                        }
                                         className="mr-2"
                                     />
                                     Can finalize/print sales (FINALIZE_SALE)
+                                    {currentPermissionUser?.role ===
+                                        UserRole.SUPER_ADMIN && (
+                                        <span className="ml-2 text-xs text-gray-500">
+                                            (Not available for Super Admin)
+                                        </span>
+                                    )}
                                 </label>
                                 {/* Add more permissions here as needed */}
                             </div>
                             <div className="flex gap-2 justify-end">
                                 <Button
-                                    onClick={() => setPermissionUserId(null)}
+                                    onClick={() => {
+                                        setPermissionUserId(null);
+                                        setCurrentPermissionUser(null);
+                                    }}
                                     color="secondary"
                                     disabled={assigning}
                                 >

@@ -78,27 +78,31 @@ export class SaleService {
     /**
      * Create a new sale, update drug stock, and return the created sale
      * @param data - Sale data including items, payment info, and customer details
+     * @param userBranchId - The branch ID of the user creating the sale
      * @returns The newly created sale object
      */
-    async createSale(data: {
-        items: {
-            drugId: string;
-            quantity: number;
-            saleType: 'unit' | 'pack' | 'carton';
-        }[];
-        totalAmount: number;
-        paymentMethod: 'cash' | 'card' | 'mobile';
-        transactionId?: string;
-        notes?: string;
-        userId: string;
-        customerId?: string;
-        shortCode?: string;
-        finalized?: boolean;
-        branchId?: string;
-    }) {
-        // Resolve branch ID - use provided branchId or get default
+    async createSale(
+        data: {
+            items: {
+                drugId: string;
+                quantity: number;
+                saleType: 'unit' | 'pack' | 'carton';
+            }[];
+            totalAmount: number;
+            paymentMethod: 'cash' | 'card' | 'mobile';
+            transactionId?: string;
+            notes?: string;
+            userId: string;
+            customerId?: string;
+            shortCode?: string;
+            finalized?: boolean;
+            branchId?: string;
+        },
+        userBranchId?: string,
+    ) {
+        // Resolve branch ID - use seller's branch, provided branchId, or get default
         const resolvedBranchId =
-            data.branchId || (await this.getDefaultBranchId());
+            userBranchId || data.branchId || (await this.getDefaultBranchId());
 
         // Check if transactions are supported before attempting to use them
         const canUseTransactions = await this.supportsTransactions();
@@ -110,10 +114,13 @@ export class SaleService {
             console.log(
                 'Using non-transactional approach (development mode or no transaction support)',
             );
-            return await this.createSaleWithoutTransaction({
-                ...data,
-                branchId: resolvedBranchId,
-            });
+            return await this.createSaleWithoutTransaction(
+                {
+                    ...data,
+                    branchId: resolvedBranchId,
+                },
+                userBranchId,
+            );
         }
 
         // Try to use transactions, fall back to non-transactional approach if needed
@@ -277,10 +284,13 @@ export class SaleService {
                     'Falling back to non-transactional approach due to:',
                     err.message,
                 );
-                return await this.createSaleWithoutTransaction({
-                    ...data,
-                    branchId: resolvedBranchId,
-                });
+                return await this.createSaleWithoutTransaction(
+                    {
+                        ...data,
+                        branchId: resolvedBranchId,
+                    },
+                    userBranchId,
+                );
             }
 
             throw err;
@@ -296,22 +306,28 @@ export class SaleService {
      * Fallback method for creating sales without transactions
      * Used when MongoDB is not in replica set mode
      */
-    private async createSaleWithoutTransaction(data: {
-        items: {
-            drugId: string;
-            quantity: number;
-            saleType: 'unit' | 'pack' | 'carton';
-        }[];
-        totalAmount: number;
-        paymentMethod: 'cash' | 'card' | 'mobile';
-        transactionId?: string;
-        notes?: string;
-        userId: string;
-        customerId?: string;
-        shortCode?: string;
-        finalized?: boolean;
-        branchId?: string;
-    }) {
+    private async createSaleWithoutTransaction(
+        data: {
+            items: {
+                drugId: string;
+                quantity: number;
+                saleType: 'unit' | 'pack' | 'carton';
+            }[];
+            totalAmount: number;
+            paymentMethod: 'cash' | 'card' | 'mobile';
+            transactionId?: string;
+            notes?: string;
+            userId: string;
+            customerId?: string;
+            shortCode?: string;
+            finalized?: boolean;
+            branchId?: string;
+        },
+        userBranchId?: string,
+    ) {
+        // Use the same branch resolution logic as the main method
+        const resolvedBranchId =
+            userBranchId || data.branchId || (await this.getDefaultBranchId());
         try {
             let calculatedTotal = 0;
             let calculatedProfit = 0;
@@ -411,8 +427,8 @@ export class SaleService {
                 finalized: data.finalized,
             };
 
-            // Always attach branch (either provided or default)
-            salePayload.branch = new Types.ObjectId(data.branchId!);
+            // Always attach branch (resolved from seller's branch or provided)
+            salePayload.branch = new Types.ObjectId(resolvedBranchId);
 
             const sale = await Sale.create(salePayload);
 
@@ -436,21 +452,27 @@ export class SaleService {
     }
 
     /**
-     * Get paginated sales list with optional date filtering
+     * Get paginated sales list with optional date filtering and branch filtering
      * @param params - Parameters for filtering and pagination
+     * @param userRole - The role of the user requesting sales
+     * @param userBranchId - The branch ID of the user requesting sales
      * @returns Paginated and grouped sales data
      */
-    async getSales({
-        page = 1,
-        limit = 10,
-        startDate,
-        endDate,
-    }: {
-        page?: number;
-        limit?: number;
-        startDate?: string;
-        endDate?: string;
-    }): Promise<{
+    async getSales(
+        {
+            page = 1,
+            limit = 10,
+            startDate,
+            endDate,
+        }: {
+            page?: number;
+            limit?: number;
+            startDate?: string;
+            endDate?: string;
+        },
+        userRole?: string,
+        userBranchId?: string,
+    ): Promise<{
         data: MappedSale[];
         groupedData: Record<string, MappedSale[]>;
         pagination: {
@@ -461,6 +483,11 @@ export class SaleService {
         };
     }> {
         const query: any = {};
+
+        // If not super admin, filter by branch
+        if (userRole && userRole !== 'super_admin' && userBranchId) {
+            query.branch = userBranchId;
+        }
 
         // Date filtering (always use UTC for consistency)
         if (startDate || endDate) {
@@ -592,11 +619,24 @@ export class SaleService {
     /**
      * Get sale by ID with populated references
      * @param id - The ID of the sale to retrieve
+     * @param userRole - The role of the user requesting the sale
+     * @param userBranchId - The branch ID of the user requesting the sale
      * @returns The sale with populated drug, customer, and soldBy fields
      * @throws NotFoundError if the sale doesn't exist
      */
-    async getSaleById(id: string): Promise<MappedSale> {
-        const sale = await Sale.findById(id)
+    async getSaleById(
+        id: string,
+        userRole?: string,
+        userBranchId?: string,
+    ): Promise<MappedSale> {
+        const query: any = { _id: id };
+
+        // If not super admin, filter by branch
+        if (userRole && userRole !== 'super_admin' && userBranchId) {
+            query.branch = userBranchId;
+        }
+
+        const sale = await Sale.findOne(query)
             .populate('items.drug')
             .populate('soldBy', 'name')
             .populate('customer', 'name phone')

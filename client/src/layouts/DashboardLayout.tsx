@@ -164,16 +164,17 @@ function Sidebar({
                 </div>
                 <nav className="mt-6">
                     {navItems.map((item) => {
-                        // Admin-only
-                        if (item.adminOnly && user?.role !== 'admin')
-                            return null;
-                        // Cashier-only
-                        if (item.cashierOnly && user?.role !== 'cashier')
-                            return null;
-                        // Hide cashier-only for non-cashiers
-                        if (!item.adminOnly && !item.cashierOnly) {
-                            // Show for all roles except if cashierOnly is set
-                            // (already handled above)
+                        // Super admin can access everything EXCEPT finalize (cashier-only items)
+                        if (user?.role === 'super_admin') {
+                            // Super admin cannot access cashier-only items (finalize functionality)
+                            if (item.cashierOnly) return null;
+                        } else {
+                            // Admin-only items
+                            if (item.adminOnly && user?.role !== 'admin')
+                                return null;
+                            // Cashier-only items
+                            if (item.cashierOnly && user?.role !== 'cashier')
+                                return null;
                         }
                         return (
                             <Link
@@ -303,7 +304,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     onLogout={handleLogout}
                     onMenuClick={() => setSidebarOpen(true)}
                 />
-                <main className="flex-1 overflow-y-auto p-4">{children}</main>
+                <main className="flex-1 overflow-y-auto p-2 sm:p-4 md:p-6 lg:p-4">
+                    {children}
+                </main>
             </div>
         </div>
     );

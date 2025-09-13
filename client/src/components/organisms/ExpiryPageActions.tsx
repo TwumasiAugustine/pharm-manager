@@ -87,8 +87,9 @@ export const ExpiryPageActions: React.FC<ExpiryPageActionsProps> = ({
                                 Refresh
                             </button>
 
-                            {/* Trigger Expiry Notifications option (Admin only) */}
-                            {user?.role === UserRole.ADMIN && (
+                            {/* Trigger Expiry Notifications option (Admin Level only) */}
+                            {(user?.role === UserRole.ADMIN ||
+                                user?.role === UserRole.SUPER_ADMIN) && (
                                 <button
                                     onClick={() => {
                                         onTriggerNotifications();
@@ -164,7 +165,8 @@ export const ExpiryPageActions: React.FC<ExpiryPageActionsProps> = ({
                         className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`}
                     />
                 </button>
-                {user?.role === UserRole.ADMIN && (
+                {(user?.role === UserRole.ADMIN ||
+                    user?.role === UserRole.SUPER_ADMIN) && (
                     <button
                         onClick={onTriggerNotifications}
                         disabled={isTriggering}

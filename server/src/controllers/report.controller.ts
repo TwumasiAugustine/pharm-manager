@@ -47,7 +47,11 @@ export class ReportController {
                 };
             }
 
-            const report = await this.reportService.generateReport(filters);
+            const report = await this.reportService.generateReport(
+                filters,
+                req.user?.role,
+                req.user?.branchId,
+            );
 
             res.status(200).json(
                 successResponse(report, 'Report generated successfully', 200),
@@ -69,7 +73,11 @@ export class ReportController {
     ): Promise<void> {
         try {
             const filters: ReportFilters = req.body;
-            const pdfBuffer = await this.reportService.exportReportPDF(filters);
+            const pdfBuffer = await this.reportService.exportReportPDF(
+                filters,
+                req.user?.role,
+                req.user?.branchId,
+            );
 
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader(
@@ -94,7 +102,11 @@ export class ReportController {
     ): Promise<void> {
         try {
             const filters: ReportFilters = req.body;
-            const csvData = await this.reportService.exportReportCSV(filters);
+            const csvData = await this.reportService.exportReportCSV(
+                filters,
+                req.user?.role,
+                req.user?.branchId,
+            );
 
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader(
@@ -148,15 +160,19 @@ export class ReportController {
                     0,
                 ).toLocaleDateString('en-CA'); // YYYY-MM-DD format
 
-            const summary = await this.reportService.getReportSummary({
-                dateRange: {
-                    start: defaultStartDate,
-                    end: defaultEndDate,
+            const summary = await this.reportService.getReportSummary(
+                {
+                    dateRange: {
+                        start: defaultStartDate,
+                        end: defaultEndDate,
+                    },
+                    reportType,
+                    format: 'table',
+                    branchId,
                 },
-                reportType,
-                format: 'table',
-                branchId,
-            });
+                req.user?.role,
+                req.user?.branchId,
+            );
 
             res.status(200).json(
                 successResponse(
@@ -190,15 +206,19 @@ export class ReportController {
             const today = new Date();
             const todayDateString = today.toLocaleDateString('en-CA'); // YYYY-MM-DD format
 
-            const report = await this.reportService.generateReport({
-                dateRange: {
-                    start: todayDateString,
-                    end: todayDateString,
+            const report = await this.reportService.generateReport(
+                {
+                    dateRange: {
+                        start: todayDateString,
+                        end: todayDateString,
+                    },
+                    reportType,
+                    format: 'table',
+                    branchId,
                 },
-                reportType,
-                format: 'table',
-                branchId,
-            });
+                req.user?.role,
+                req.user?.branchId,
+            );
 
             res.status(200).json(
                 successResponse(

@@ -36,7 +36,11 @@ export class ExpiryController {
                     limit: parseInt(limit as string),
                 };
 
-            const result = await this.expiryService.getExpiringDrugs(filters);
+            const result = await this.expiryService.getExpiringDrugs(
+                filters,
+                req.user?.role,
+                req.user?.branchId,
+            );
 
             res.status(200).json(
                 successResponse(

@@ -12,6 +12,8 @@ export class SaleController {
     async createSale(req: Request, res: Response, next: NextFunction) {
         try {
             const userId = req.user!.id;
+            const userBranchId = req.user!.branchId;
+
             // Check if short code feature is enabled
             const pharmacyInfo = await PharmacyInfo.findOne();
             let shortCode: string | undefined = undefined;
@@ -22,13 +24,16 @@ export class SaleController {
                     .substring(2, 8)
                     .toUpperCase();
             }
-            const sale: any = await saleService.createSale({
-                ...req.body,
-                userId,
-                shortCode,
-                finalized: !shortCode, // If no code, mark as finalized
-                branchId: req.body.branchId,
-            });
+            const sale: any = await saleService.createSale(
+                {
+                    ...req.body,
+                    userId,
+                    shortCode,
+                    finalized: !shortCode, // If no code, mark as finalized
+                    branchId: req.body.branchId,
+                },
+                userBranchId, // Pass user's branch ID
+            );
 
             // Log audit event for sale creation
             setImmediate(async () => {
@@ -78,6 +83,14 @@ export class SaleController {
     ) {
         try {
             if (!req.user) throw new UnauthorizedError('Not authenticated');
+
+            // Super admin cannot finalize sales - they have all other permissions but not this
+            if (req.user.role === 'super_admin') {
+                throw new UnauthorizedError(
+                    'Super admin cannot finalize sales',
+                );
+            }
+
             if (
                 !req.user.permissions ||
                 !req.user.permissions.includes('FINALIZE_SALE')
@@ -133,12 +146,16 @@ export class SaleController {
     async getSales(req: Request, res: Response, next: NextFunction) {
         try {
             const { page, limit, startDate, endDate } = req.query;
-            const result = await saleService.getSales({
-                page: page ? Number(page) : 1,
-                limit: limit ? Number(limit) : 10,
-                startDate: startDate as string,
-                endDate: endDate as string,
-            });
+            const result = await saleService.getSales(
+                {
+                    page: page ? Number(page) : 1,
+                    limit: limit ? Number(limit) : 10,
+                    startDate: startDate as string,
+                    endDate: endDate as string,
+                },
+                req.user?.role,
+                req.user?.branchId,
+            );
             res.json(successResponse(result));
         } catch (err: any) {
             next(err);
@@ -147,7 +164,11 @@ export class SaleController {
 
     async getSaleById(req: Request, res: Response, next: NextFunction) {
         try {
-            const sale = await saleService.getSaleById(req.params.id);
+            const sale = await saleService.getSaleById(
+                req.params.id,
+                req.user?.role,
+                req.user?.branchId,
+            );
             res.json(successResponse(sale));
         } catch (err: any) {
             next(err);

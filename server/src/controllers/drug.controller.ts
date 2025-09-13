@@ -24,7 +24,13 @@ export class DrugController {
     ): Promise<void> {
         try {
             const drugData: ICreateDrugRequest = req.body;
-            const drug: any = await drugService.createDrug(drugData);
+            const user = req.user!;
+
+            const drug: any = await drugService.createDrug(
+                drugData,
+                user.role,
+                user.branchId,
+            );
 
             // Log audit event for drug creation
             setImmediate(async () => {
@@ -65,7 +71,13 @@ export class DrugController {
     ): Promise<void> {
         try {
             const { id } = req.params;
-            const drug = await drugService.getDrugById(id);
+            const user = req.user!;
+
+            const drug = await drugService.getDrugById(
+                id,
+                user.role,
+                user.branchId,
+            );
 
             res.status(200).json(
                 successResponse(
@@ -89,10 +101,20 @@ export class DrugController {
         try {
             const { id } = req.params;
             const updateData: IUpdateDrugRequest = req.body;
+            const user = req.user!;
 
             // Get original drug data for audit log
-            const originalDrug: any = await drugService.getDrugById(id);
-            const drug: any = await drugService.updateDrug(id, updateData);
+            const originalDrug: any = await drugService.getDrugById(
+                id,
+                user.role,
+                user.branchId,
+            );
+            const drug: any = await drugService.updateDrug(
+                id,
+                updateData,
+                user.role,
+                user.branchId,
+            );
 
             // Log audit event for drug update
             setImmediate(async () => {
@@ -139,10 +161,15 @@ export class DrugController {
     ): Promise<void> {
         try {
             const { id } = req.params;
+            const user = req.user!;
 
             // Get drug data before deletion for audit log
-            const drugToDelete: any = await drugService.getDrugById(id);
-            await drugService.deleteDrug(id);
+            const drugToDelete: any = await drugService.getDrugById(
+                id,
+                user.role,
+                user.branchId,
+            );
+            await drugService.deleteDrug(id, user.role, user.branchId);
 
             // Log audit event for drug deletion
             setImmediate(async () => {
@@ -202,7 +229,12 @@ export class DrugController {
                     : undefined,
             };
 
-            const result = await drugService.getDrugs(params);
+            const user = req.user!;
+            const result = await drugService.getDrugs(
+                params,
+                user.role,
+                user.branchId,
+            );
 
             res.status(200).json(
                 successResponse(result, 'Drugs retrieved successfully'),
@@ -221,7 +253,11 @@ export class DrugController {
         next: NextFunction,
     ): Promise<void> {
         try {
-            const categories = await drugService.getCategories();
+            const user = req.user!;
+            const categories = await drugService.getCategories(
+                user.role,
+                user.branchId,
+            );
 
             res.status(200).json(
                 successResponse(
@@ -244,7 +280,12 @@ export class DrugController {
     ): Promise<void> {
         try {
             const days = req.query.days ? Number(req.query.days) : 30; // Default to 30 days
-            const drugs = await drugService.getExpiringDrugs(days);
+            const user = req.user!;
+            const drugs = await drugService.getExpiringDrugs(
+                days,
+                user.role,
+                user.branchId,
+            );
 
             res.status(200).json(
                 successResponse(

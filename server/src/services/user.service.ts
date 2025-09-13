@@ -15,16 +15,26 @@ function normalizeEmail(email: string): string {
 }
 
 export class UserService {
-    async getUsers({
-        page = 1,
-        limit = 10,
-        search = '',
-    }: {
-        page?: number;
-        limit?: number;
-        search?: string;
-    }) {
+    async getUsers(
+        {
+            page = 1,
+            limit = 10,
+            search = '',
+        }: {
+            page?: number;
+            limit?: number;
+            search?: string;
+        },
+        userRole?: string,
+        userBranchId?: string,
+    ) {
         const query: any = {};
+
+        // If not super admin, filter by branch
+        if (userRole && userRole !== 'super_admin' && userBranchId) {
+            query.branch = userBranchId;
+        }
+
         if (search) {
             query.$or = [
                 { name: { $regex: search, $options: 'i' } },
@@ -80,6 +90,18 @@ export class UserService {
             isFirstSetup: data.role === 'admin' ? true : false,
         };
 
+        // Super admin cannot have FINALIZE_SALE permission
+        if (
+            data.role === 'super_admin' &&
+            data.permissions?.includes('FINALIZE_SALE')
+        ) {
+            userData.permissions = data.permissions.filter(
+                (p) => p !== 'FINALIZE_SALE',
+            );
+        } else if (data.permissions) {
+            userData.permissions = data.permissions;
+        }
+
         // Convert branchId to branch field for MongoDB
         if (data.branchId) {
             userData.branch = new mongoose.Types.ObjectId(data.branchId);
@@ -130,6 +152,19 @@ export class UserService {
 
         // Handle branch assignment
         const updateData: any = { ...data };
+
+        // Super admin cannot have FINALIZE_SALE permission
+        if (
+            (data.role === 'super_admin' || user.role === 'super_admin') &&
+            data.permissions?.includes('FINALIZE_SALE')
+        ) {
+            updateData.permissions = data.permissions.filter(
+                (p) => p !== 'FINALIZE_SALE',
+            );
+        } else if (data.permissions !== undefined) {
+            updateData.permissions = data.permissions;
+        }
+
         if (data.branchId) {
             updateData.branch = new mongoose.Types.ObjectId(data.branchId);
             delete updateData.branchId; // Remove branchId as we use 'branch' in the model

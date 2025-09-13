@@ -4,6 +4,7 @@ import { ExpiryPageHeader } from '../components/organisms/ExpiryPageHeader';
 import { ExpiryPageFilters } from '../components/organisms/ExpiryPageFilters';
 import { ExpiryPageContent } from '../components/organisms/ExpiryPageContent';
 import { NotificationPanel } from '../components/molecules/NotificationPanel';
+import { BranchSelect } from '../components/molecules/BranchSelect';
 import { useExpiryPage } from '../hooks/useExpiryPage';
 
 export const ExpiryPage: React.FC = () => {
@@ -14,6 +15,7 @@ export const ExpiryPage: React.FC = () => {
         showFilters,
         showActionsDropdown,
         filters,
+        branchId,
         expiringDrugs,
         expiryStats,
         unreadNotifications,
@@ -29,6 +31,7 @@ export const ExpiryPage: React.FC = () => {
         setShowNotifications,
         setShowFilters,
         setShowActionsDropdown,
+        setBranchId,
         handleFilterChange,
         handleExportData,
         refreshData,
@@ -64,6 +67,16 @@ export const ExpiryPage: React.FC = () => {
                             actionsDropdownRef as React.RefObject<HTMLDivElement>
                         }
                     />
+
+                    {/* Branch Filter */}
+                    <div className="px-4 sm:px-6 lg:px-8 py-4 bg-white border-b">
+                        <div className="flex items-center gap-3">
+                            <BranchSelect
+                                value={branchId}
+                                onChange={setBranchId}
+                            />
+                        </div>
+                    </div>
 
                     {/* Filter Dropdowns */}
                     <ExpiryPageFilters

@@ -159,7 +159,7 @@ export const useExpiry = (
     };
 
     const expiringDrugsQuery = useExpiringDrugs(defaultFilters);
-    const expiryStatsQuery = useExpiryStats();
+    const expiryStatsQuery = useExpiryStats(defaultFilters.branchId);
     const notificationsQuery = useExpiryNotifications({});
     const markAsRead = useMarkNotificationAsRead();
     const markAllAsRead = useMarkAllNotificationsAsRead();

@@ -6,6 +6,7 @@ export interface ICustomer extends Document {
     purchases: Types.ObjectId[];
     email?: string;
     address?: string;
+    branch?: Types.ObjectId; // Branch assignment for customers
     createdAt: Date;
     updatedAt: Date;
 }
@@ -35,6 +36,11 @@ const customerSchema = new Schema<ICustomer>(
         purchases: {
             type: [{ type: Schema.Types.ObjectId, ref: 'Sale' }],
             default: [],
+        },
+        branch: {
+            type: Schema.Types.ObjectId,
+            ref: 'Branch',
+            required: false, // Optional, customers may not be assigned to specific branches
         },
     },
     {

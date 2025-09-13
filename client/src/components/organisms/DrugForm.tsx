@@ -48,6 +48,11 @@ export const DrugForm = ({
     const [selectedCategory, setSelectedCategory] = useState(
         initialData?.category || '',
     );
+
+    // State for branch selection
+    const [selectedBranchId, setSelectedBranchId] = useState(
+        (initialData as any)?.branchId || '',
+    );
     const debouncedCategorySearch = useDebounce(categorySearchTerm, 300);
 
     // Ensure requiresPrescription is always a boolean
@@ -217,12 +222,19 @@ export const DrugForm = ({
             data.category = selectedCategory;
         }
 
-        onSubmit(data);
+        // Include branchId in the submission data
+        const submissionData = {
+            ...data,
+            branchId: selectedBranchId,
+        };
+
+        onSubmit(submissionData);
 
         if (!initialData) {
             reset(); // Reset form after submission only for new drugs
             setSelectedCategory('');
             setCategorySearchTerm('');
+            setSelectedBranchId('');
         }
     };
 
@@ -256,6 +268,27 @@ export const DrugForm = ({
                             handleCategorySearch={handleCategorySearch}
                             handleCategorySelect={handleCategorySelect}
                         />
+                    </FormSection>
+                </div>
+                <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
+                    <FormSection title="Branch Assignment">
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Branch{' '}
+                                    <span className="text-red-500">*</span>
+                                </label>
+                                <BranchSelect
+                                    value={selectedBranchId}
+                                    onChange={setSelectedBranchId}
+                                />
+                                {!selectedBranchId && (
+                                    <p className="mt-1 text-sm text-red-600">
+                                        Branch selection is required
+                                    </p>
+                                )}
+                            </div>
+                        </div>
                     </FormSection>
                 </div>
             </div>
@@ -383,9 +416,11 @@ export const DrugForm = ({
             <div className="flex justify-end mt-8">
                 <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !selectedBranchId}
                     className={`inline-flex items-center px-8 py-3 border border-transparent text-base font-semibold rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-md transition-colors duration-200 ease-in-out ${
-                        isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
+                        isSubmitting || !selectedBranchId
+                            ? 'opacity-75 cursor-not-allowed'
+                            : ''
                     }`}
                 >
                     {isSubmitting ? (

@@ -2,26 +2,25 @@ import { csrfProtection } from '../middlewares/csrf.middleware';
 import { Router } from 'express';
 import { cronController } from '../controllers/cron.controller';
 import { authenticate } from '../middlewares/auth.middleware';
-import { authorize } from '../middlewares/authorize.middleware';
-import { UserRole } from '../types/auth.types';
+import { authorizeAdminLevel } from '../middlewares/authorize.middleware';
 
 const router = Router();
 
-// Apply authentication and admin authorization to all cron routes
+// Apply authentication and admin level authorization to all cron routes
 router.use(authenticate);
-router.use(authorize([UserRole.ADMIN]));
+router.use(authorizeAdminLevel());
 
 /**
  * @route GET /api/cron/status
  * @desc Get cron job status and information
- * @access Admin only
+ * @access Admin level (admin or super_admin)
  */
 router.get('/status', cronController.getCronJobStatus.bind(cronController));
 
 /**
  * @route POST /api/cron/trigger-expiry-notifications
  * @desc Manually trigger expiry notifications creation
- * @access Admin only
+ * @access Admin level (admin or super_admin)
  */
 router.post(
     '/trigger-expiry-notifications',
@@ -32,7 +31,7 @@ router.post(
 /**
  * @route POST /api/cron/trigger-cleanup-notifications
  * @desc Manually trigger cleanup of old notifications
- * @access Admin only
+ * @access Admin level (admin or super_admin)
  */
 router.post(
     '/trigger-cleanup-notifications',
@@ -43,7 +42,7 @@ router.post(
 /**
  * @route POST /api/cron/trigger-daily-audit-cleanup
  * @desc Manually trigger daily audit log cleanup (user requested manual control)
- * @access Admin only
+ * @access Admin level (admin or super_admin)
  */
 router.post(
     '/trigger-daily-audit-cleanup',
@@ -53,7 +52,7 @@ router.post(
 /**
  * @route POST /api/cron/trigger-weekly-audit-cleanup
  * @desc Manually trigger weekly audit log cleanup
- * @access Admin only
+ * @access Admin level (admin or super_admin)
  */
 router.post(
     '/trigger-weekly-audit-cleanup',
@@ -63,7 +62,7 @@ router.post(
 /**
  * @route POST /api/cron/trigger-monthly-user-activity-cleanup
  * @desc Manually trigger monthly user activity cleanup
- * @access Admin only
+ * @access Admin level (admin or super_admin)
  */
 router.post(
     '/trigger-monthly-user-activity-cleanup',
@@ -73,7 +72,7 @@ router.post(
 /**
  * @route POST /api/cron/trigger-inventory-check
  * @desc Manually trigger inventory check
- * @access Admin only
+ * @access Admin level (admin or super_admin)
  */
 router.post(
     '/trigger-inventory-check',
@@ -83,7 +82,7 @@ router.post(
 /**
  * @route POST /api/cron/trigger-expired-sessions-cleanup
  * @desc Manually trigger expired sessions cleanup
- * @access Admin only
+ * @access Admin level (admin or super_admin)
  */
 router.post(
     '/trigger-expired-sessions-cleanup',
@@ -93,7 +92,7 @@ router.post(
 /**
  * @route POST /api/cron/trigger-weekly-summary-reports
  * @desc Manually trigger weekly summary reports generation
- * @access Admin only
+ * @access Admin level (admin or super_admin)
  */
 router.post(
     '/trigger-weekly-summary-reports',
