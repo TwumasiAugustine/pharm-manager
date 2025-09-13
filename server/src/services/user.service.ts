@@ -4,6 +4,7 @@ import { NotFoundError, ConflictError, BadRequestError } from '../utils/errors';
 import { IUser } from '../types/user.types';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
+import { AuthService } from './auth.service';
 
 // Extended interface for user operations that include branchId
 interface IUserWithBranchId extends Partial<IUser> {
@@ -15,6 +16,11 @@ function normalizeEmail(email: string): string {
 }
 
 export class UserService {
+    private authService: AuthService;
+
+    constructor() {
+        this.authService = new AuthService();
+    }
     async getUsers(
         {
             page = 1,
@@ -27,167 +33,58 @@ export class UserService {
         },
         userRole?: string,
         userBranchId?: string,
+        pharmacyId?: string,
     ) {
-        const query: any = {};
-
-        // If not super admin, filter by branch
-        if (userRole && userRole !== 'super_admin' && userBranchId) {
-            query.branch = userBranchId;
-        }
-
-        if (search) {
-            query.$or = [
-                { name: { $regex: search, $options: 'i' } },
-                { email: { $regex: search, $options: 'i' } },
-            ];
-        }
-        const total = await User.countDocuments(query);
-        const users = await User.find(query)
-            .sort({ createdAt: -1 })
-            .skip((page - 1) * limit)
-            .limit(limit)
-            .select('-password')
-            .populate('branch', 'name address _id');
-        return {
-            users,
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
-        };
+        // Delegate to auth service with pharmacy filtering
+        return this.authService.getUsers(
+            { page, limit, search },
+            userRole,
+            userBranchId,
+            pharmacyId,
+        );
     }
 
-    async createUser(data: IUserWithBranchId) {
-        if (!data.name || !data.email || !data.password || !data.role) {
-            throw new BadRequestError(
-                'Name, email, password, and role are required',
-            );
+    async createUser(data: IUserWithBranchId, adminPharmacyId?: string) {
+        if (!adminPharmacyId) {
+            // Fallback to original behavior if no pharmacy ID provided
+            throw new BadRequestError('Pharmacy ID is required');
         }
-
-        // Validate branch assignment if provided
-        if (data.branchId) {
-            if (!mongoose.Types.ObjectId.isValid(data.branchId)) {
-                throw new BadRequestError('Invalid branch ID format');
-            }
-            const branch = await Branch.findById(data.branchId);
-            if (!branch) {
-                throw new NotFoundError('Branch not found');
-            }
-        }
-
-        // Normalize email
-        const normalizedEmail = normalizeEmail(data.email);
-        // Prevent duplicate emails
-        const existing = await User.findOne({ email: normalizedEmail });
-        if (existing)
-            throw new ConflictError('A user with this email already exists');
-        const hashedPassword = await bcrypt.hash(data.password, 10);
-
-        const userData: any = {
-            ...data,
-            email: normalizedEmail,
-            password: hashedPassword,
-            isFirstSetup: data.role === 'admin' ? true : false,
-        };
-
-        // Super admin cannot have FINALIZE_SALE permission
-        if (
-            data.role === 'super_admin' &&
-            data.permissions?.includes('FINALIZE_SALE')
-        ) {
-            userData.permissions = data.permissions.filter(
-                (p) => p !== 'FINALIZE_SALE',
-            );
-        } else if (data.permissions) {
-            userData.permissions = data.permissions;
-        }
-
-        // Convert branchId to branch field for MongoDB
-        if (data.branchId) {
-            userData.branch = new mongoose.Types.ObjectId(data.branchId);
-            delete userData.branchId; // Remove branchId as we use 'branch' in the model
-        }
-
-        const user = await User.create(userData);
-
-        // Populate branch info in response
-        await user.populate('branch', 'name address _id');
-        const populatedUser = user.toObject({ versionKey: false }) as any;
-        const { password: _, ...userResponse } = populatedUser;
-
-        return userResponse;
+        // Delegate to auth service with pharmacy filtering
+        return this.authService.createUser(data, adminPharmacyId);
     }
 
-    async updateUser(id: string, data: IUserWithBranchId) {
-        const user = await User.findById(id);
-        if (!user) throw new NotFoundError('User not found');
-
-        // Validate branch assignment if provided
-        if (data.branchId) {
-            if (!mongoose.Types.ObjectId.isValid(data.branchId)) {
-                throw new BadRequestError('Invalid branch ID format');
-            }
-            const branch = await Branch.findById(data.branchId);
-            if (!branch) {
-                throw new NotFoundError('Branch not found');
-            }
+    async updateUser(
+        id: string,
+        data: IUserWithBranchId,
+        adminPharmacyId?: string,
+    ) {
+        if (!adminPharmacyId) {
+            // Fallback to original behavior if no pharmacy ID provided
+            throw new BadRequestError('Pharmacy ID is required');
         }
-
-        // Normalize email if present
-        if (data.email) {
-            data.email = normalizeEmail(data.email);
-            // Prevent duplicate emails (except for self)
-            const existing = await User.findOne({ email: data.email });
-            if (existing && existing._id.toString() !== id) {
-                throw new ConflictError(
-                    'A user with this email already exists',
-                );
-            }
-        }
-        if (data.password) {
-            data.password = await bcrypt.hash(data.password, 10);
-        } else {
-            delete data.password;
-        }
-
-        // Handle branch assignment
-        const updateData: any = { ...data };
-
-        // Super admin cannot have FINALIZE_SALE permission
-        if (
-            (data.role === 'super_admin' || user.role === 'super_admin') &&
-            data.permissions?.includes('FINALIZE_SALE')
-        ) {
-            updateData.permissions = data.permissions.filter(
-                (p) => p !== 'FINALIZE_SALE',
-            );
-        } else if (data.permissions !== undefined) {
-            updateData.permissions = data.permissions;
-        }
-
-        if (data.branchId) {
-            updateData.branch = new mongoose.Types.ObjectId(data.branchId);
-            delete updateData.branchId; // Remove branchId as we use 'branch' in the model
-        } else if (data.branchId === null || data.branchId === '') {
-            updateData.branch = null; // Remove branch assignment
-            delete updateData.branchId;
-        }
-
-        Object.assign(user, updateData);
-        await user.save();
-
-        // Populate branch info in response
-        await user.populate('branch', 'name address _id');
-        const populatedUser = user.toObject({ versionKey: false }) as any;
-        const { password: _, ...userResponse } = populatedUser;
-
-        return userResponse;
+        // Delegate to auth service with pharmacy filtering
+        return this.authService.updateUser(id, data, adminPharmacyId);
     }
 
-    async deleteUser(id: string) {
-        const user = await User.findById(id);
-        if (!user) throw new NotFoundError('User not found');
-        await user.deleteOne();
-        return true;
+    async deleteUser(id: string, adminPharmacyId?: string) {
+        if (!adminPharmacyId) {
+            // Fallback to original behavior if no pharmacy ID provided
+            throw new BadRequestError('Pharmacy ID is required');
+        }
+        // Delegate to auth service with pharmacy filtering
+        return this.authService.deleteUser(id, adminPharmacyId);
+    }
+
+    // Add assignment permissions method from auth service
+    async assignPermissions(
+        userId: string,
+        permissions: string[],
+        adminPharmacyId: string,
+    ) {
+        return this.authService.assignPermissions(
+            userId,
+            permissions,
+            adminPharmacyId,
+        );
     }
 }

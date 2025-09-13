@@ -259,4 +259,141 @@ export class AuthController {
             next(error);
         }
     }
+
+    // Admin User Management Methods
+    async getUsers(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { page = 1, limit = 10, search = '' } = req.query;
+            const result = await authService.getUsers(
+                {
+                    page: Number(page),
+                    limit: Number(limit),
+                    search: String(search),
+                },
+                req.user?.role,
+                req.user?.branchId,
+                req.user?.pharmacyId,
+            );
+            res.json(successResponse(result, 'Users retrieved successfully'));
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async createUser(req: Request, res: Response, next: NextFunction) {
+        try {
+            if (!req.user?.pharmacyId) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Pharmacy ID is required',
+                });
+                return;
+            }
+
+            const user = await authService.createUser(
+                req.body,
+                req.user.pharmacyId,
+            );
+            res.status(201).json(
+                successResponse(user, 'User created successfully'),
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async updateUser(req: Request, res: Response, next: NextFunction) {
+        try {
+            if (!req.user?.pharmacyId) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Pharmacy ID is required',
+                });
+                return;
+            }
+
+            const user = await authService.updateUser(
+                req.params.id,
+                req.body,
+                req.user.pharmacyId,
+            );
+            res.json(successResponse(user, 'User updated successfully'));
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async deleteUser(req: Request, res: Response, next: NextFunction) {
+        try {
+            if (!req.user?.pharmacyId) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Pharmacy ID is required',
+                });
+                return;
+            }
+
+            await authService.deleteUser(req.params.id, req.user.pharmacyId);
+            res.json(successResponse(null, 'User deleted successfully'));
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async assignPermissions(req: Request, res: Response, next: NextFunction) {
+        try {
+            if (!req.user?.pharmacyId) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Pharmacy ID is required',
+                });
+                return;
+            }
+
+            const { userId, permissions } = req.body;
+            const user = await authService.assignPermissions(
+                userId,
+                permissions,
+                req.user.pharmacyId,
+            );
+            res.json(
+                successResponse(user, 'Permissions assigned successfully'),
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async checkAdminFirstSetup(
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ) {
+        try {
+            if (
+                !req.user ||
+                (req.user.role !== 'admin' && req.user.role !== 'super_admin')
+            ) {
+                res.status(403).json({
+                    success: false,
+                    message:
+                        'Forbidden: Only admin level users can check first setup status',
+                });
+                return;
+            }
+
+            const User = require('../models/user.model').default;
+            const user = await User.findById(req.user.id);
+            res.json(
+                successResponse(
+                    {
+                        isFirstSetup: !!user?.isFirstSetup,
+                    },
+                    'First setup status retrieved',
+                ),
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
 }

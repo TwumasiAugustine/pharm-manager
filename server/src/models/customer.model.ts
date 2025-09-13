@@ -6,6 +6,7 @@ export interface ICustomer extends Document {
     purchases: Types.ObjectId[];
     email?: string;
     address?: string;
+    pharmacyId: Types.ObjectId;
     branch?: Types.ObjectId; // Branch assignment for customers
     createdAt: Date;
     updatedAt: Date;
@@ -37,6 +38,12 @@ const customerSchema = new Schema<ICustomer>(
             type: [{ type: Schema.Types.ObjectId, ref: 'Sale' }],
             default: [],
         },
+        pharmacyId: {
+            type: Schema.Types.ObjectId,
+            ref: 'PharmacyInfo',
+            required: true,
+            index: true,
+        },
         branch: {
             type: Schema.Types.ObjectId,
             ref: 'Branch',
@@ -50,6 +57,8 @@ const customerSchema = new Schema<ICustomer>(
 
 // Create indexes for faster lookups
 customerSchema.index({ name: 'text', phone: 'text', email: 'text' });
+customerSchema.index({ pharmacyId: 1 });
+customerSchema.index({ pharmacyId: 1, phone: 1 }); // Compound index for pharmacy filtering with phone lookup
 
 const Customer = model<ICustomer>('Customer', customerSchema);
 export default Customer;

@@ -21,6 +21,7 @@ export interface IDrug extends Document {
     supplier?: string;
     location?: string;
     costPrice: number;
+    pharmacyId: mongoose.Types.ObjectId;
     branch: IBranch | mongoose.Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
@@ -114,6 +115,12 @@ const drugSchema = new Schema<IDrug>(
             type: Schema.Types.String,
             trim: true,
         },
+        pharmacyId: {
+            type: Schema.Types.ObjectId,
+            ref: 'PharmacyInfo',
+            required: true,
+            index: true,
+        },
         branch: {
             type: Schema.Types.ObjectId,
             ref: 'Branch',
@@ -176,5 +183,7 @@ drugSchema.pre<IDrug>('save', function (next) {
 drugSchema.index({ name: 'text', brand: 'text', category: 'text' });
 drugSchema.index({ batchNumber: 1 });
 drugSchema.index({ expiryDate: 1 });
+drugSchema.index({ pharmacyId: 1 });
+drugSchema.index({ pharmacyId: 1, expiryDate: 1 }); // Compound index for pharmacy filtering with expiry
 
 export const Drug = mongoose.model<IDrug>('Drug', drugSchema);

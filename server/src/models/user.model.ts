@@ -1,11 +1,25 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { IUser, UserRole } from '../types/auth.types';
+import { UserRole } from '../types/auth.types';
 
 import { IBranch } from '../types/branch.types';
-const userSchema = new Schema<
-    IUser & { branch?: IBranch | mongoose.Types.ObjectId }
->(
+
+// Interface for the user document that matches mongoose expectations
+interface IUserDoc extends Document {
+    _id: mongoose.Types.ObjectId;
+    name: string;
+    email: string;
+    password: string;
+    role: UserRole;
+    pharmacyId?: mongoose.Types.ObjectId; // Optional for first user signup
+    branch?: mongoose.Types.ObjectId | IBranch;
+    isFirstSetup: boolean;
+    refreshToken?: string;
+    permissions?: string[];
+    comparePassword(enteredPassword: string): Promise<boolean>;
+}
+
+const userSchema = new Schema<IUserDoc>(
     {
         name: {
             type: String,
@@ -37,6 +51,12 @@ const userSchema = new Schema<
         isFirstSetup: {
             type: Boolean,
             default: false,
+        },
+        pharmacyId: {
+            type: Schema.Types.ObjectId,
+            ref: 'PharmacyInfo',
+            required: false, // Allow first user signup without pharmacy
+            index: true,
         },
         branch: {
             type: Schema.Types.ObjectId,
@@ -114,7 +134,7 @@ const userSchema = new Schema<
 );
 
 // Hash password before saving
-userSchema.pre('save', async function (next) {
+userSchema.pre<IUserDoc>('save', async function (next) {
     if (!this.isModified('password')) {
         return next();
     }
@@ -139,6 +159,11 @@ userSchema.methods.comparePassword = async function (
     return bcrypt.compare(enteredPassword, this.password);
 };
 
-const User = mongoose.model<IUser>('User', userSchema);
+// Indexes for better query performance
+userSchema.index({ pharmacyId: 1 });
+userSchema.index({ email: 1 }); // Unique index already handled by schema
+userSchema.index({ pharmacyId: 1, role: 1 }); // Compound index for pharmacy filtering with role
+
+const User = mongoose.model<IUserDoc>('User', userSchema);
 
 export default User;

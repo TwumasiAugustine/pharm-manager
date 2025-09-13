@@ -25,6 +25,7 @@ export interface ISale extends Document {
     notes?: string; // Optional notes about the sale
     shortCode?: string; // Short code for cashier to finalize/print
     finalized?: boolean; // Whether the sale has been finalized/printed
+    pharmacyId: Types.ObjectId; // Pharmacy association
     branch: IBranch | Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
@@ -65,6 +66,12 @@ const saleSchema = new Schema<ISale>(
         items: {
             type: [saleItemSchema],
             required: true,
+        },
+        pharmacyId: {
+            type: Schema.Types.ObjectId,
+            ref: 'PharmacyInfo',
+            required: true,
+            index: true,
         },
         branch: {
             type: Schema.Types.ObjectId,
@@ -116,8 +123,10 @@ const saleSchema = new Schema<ISale>(
 );
 
 // Indexes for better query performance
+saleSchema.index({ pharmacyId: 1 });
 saleSchema.index({ soldBy: 1 });
 saleSchema.index({ customer: 1 });
 saleSchema.index({ createdAt: -1 });
+saleSchema.index({ pharmacyId: 1, createdAt: -1 }); // Compound index for pharmacy filtering with date
 
 export const Sale = model<ISale>('Sale', saleSchema);

@@ -30,6 +30,8 @@ export interface RegisterRequest {
     email: string;
     password: string;
     role?: UserRole;
+    branchId?: string;
+    pharmacyId?: string; // For initial setup or admin-created users without branch
 }
 
 export interface AuthResponse {

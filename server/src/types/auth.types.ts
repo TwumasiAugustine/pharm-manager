@@ -11,6 +11,7 @@ export interface IUser {
     email: string;
     password: string;
     role: UserRole;
+    pharmacyId: string; // Pharmacy association
     branchId?: string; // Branch assignment
     isFirstSetup: boolean;
     refreshToken?: string;
@@ -25,6 +26,7 @@ export interface ITokenPayload {
     name: string;
     email: string;
     role: UserRole;
+    pharmacyId: string; // Pharmacy association
     branchId?: string; // Branch assignment for branch-based access control
     isFirstSetup: boolean;
     permissions?: string[];
@@ -42,6 +44,7 @@ export interface ISignupRequest {
     password: string;
     role?: UserRole;
     branchId?: string;
+    pharmacyId?: string; // For initial setup or admin-created users without branch
 }
 
 export interface ILoginRequest {
@@ -56,6 +59,7 @@ export interface IAuthResponse {
         name: string;
         email: string;
         role: UserRole;
+        pharmacyId: string; // Pharmacy association
         branchId?: string; // Include branch information in auth response
         isFirstSetup: boolean;
         permissions?: string[];
