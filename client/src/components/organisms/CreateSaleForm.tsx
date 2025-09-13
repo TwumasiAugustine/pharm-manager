@@ -298,13 +298,15 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                                         Subtotal:{' '}
                                         {formatGHSDisplayAmount(subtotal)}
                                     </p>
-                                    <Button
+                                    <button
                                         type="button"
-                                        variant="danger"
                                         onClick={() => remove(index)}
+                                        className="flex items-center justify-center px-3 py-2 border border-red-300 rounded-md bg-white text-red-600 hover:bg-red-50 hover:border-red-400 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                                        aria-label="Remove item"
+                                        title="Remove this item"
                                     >
                                         <FaTrash className="h-4 w-4" />
-                                    </Button>
+                                    </button>
                                 </div>
                             );
                         })}
@@ -421,11 +423,12 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                         </Alert>
                     )}
 
-                    <Button
+                    <button
                         type="submit"
                         disabled={isProcessing || fields.length === 0}
-                        className="w-full md:w-auto flex items-center justify-center space-x-2"
+                        className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         aria-live="polite"
+                        title={isProcessing ? 'Processing...' : 'Create Sale'}
                     >
                         {isProcessing ? (
                             <>
@@ -472,7 +475,7 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                                 Create Sale
                             </span>
                         )}
-                    </Button>
+                    </button>
                 </form>
             </CardContent>
         </Card>

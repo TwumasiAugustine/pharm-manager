@@ -19,3 +19,44 @@
 .chart-indicator-good {
     background-color: #10b981;
 }
+
+/* Dashboard Layout Responsive Styles */
+.sidebar-transition {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.content-transition {
+    transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom CSS variables for responsive layout */
+:root {
+    --sidebar-expanded-width: 16rem;
+    --sidebar-collapsed-width: 4rem;
+    --content-padding-expanded: 1.5rem;
+    --content-padding-collapsed: 2rem;
+}
+
+/* Responsive content padding based on screen size */
+@media (min-width: 1024px) {
+    .content-responsive-padding {
+        padding-left: var(--content-padding-expanded);
+        padding-right: var(--content-padding-expanded);
+    }
+
+    .content-responsive-padding.sidebar-collapsed {
+        padding-left: var(--content-padding-collapsed);
+        padding-right: var(--content-padding-collapsed);
+    }
+}
+
+/* Smooth transitions for all layout elements */
+.layout-element {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced focus styles for better accessibility */
+.nav-link:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}

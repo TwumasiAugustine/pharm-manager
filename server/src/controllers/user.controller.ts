@@ -53,7 +53,7 @@ export const checkAdminFirstSetup = async (req: Request, res: Response) => {
         // req.user is set by authenticate middleware
         if (
             !req.user ||
-            (req.user.role !== 'admin' && req.user.role !== 'super_admin')
+            (req.user.role !== UserRole.ADMIN && req.user.role !== UserRole.SUPER_ADMIN)
         ) {
             return res.status(403).json({
                 success: false,

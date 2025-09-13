@@ -30,6 +30,8 @@ import type {
     DrugDetails,
 } from '../types/sale.types';
 import { Input } from '../components/atoms/Input';
+import { SalesPageActions } from '../components/organisms/SalesPageActions';
+import { useAuthStore } from '../store/auth.store';
 
 const SalesListPage: React.FC = () => {
     // Pagination and filter state
@@ -50,7 +52,11 @@ const SalesListPage: React.FC = () => {
     const [showFilters, setShowFilters] = useState(false);
 
     const navigate = useNavigate();
-    const { data, isLoading, error } = useSales({ ...filters, branchId });
+    const { user } = useAuthStore();
+    const { data, isLoading, error, refetch } = useSales({
+        ...filters,
+        branchId,
+    });
 
     // Debug log to check data structure
     React.useEffect(() => {
@@ -499,93 +505,22 @@ const SalesListPage: React.FC = () => {
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-semibold">Sales History</h2>
 
-                    {/* Desktop view - regular buttons (large screens and above) */}
-                    <div className="hidden lg:flex space-x-2">
-                        <Button
-                            variant="secondary"
-                            onClick={toggleGrouping}
-                            className="flex items-center"
-                        >
-                            {filters.groupByDate
-                                ? 'Show Individual Sales'
-                                : 'Group by Date'}
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            onClick={() => setShowFilters(!showFilters)}
-                            className="flex items-center"
-                        >
-                            <FaFilter className="mr-2 h-4 w-4" />
-                            Filters
-                        </Button>
-                        <Link to="/sales/new">
-                            <Button>Create New Sale</Button>
-                        </Link>
-                    </div>
-
-                    {/* Mobile/Tablet view - dropdown menu (small to large screens) */}
-                    <div className="relative lg:hidden" ref={dropdownRef}>
-                        <Button
-                            variant="secondary"
-                            onClick={() =>
-                                setShowActionsDropdown(!showActionsDropdown)
-                            }
-                            className="flex items-center"
-                            aria-label="Actions menu"
-                        >
-                            <span className="mr-2">Actions</span>
-                            <FaEllipsisV className="h-4 w-4" />
-                        </Button>
-
-                        {showActionsDropdown && (
-                            <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                                <div
-                                    className="py-1"
-                                    role="menu"
-                                    aria-orientation="vertical"
-                                    aria-labelledby="options-menu"
-                                >
-                                    <button
-                                        onClick={() => {
-                                            toggleGrouping();
-                                            setShowActionsDropdown(false);
-                                        }}
-                                        className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                        role="menuitem"
-                                    >
-                                        <FaLayerGroup className="mr-3 h-4 w-4" />
-                                        {filters.groupByDate
-                                            ? 'Show Individual Sales'
-                                            : 'Group by Date'}
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setShowFilters(!showFilters);
-                                            setShowActionsDropdown(false);
-                                        }}
-                                        className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                        role="menuitem"
-                                    >
-                                        <FaFilter className="mr-3 h-4 w-4" />
-                                        Filters
-                                    </button>
-                                    <Link
-                                        to="/sales/new"
-                                        className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                        role="menuitem"
-                                        onClick={() =>
-                                            setShowActionsDropdown(false)
-                                        }
-                                    >
-                                        <FaPlus className="mr-3 h-4 w-4" />
-                                        Create New Sale
-                                    </Link>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    {/* Sales Actions Component */}
+                    <SalesPageActions
+                        user={user}
+                        showActionsDropdown={showActionsDropdown}
+                        onToggleActionsDropdown={() =>
+                            setShowActionsDropdown(!showActionsDropdown)
+                        }
+                        onToggleFilters={() => setShowFilters(!showFilters)}
+                        onRefresh={() => refetch()}
+                        onToggleGrouping={toggleGrouping}
+                        onCreateSale={() => navigate('/sales/new')}
+                        isLoading={isLoading}
+                        isGrouped={filters.groupByDate}
+                        actionsDropdownRef={dropdownRef}
+                    />
                 </div>
-
                 {/* Filter controls */}
                 {showFilters && (
                     <div className="mb-6 p-4 border rounded-md bg-gray-50">
@@ -665,9 +600,12 @@ const SalesListPage: React.FC = () => {
                             </div>
                         </div>
                         <div className="flex justify-end">
-                            <Button onClick={applyFilters}>
+                            <button
+                                onClick={applyFilters}
+                                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            >
                                 Apply Filters
-                            </Button>
+                            </button>
                         </div>
                     </div>
                 )}

@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 export interface IBranch {
     _id: string;
     name: string;
+    pharmacyId: Types.ObjectId | string;
     address: {
         street: string;
         city: string;

@@ -4,6 +4,7 @@ import mongoose, { Schema, Document } from 'mongoose';
  */
 export interface IBranch extends Document {
     name: string;
+    pharmacyId: mongoose.Types.ObjectId;
     address: {
         street: string;
         city: string;
@@ -23,6 +24,12 @@ export interface IBranch extends Document {
 const BranchSchema: Schema<IBranch> = new Schema(
     {
         name: { type: String, required: true },
+        pharmacyId: {
+            type: Schema.Types.ObjectId,
+            ref: 'PharmacyInfo',
+            required: true,
+            index: true,
+        },
         address: {
             street: { type: String, required: true },
             city: { type: String, required: true },
@@ -60,9 +67,12 @@ const BranchSchema: Schema<IBranch> = new Schema(
     },
 );
 
-// Add unique indexes for branch name and contact email/phone
-BranchSchema.index({ name: 1 }, { unique: true });
-BranchSchema.index({ 'contact.email': 1 }, { unique: true });
-BranchSchema.index({ 'contact.phone': 1 }, { unique: true });
+// Add compound indexes for pharmacy-specific unique constraints
+BranchSchema.index({ pharmacyId: 1, name: 1 }, { unique: true });
+BranchSchema.index({ pharmacyId: 1, 'contact.email': 1 }, { unique: true });
+BranchSchema.index({ pharmacyId: 1, 'contact.phone': 1 }, { unique: true });
+
+// Add index for pharmacy-based queries
+BranchSchema.index({ pharmacyId: 1 });
 
 export default mongoose.model<IBranch>('Branch', BranchSchema);

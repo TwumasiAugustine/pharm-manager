@@ -1,6 +1,7 @@
 export interface Branch {
     id: string;
     name: string;
+    pharmacyId: string;
     address: {
         street: string;
         city: string;
