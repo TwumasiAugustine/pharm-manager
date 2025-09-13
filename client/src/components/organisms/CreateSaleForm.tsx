@@ -6,7 +6,6 @@ import type {
     FieldArrayWithId,
 } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '../molecules/Card';
-import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { SearchBar } from '../molecules/SearchBar';
 import { FaTrash } from 'react-icons/fa';

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '../components/atoms/Input';
-import { Button } from '../components/atoms/Button';
 import { useUpdatePharmacyInfo, usePharmacyInfo } from '../hooks/usePharmacy';
 import type { PharmacyInfo } from '../api/pharmacy.api';
 import { useAuthStore } from '../store/auth.store';
@@ -110,7 +109,7 @@ const PharmacySetupPage: React.FC = () => {
             if (isConfigured) {
                 navigate('/dashboard');
             }
-        } catch (e) {
+        } catch {
             // fallback: do nothing
         }
     };

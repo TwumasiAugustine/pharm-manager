@@ -1,16 +1,8 @@
 import { BranchSelect } from '../components/molecules/BranchSelect';
 import React, { useState, useRef, useEffect } from 'react';
 import { useSales } from '../hooks/useSales';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '../components/atoms/Button';
-import {
-    FaEye,
-    FaCalendarAlt,
-    FaFilter,
-    FaEllipsisV,
-    FaLayerGroup,
-    FaPlus,
-} from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { FaEye, FaCalendarAlt } from 'react-icons/fa';
 import { Table } from '../components/molecules/Table';
 import type { TableColumn, TableAction } from '../components/molecules/Table';
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -31,7 +23,6 @@ import type {
 } from '../types/sale.types';
 import { Input } from '../components/atoms/Input';
 import { SalesPageActions } from '../components/organisms/SalesPageActions';
-import { useAuthStore } from '../store/auth.store';
 
 const SalesListPage: React.FC = () => {
     // Pagination and filter state
@@ -52,7 +43,6 @@ const SalesListPage: React.FC = () => {
     const [showFilters, setShowFilters] = useState(false);
 
     const navigate = useNavigate();
-    const { user } = useAuthStore();
     const { data, isLoading, error, refetch } = useSales({
         ...filters,
         branchId,
@@ -507,7 +497,6 @@ const SalesListPage: React.FC = () => {
 
                     {/* Sales Actions Component */}
                     <SalesPageActions
-                        user={user}
                         showActionsDropdown={showActionsDropdown}
                         onToggleActionsDropdown={() =>
                             setShowActionsDropdown(!showActionsDropdown)
@@ -517,7 +506,7 @@ const SalesListPage: React.FC = () => {
                         onToggleGrouping={toggleGrouping}
                         onCreateSale={() => navigate('/sales/new')}
                         isLoading={isLoading}
-                        isGrouped={filters.groupByDate}
+                        isGrouped={!!filters.groupByDate}
                         actionsDropdownRef={dropdownRef}
                     />
                 </div>

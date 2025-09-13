@@ -3,6 +3,7 @@ import { useLogout } from '../hooks/useAuth';
 import { useAuthStore } from '../store/auth.store';
 import { Link, useLocation } from 'react-router-dom';
 import type { User } from '../types/auth.types';
+import { UserRole } from '../types/auth.types';
 import {
     FaSignOutAlt,
     FaUser,
@@ -239,19 +240,22 @@ function Sidebar({
                 >
                     {navItems.map((item) => {
                         // Super admin can access everything EXCEPT finalize (cashier-only items)
-                        if (user?.role === 'super_admin') {
+                        if (user?.role === UserRole.SUPER_ADMIN) {
                             // Super admin cannot access cashier-only items (finalize functionality)
                             if (item.cashierOnly) return null;
                         } else {
                             // Admin-only items - now include super_admin
                             if (
                                 item.adminOnly &&
-                                user?.role !== 'admin' &&
-                                user?.role !== 'super_admin'
+                                user?.role !== UserRole.ADMIN &&
+                                user?.role !== UserRole.SUPER_ADMIN
                             )
                                 return null;
                             // Cashier-only items
-                            if (item.cashierOnly && user?.role !== 'cashier')
+                            if (
+                                item.cashierOnly &&
+                                user?.role !== UserRole.CASHIER
+                            )
                                 return null;
                         }
 

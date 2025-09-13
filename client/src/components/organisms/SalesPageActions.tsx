@@ -7,10 +7,8 @@ import {
     FiLayers,
     FiDownload,
 } from 'react-icons/fi';
-import { UserRole, type User } from '../../types/auth.types';
 
 interface SalesPageActionsProps {
-    user: User | null;
     showActionsDropdown: boolean;
     onToggleActionsDropdown: () => void;
     onToggleFilters: () => void;
@@ -21,11 +19,10 @@ interface SalesPageActionsProps {
     isLoading?: boolean;
     isExporting?: boolean;
     isGrouped: boolean;
-    actionsDropdownRef: React.RefObject<HTMLDivElement>;
+    actionsDropdownRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export const SalesPageActions: React.FC<SalesPageActionsProps> = ({
-    user,
     showActionsDropdown,
     onToggleActionsDropdown,
     onToggleFilters,
