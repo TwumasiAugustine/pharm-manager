@@ -83,7 +83,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 
     return (
         <div
-            className={`p-4 border-b border-gray-200 last:border-b-0 transition-all hover:bg-gray-50 ${getBgColor(
+            className={`p-4 notification-item-hover ${getBgColor(
                 notification.type,
                 notification.isRead,
             )} ${!notification.isRead ? 'border-l-4 border-l-blue-500' : ''}`}
@@ -180,9 +180,9 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
             />
 
             {/* Panel */}
-            <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl lg:relative lg:h-auto lg:max-h-96 lg:rounded-lg lg:border">
+            <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl lg:relative lg:h-auto lg:max-h-[32rem] lg:rounded-lg lg:border flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
                     <div className="flex items-center gap-2">
                         <FiBell className="h-5 w-5 text-gray-600" />
                         <h3 className="text-lg font-semibold text-gray-900">
@@ -204,7 +204,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                 </div>
 
                 {/* Filters */}
-                <div className="p-4 border-b border-gray-200">
+                <div className="p-4 border-b border-gray-200 flex-shrink-0">
                     <div className="flex items-center gap-2 mb-3">
                         <FiFilter className="h-4 w-4 text-gray-500" />
                         <span className="text-sm font-medium text-gray-700">
@@ -270,7 +270,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                 </div>
 
                 {/* Notifications List */}
-                <div className="flex-1 overflow-y-auto max-h-80">
+                <div className="flex-1 overflow-y-auto scrollbar-thin notification-scroll-shadow min-h-0">
                     {notificationsLoading ? (
                         <div className="p-4 space-y-4">
                             {[1, 2, 3].map((i) => (
@@ -287,7 +287,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                         </div>
                     ) : filteredNotifications &&
                       filteredNotifications.length > 0 ? (
-                        <div>
+                        <div className="divide-y divide-gray-100">
                             {filteredNotifications.map((notification) => (
                                 <NotificationItem
                                     key={notification.id}
@@ -295,6 +295,19 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                                     onMarkAsRead={(id) => markAsRead.mutate(id)}
                                 />
                             ))}
+                            {/* Scroll indicator for many notifications */}
+                            {filteredNotifications.length > 5 && (
+                                <div className="p-2 text-center bg-gray-50">
+                                    <div className="text-xs text-gray-400 flex items-center justify-center gap-1">
+                                        <span>•</span>
+                                        <span>
+                                            {filteredNotifications.length}{' '}
+                                            notifications total
+                                        </span>
+                                        <span>•</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="p-8 text-center">

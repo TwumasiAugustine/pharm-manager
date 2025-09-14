@@ -6,6 +6,7 @@ import { Types } from 'mongoose';
 import mongoose from 'mongoose';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 import { CustomerService } from './customer.service';
+import { AssignmentService } from './assignment.service';
 
 // Helper type for mapped sale objects
 type MappedSaleItem = {
@@ -48,6 +49,14 @@ export class SaleService {
             );
         }
         return (defaultBranch._id as Types.ObjectId).toString();
+    }
+
+    /**
+     * Get default pharmacy ID for automatic assignment
+     * @returns The default pharmacy ID or throws error if no pharmacy exists
+     */
+    private async getPharmacyId(): Promise<string> {
+        return await AssignmentService.getDefaultPharmacyId();
     }
 
     /**
@@ -223,6 +232,9 @@ export class SaleService {
                         );
                     }
 
+                    // Get pharmacyId for automatic assignment
+                    const pharmacyId = await this.getPharmacyId();
+
                     const salePayload: any = {
                         items: saleItems,
                         totalAmount: calculatedTotal,
@@ -237,6 +249,7 @@ export class SaleService {
                         shortCode: data.shortCode,
                         finalized: data.finalized,
                         branch: new Types.ObjectId(resolvedBranchId),
+                        pharmacyId: pharmacyId,
                     };
 
                     const sale = await Sale.create([salePayload], {
@@ -412,6 +425,9 @@ export class SaleService {
                 );
             }
 
+            // Get pharmacyId for automatic assignment
+            const pharmacyId = await this.getPharmacyId();
+
             const salePayload: any = {
                 items: saleItems,
                 totalAmount: calculatedTotal,
@@ -429,6 +445,7 @@ export class SaleService {
 
             // Always attach branch (resolved from seller's branch or provided)
             salePayload.branch = new Types.ObjectId(resolvedBranchId);
+            salePayload.pharmacyId = pharmacyId;
 
             const sale = await Sale.create(salePayload);
 

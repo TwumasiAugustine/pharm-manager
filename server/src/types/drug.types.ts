@@ -43,8 +43,8 @@ export interface ICreateDrugRequest {
     location?: string;
     /** Cost price per unit */
     costPrice: number;
-    /** Branch ID for the drug */
-    branchId: string;
+    /** Branch ID for the drug (optional for super admin - will use default branch) */
+    branchId?: string;
 }
 
 /**

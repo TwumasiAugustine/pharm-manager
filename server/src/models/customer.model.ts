@@ -42,7 +42,6 @@ const customerSchema = new Schema<ICustomer>(
             type: Schema.Types.ObjectId,
             ref: 'PharmacyInfo',
             required: true,
-            index: true,
         },
         branch: {
             type: Schema.Types.ObjectId,

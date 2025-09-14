@@ -51,7 +51,7 @@ export class DrugController {
 
             res.status(201).json(
                 successResponse(
-                    { drug: drugService['mapDrugToResponse'](drug) },
+                    { drug: drug },
                     'Drug created successfully',
                     201,
                 ),
@@ -80,10 +80,7 @@ export class DrugController {
             );
 
             res.status(200).json(
-                successResponse(
-                    { drug: drugService['mapDrugToResponse'](drug) },
-                    'Drug retrieved successfully',
-                ),
+                successResponse({ drug: drug }, 'Drug retrieved successfully'),
             );
         } catch (error) {
             next(error);
@@ -141,10 +138,7 @@ export class DrugController {
             });
 
             res.status(200).json(
-                successResponse(
-                    { drug: drugService['mapDrugToResponse'](drug) },
-                    'Drug updated successfully',
-                ),
+                successResponse({ drug: drug }, 'Drug updated successfully'),
             );
         } catch (error) {
             next(error);

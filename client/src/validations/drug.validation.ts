@@ -78,8 +78,11 @@ export const drugSchema = z.object({
         .optional(),
     branchId: z
         .string()
-        .min(2, 'Branch Id must be at least 2 characters')
-        .max(100, 'Branch Id must be less than 100 characters'),
+        .transform((val) => val || undefined) // Convert empty string to undefined
+        .optional()
+        .refine((val) => !val || val.length >= 2, {
+            message: 'Branch Id must be at least 2 characters when provided',
+        }),
 });
 
 /**

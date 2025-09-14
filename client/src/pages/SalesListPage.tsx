@@ -256,7 +256,13 @@ const SalesListPage: React.FC = () => {
     const saleActions: TableAction<Sale>[] = [
         {
             label: 'View',
-            onClick: (sale) => navigate(`/sales/${sale._id}`),
+            onClick: (sale) => {
+                if (sale._id || sale.id) {
+                    navigate(`/sales/${sale._id || sale.id}`);
+                } else {
+                    console.error('Sale ID is missing:', sale);
+                }
+            },
             icon: <FaEye className="h-4 w-4" />,
         },
     ];

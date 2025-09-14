@@ -14,7 +14,6 @@
  */
 
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -24,6 +23,15 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 // Import models after environment is loaded
 import User from '../src/models/user.model';
 import { UserRole } from '../src/types/auth.types';
+import {
+    USER_PERMISSIONS,
+    PHARMACY_PERMISSIONS,
+    BRANCH_PERMISSIONS,
+    REPORT_PERMISSIONS,
+    DRUG_PERMISSIONS,
+    CUSTOMER_PERMISSIONS,
+    SALES_PERMISSIONS,
+} from '../src/constants/permissions';
 
 interface CreateSuperAdminOptions {
     name: string;
@@ -81,39 +89,45 @@ class AutoSuperAdminCreator {
             const normalizedEmail = options.email.trim().toLowerCase();
 
             // Check if user already exists
-            if (!options.force) {
-                const existingUser = await User.findOne({
-                    email: normalizedEmail,
-                });
-                if (existingUser) {
+            const existingUser = await User.findOne({
+                email: normalizedEmail,
+            });
+
+            if (existingUser) {
+                if (!options.force) {
                     throw new Error(
                         `User with email ${normalizedEmail} already exists`,
+                    );
+                } else {
+                    // Delete existing user when force is true
+                    await User.deleteOne({ email: normalizedEmail });
+                    console.log(
+                        `🗑️  Deleted existing user: ${normalizedEmail}`,
                     );
                 }
             }
 
-            // Hash password
-            const hashedPassword = await bcrypt.hash(options.password, 10);
-
-            // Create user document
+            // Create user document (password will be hashed by pre-save middleware)
             const user = new User({
                 name: options.name.trim(),
                 email: normalizedEmail,
-                password: hashedPassword,
+                password: options.password, // Let pre-save middleware handle hashing
                 role: UserRole.SUPER_ADMIN,
                 isFirstSetup: false,
                 permissions: [
-                    'CREATE_USER',
-                    'UPDATE_USER',
-                    'DELETE_USER',
-                    'VIEW_USERS',
-                    'MANAGE_PERMISSIONS',
-                    'MANAGE_PHARMACY',
-                    'MANAGE_BRANCHES',
-                    'VIEW_REPORTS',
-                    'MANAGE_DRUGS',
-                    'MANAGE_CUSTOMERS',
-                    'VIEW_SALES',
+                    USER_PERMISSIONS.CREATE_USER,
+                    USER_PERMISSIONS.UPDATE_USER,
+                    USER_PERMISSIONS.DELETE_USER,
+                    USER_PERMISSIONS.VIEW_USERS,
+                    USER_PERMISSIONS.MANAGE_PERMISSIONS,
+                    PHARMACY_PERMISSIONS.MANAGE_PHARMACY,
+                    PHARMACY_PERMISSIONS.VIEW_PHARMACY_INFO,
+                    PHARMACY_PERMISSIONS.UPDATE_PHARMACY_SETTINGS,
+                    BRANCH_PERMISSIONS.MANAGE_BRANCHES,
+                    REPORT_PERMISSIONS.VIEW_REPORTS,
+                    DRUG_PERMISSIONS.MANAGE_DRUGS,
+                    CUSTOMER_PERMISSIONS.MANAGE_CUSTOMERS,
+                    SALES_PERMISSIONS.VIEW_SALES,
                 ],
                 // pharmacyId is intentionally omitted for super admin during initial setup
             });

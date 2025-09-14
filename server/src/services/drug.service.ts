@@ -1,4 +1,7 @@
 import { Drug, IDrug } from '../models/drug.model';
+import Branch from '../models/branch.model';
+import PharmacyInfo from '../models/pharmacy-info.model';
+import { AssignmentService } from './assignment.service';
 import {
     ICreateDrugRequest,
     IDrugSearchParams,
@@ -11,11 +14,28 @@ import {
     BadRequestError,
     ForbiddenError,
 } from '../utils/errors';
+import mongoose, { Types } from 'mongoose';
 
 /**
  * Service for drug-related operations
  */
 export class DrugService {
+    /**
+     * Get default branch ID if no branchId is provided
+     * @returns The first available branch ID or throws error if no branches exist
+     */
+    private async getDefaultBranchId(): Promise<string> {
+        return await AssignmentService.getDefaultBranchId();
+    }
+
+    /**
+     * Get pharmacy ID from the first available pharmacy
+     * @returns The pharmacy ID or throws error if no pharmacy exists
+     */
+    private async getPharmacyId(): Promise<string> {
+        return await AssignmentService.getDefaultPharmacyId();
+    }
+
     /**
      * Create a new drug
      * @param drugData The drug data to create
@@ -27,23 +47,22 @@ export class DrugService {
         drugData: ICreateDrugRequest,
         userRole: UserRole,
         userBranchId?: string,
-    ): Promise<IDrug> {
+    ): Promise<any> {
         // Only super admin can create drugs
         if (userRole !== UserRole.SUPER_ADMIN) {
             throw new ForbiddenError('Only super admin can create drugs');
         }
 
-        // Ensure branchId is provided for the drug
-        if (!drugData.branchId) {
-            throw new BadRequestError(
-                'Branch ID is required for drug creation',
-            );
+        // For super admin, use default branch if no branchId is provided
+        let effectiveBranchId = drugData.branchId;
+        if (!effectiveBranchId) {
+            effectiveBranchId = await this.getDefaultBranchId();
         }
 
         // Check if drug with same batch number already exists in the same branch
         const existingDrug = await Drug.findOne({
             batchNumber: drugData.batchNumber,
-            branch: drugData.branchId,
+            branch: effectiveBranchId,
         });
 
         if (existingDrug) {
@@ -59,15 +78,19 @@ export class DrugService {
             );
         }
 
-        // Create drug with branch assignment
+        // Get pharmacy ID for the drug
+        const pharmacyId = await this.getPharmacyId();
+
+        // Create drug with branch and pharmacy assignment
         const drugCreateData = {
             ...drugData,
-            branch: drugData.branchId,
+            branch: effectiveBranchId,
+            pharmacyId: pharmacyId,
         };
 
         // Create and return the new drug
         const drug = await Drug.create(drugCreateData);
-        return drug;
+        return this.mapDrugToResponse(drug);
     }
 
     /**
@@ -81,7 +104,7 @@ export class DrugService {
         id: string,
         userRole?: UserRole,
         userBranchId?: string,
-    ): Promise<IDrug> {
+    ): Promise<any> {
         let query: any = { _id: id };
 
         // If not super admin, filter by branch
@@ -95,7 +118,7 @@ export class DrugService {
             throw new NotFoundError(`Drug with ID ${id} not found`);
         }
 
-        return drug;
+        return this.mapDrugToResponse(drug);
     }
 
     /**
@@ -111,23 +134,29 @@ export class DrugService {
         updateData: IUpdateDrugRequest,
         userRole: UserRole,
         userBranchId?: string,
-    ): Promise<IDrug> {
+    ): Promise<any> {
         // Only super admin can update drugs
         if (userRole !== UserRole.SUPER_ADMIN) {
             throw new ForbiddenError('Only super admin can update drugs');
         }
 
-        // Get the existing drug first to verify access
-        const drug = await this.getDrugById(id, userRole, userBranchId);
+        // Get the existing drug first to verify access (this now returns mapped response)
+        const existingDrug = await this.getDrugById(id, userRole, userBranchId);
+
+        // Convert the mapped response back to get the raw branch for batch number check
+        const rawDrug = await Drug.findById(id);
+        if (!rawDrug) {
+            throw new NotFoundError(`Drug with ID ${id} not found`);
+        }
 
         // If batch number is being updated, check for duplicates in the same branch
         if (
             updateData.batchNumber &&
-            updateData.batchNumber !== drug.batchNumber
+            updateData.batchNumber !== rawDrug.batchNumber
         ) {
             const existingDrug = await Drug.findOne({
                 batchNumber: updateData.batchNumber,
-                branch: drug.branch, // Check within the same branch
+                branch: rawDrug.branch, // Check within the same branch
             });
 
             if (existingDrug && existingDrug.id !== id) {
@@ -145,7 +174,7 @@ export class DrugService {
         // Backward compatibility: assign default costPrice if missing
         if (
             updateData.costPrice === undefined &&
-            (drug as any).costPrice === undefined
+            (rawDrug as any).costPrice === undefined
         ) {
             updateData.costPrice = 0.01;
         }
@@ -163,7 +192,7 @@ export class DrugService {
             runValidators: true,
         });
 
-        return updatedDrug!;
+        return this.mapDrugToResponse(updatedDrug!);
     }
 
     /**
@@ -362,6 +391,8 @@ export class DrugService {
             requiresPrescription: drug.requiresPrescription,
             supplier: drug.supplier,
             location: drug.location,
+            branch: drug.branch, // Include branch field for frontend compatibility
+            branchId: drug.branch, // Also include as branchId for frontend convenience
             createdAt: drug.createdAt,
             updatedAt: drug.updatedAt,
         };

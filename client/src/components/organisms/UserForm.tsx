@@ -95,7 +95,7 @@ const UserForm: React.FC<UserFormProps> = ({
                     required
                 >
                     <option value={UserRole.ADMIN}>Admin</option>
-                    <option value={UserRole.SUPER_ADMIN}>Cashier</option>
+                    <option value={UserRole.SUPER_ADMIN}>Super Admin</option>
                     <option value={UserRole.PHARMACIST}>Pharmacist</option>
                     <option value={UserRole.CASHIER}>Cashier</option>
                 </select>

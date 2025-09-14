@@ -119,7 +119,6 @@ const drugSchema = new Schema<IDrug>(
             type: Schema.Types.ObjectId,
             ref: 'PharmacyInfo',
             required: true,
-            index: true,
         },
         branch: {
             type: Schema.Types.ObjectId,

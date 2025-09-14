@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import User from '../models/user.model';
 import Branch from '../models/branch.model';
+import { AssignmentService } from './assignment.service';
 import { generateTokens } from '../utils/jwt';
 import {
     BadRequestError,
@@ -305,19 +306,37 @@ export class AuthService {
             );
         }
 
+        // Auto-assign pharmacy and branch if not provided
+        const autoAssignedData = await AssignmentService.autoAssignUserIds(
+            data,
+            ['pharmacist', 'cashier'].includes(data.role || ''), // Require branch for non-admin roles
+        );
+
+        // Use auto-assigned pharmacy ID if adminPharmacyId is not provided
+        const effectivePharmacyId =
+            adminPharmacyId || autoAssignedData.pharmacyId;
+
+        // Validate assignments
+        if (autoAssignedData.pharmacyId || autoAssignedData.branchId) {
+            await AssignmentService.validateAssignments(
+                autoAssignedData.pharmacyId,
+                autoAssignedData.branchId,
+            );
+        }
+
         // Validate branch assignment if provided
-        if (data.branchId) {
-            if (!mongoose.Types.ObjectId.isValid(data.branchId)) {
+        if (autoAssignedData.branchId) {
+            if (!mongoose.Types.ObjectId.isValid(autoAssignedData.branchId)) {
                 throw new BadRequestError('Invalid branch ID format');
             }
-            const branch = await Branch.findById(data.branchId);
+            const branch = await Branch.findById(autoAssignedData.branchId);
             if (!branch) {
                 throw new NotFoundError('Branch not found');
             }
-            // Ensure branch belongs to the same pharmacy (only if we have adminPharmacyId)
+            // Ensure branch belongs to the same pharmacy (only if we have effectivePharmacyId)
             if (
-                adminPharmacyId &&
-                branch.pharmacyId.toString() !== adminPharmacyId
+                effectivePharmacyId &&
+                branch.pharmacyId.toString() !== effectivePharmacyId
             ) {
                 throw new UnauthorizedError(
                     'Cannot assign user to branch from different pharmacy',
@@ -326,51 +345,55 @@ export class AuthService {
         }
 
         // Normalize email
-        const normalizedEmail = normalizeEmail(data.email);
+        const normalizedEmail = normalizeEmail(autoAssignedData.email);
 
         // Prevent duplicate emails within the same pharmacy
         const emailQuery: any = { email: normalizedEmail };
-        if (adminPharmacyId) {
-            emailQuery.pharmacyId = adminPharmacyId;
+        if (effectivePharmacyId) {
+            emailQuery.pharmacyId = effectivePharmacyId;
         }
 
         const existing = await User.findOne(emailQuery);
         if (existing) {
             throw new ConflictError(
                 'A user with this email already exists' +
-                    (adminPharmacyId ? ' in this pharmacy' : ''),
+                    (effectivePharmacyId ? ' in this pharmacy' : ''),
             );
         }
 
-        const hashedPassword = await bcrypt.hash(data.password, 10);
+        const hashedPassword = await bcrypt.hash(autoAssignedData.password, 10);
 
         const userData: any = {
-            ...data,
+            ...autoAssignedData,
             email: normalizedEmail,
             password: hashedPassword,
-            isFirstSetup: data.role === 'admin' ? true : false,
+            isFirstSetup: autoAssignedData.role === 'admin' ? true : false,
         };
 
-        // Only set pharmacyId if adminPharmacyId is provided
-        if (adminPharmacyId) {
-            userData.pharmacyId = new mongoose.Types.ObjectId(adminPharmacyId);
+        // Set pharmacyId if we have one
+        if (effectivePharmacyId) {
+            userData.pharmacyId = new mongoose.Types.ObjectId(
+                effectivePharmacyId,
+            );
         }
 
         // Super admin cannot have FINALIZE_SALE permission
         if (
-            data.role === 'super_admin' &&
-            data.permissions?.includes('FINALIZE_SALE')
+            autoAssignedData.role === 'super_admin' &&
+            autoAssignedData.permissions?.includes('FINALIZE_SALE')
         ) {
-            userData.permissions = data.permissions.filter(
-                (p) => p !== 'FINALIZE_SALE',
+            userData.permissions = autoAssignedData.permissions.filter(
+                (p: string) => p !== 'FINALIZE_SALE',
             );
-        } else if (data.permissions) {
-            userData.permissions = data.permissions;
+        } else if (autoAssignedData.permissions) {
+            userData.permissions = autoAssignedData.permissions;
         }
 
         // Convert branchId to branch field for MongoDB
-        if (data.branchId) {
-            userData.branch = new mongoose.Types.ObjectId(data.branchId);
+        if (autoAssignedData.branchId) {
+            userData.branch = new mongoose.Types.ObjectId(
+                autoAssignedData.branchId,
+            );
             delete userData.branchId;
         }
 

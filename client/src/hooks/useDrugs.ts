@@ -251,6 +251,12 @@ export const useUpdateDrug = (id: string) => {
             notify.success('Drug updated successfully');
         },
         onError: (error: Error) => {
+            console.error('Drug update error:', error);
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+            });
             notify.error(error.message || 'Failed to update drug');
         },
     });

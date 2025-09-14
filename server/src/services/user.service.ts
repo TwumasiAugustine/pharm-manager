@@ -45,7 +45,8 @@ export class UserService {
     }
 
     async createUser(data: IUserWithBranchId, adminPharmacyId?: string) {
-        if (!adminPharmacyId) {
+        // Allow super admin operations without pharmacy ID
+        if (!adminPharmacyId && adminPharmacyId !== '') {
             // Fallback to original behavior if no pharmacy ID provided
             throw new BadRequestError('Pharmacy ID is required');
         }
@@ -58,7 +59,8 @@ export class UserService {
         data: IUserWithBranchId,
         adminPharmacyId?: string,
     ) {
-        if (!adminPharmacyId) {
+        // Allow super admin operations without pharmacy ID
+        if (!adminPharmacyId && adminPharmacyId !== '') {
             // Fallback to original behavior if no pharmacy ID provided
             throw new BadRequestError('Pharmacy ID is required');
         }
@@ -67,7 +69,8 @@ export class UserService {
     }
 
     async deleteUser(id: string, adminPharmacyId?: string) {
-        if (!adminPharmacyId) {
+        // Allow super admin operations without pharmacy ID
+        if (!adminPharmacyId && adminPharmacyId !== '') {
             // Fallback to original behavior if no pharmacy ID provided
             throw new BadRequestError('Pharmacy ID is required');
         }

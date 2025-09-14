@@ -71,7 +71,6 @@ const saleSchema = new Schema<ISale>(
             type: Schema.Types.ObjectId,
             ref: 'PharmacyInfo',
             required: true,
-            index: true,
         },
         branch: {
             type: Schema.Types.ObjectId,

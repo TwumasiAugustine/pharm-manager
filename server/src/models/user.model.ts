@@ -56,7 +56,6 @@ const userSchema = new Schema<IUserDoc>(
             type: Schema.Types.ObjectId,
             ref: 'PharmacyInfo',
             required: false, // Allow first user signup without pharmacy
-            index: true,
         },
         branch: {
             type: Schema.Types.ObjectId,
