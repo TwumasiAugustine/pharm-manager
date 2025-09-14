@@ -168,8 +168,8 @@ export const PERMISSION_CATEGORIES = {
 
 // Role-based default permissions
 export const ROLE_PERMISSIONS = {
-    SUPER_ADMIN: Object.values(ALL_PERMISSIONS),
-    ADMIN: [
+    super_admin: Object.values(ALL_PERMISSIONS),
+    admin: [
         // User Management (limited)
         USER_PERMISSIONS.CREATE_USER,
         USER_PERMISSIONS.UPDATE_USER,
@@ -205,7 +205,7 @@ export const ROLE_PERMISSIONS = {
         // Expiry Management
         ...Object.values(EXPIRY_PERMISSIONS),
     ],
-    PHARMACIST: [
+    pharmacist: [
         // User Management (view only)
         USER_PERMISSIONS.VIEW_USERS,
 
@@ -243,7 +243,7 @@ export const ROLE_PERMISSIONS = {
         EXPIRY_PERMISSIONS.VIEW_EXPIRY_ALERTS,
         EXPIRY_PERMISSIONS.DISPOSE_EXPIRED_DRUGS,
     ],
-    CASHIER: [
+    cashier: [
         // Branch (view only)
         BRANCH_PERMISSIONS.VIEW_BRANCHES,
 

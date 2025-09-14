@@ -12,6 +12,8 @@ import { BranchSelect } from '../components/molecules/BranchSelect';
 import { useDebounce } from '../hooks/useDebounce';
 import { FaUsers, FaUserPlus, FaSync, FaDownload } from 'react-icons/fa';
 import { FiMoreVertical } from 'react-icons/fi';
+import PermissionGuard from '../components/atoms/PermissionGuard';
+import { PERMISSION_KEYS } from '../types/permission.types';
 
 const CustomerManagementPage: React.FC = () => {
     const [branchId, setBranchId] = useState<string>('');
@@ -205,13 +207,17 @@ const CustomerManagementPage: React.FC = () => {
                     <div className="flex items-center gap-3 flex-wrap justify-end lg:justify-start">
                         {/* Desktop view - show all buttons (large screens and above) */}
                         <div className="hidden lg:flex items-center gap-3">
-                            <button
-                                onClick={() => setShowForm(!showForm)}
-                                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                            <PermissionGuard
+                                permission={PERMISSION_KEYS.CREATE_CUSTOMER}
                             >
-                                <FaUserPlus className="h-4 w-4 mr-2" />
-                                {showForm ? 'Cancel' : 'Add New Customer'}
-                            </button>
+                                <button
+                                    onClick={() => setShowForm(!showForm)}
+                                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                >
+                                    <FaUserPlus className="h-4 w-4 mr-2" />
+                                    {showForm ? 'Cancel' : 'Add New Customer'}
+                                </button>
+                            </PermissionGuard>
                         </div>
 
                         {/* Mobile/Tablet view - Actions dropdown (small to large screens) */}
@@ -234,18 +240,26 @@ const CustomerManagementPage: React.FC = () => {
                                 <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-40">
                                     <div className="py-1">
                                         {/* Add Customer option */}
-                                        <button
-                                            onClick={() => {
-                                                setShowForm(!showForm);
-                                                setShowActionsDropdown(false);
-                                            }}
-                                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                        <PermissionGuard
+                                            permission={
+                                                PERMISSION_KEYS.CREATE_CUSTOMER
+                                            }
                                         >
-                                            <FaUserPlus className="h-4 w-4 mr-3" />
-                                            {showForm
-                                                ? 'Cancel'
-                                                : 'Add New Customer'}
-                                        </button>
+                                            <button
+                                                onClick={() => {
+                                                    setShowForm(!showForm);
+                                                    setShowActionsDropdown(
+                                                        false,
+                                                    );
+                                                }}
+                                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                            >
+                                                <FaUserPlus className="h-4 w-4 mr-3" />
+                                                {showForm
+                                                    ? 'Cancel'
+                                                    : 'Add New Customer'}
+                                            </button>
+                                        </PermissionGuard>
 
                                         {/* Refresh option */}
                                         <button

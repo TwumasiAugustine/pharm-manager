@@ -6,6 +6,8 @@ import { FaEye, FaCalendarAlt } from 'react-icons/fa';
 import { Table } from '../components/molecules/Table';
 import type { TableColumn, TableAction } from '../components/molecules/Table';
 import DashboardLayout from '../layouts/DashboardLayout';
+import PermissionGuard from '../components/atoms/PermissionGuard';
+import { PERMISSION_KEYS } from '../types/permission.types';
 import { format, parseISO, subDays } from 'date-fns';
 import {
     Alert,
@@ -488,187 +490,208 @@ const SalesListPage: React.FC = () => {
 
     return (
         <DashboardLayout>
-            <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex items-center gap-3 mb-4">
-                    <BranchSelect value={branchId} onChange={setBranchId} />
-                </div>
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-semibold">Sales History</h2>
-
-                    {/* Sales Actions Component */}
-                    <SalesPageActions
-                        showActionsDropdown={showActionsDropdown}
-                        onToggleActionsDropdown={() =>
-                            setShowActionsDropdown(!showActionsDropdown)
-                        }
-                        onToggleFilters={() => setShowFilters(!showFilters)}
-                        onRefresh={() => refetch()}
-                        onToggleGrouping={toggleGrouping}
-                        onCreateSale={() => navigate('/sales/new')}
-                        isLoading={isLoading}
-                        isGrouped={!!filters.groupByDate}
-                        actionsDropdownRef={dropdownRef}
-                    />
-                </div>
-                {/* Filter controls */}
-                {showFilters && (
-                    <div className="mb-6 p-4 border rounded-md bg-gray-50">
-                        <h3 className="text-lg font-medium mb-4">
-                            Filter Sales
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Start Date
-                                </label>
-                                <div className="relative">
-                                    <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                    <Input
-                                        type="date"
-                                        value={filters.startDate || ''}
-                                        onChange={(e) =>
-                                            handleFilterChange(
-                                                'startDate',
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="pl-10"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    End Date
-                                </label>
-                                <div className="relative">
-                                    <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                    <Input
-                                        type="date"
-                                        value={filters.endDate || ''}
-                                        onChange={(e) =>
-                                            handleFilterChange(
-                                                'endDate',
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="pl-10"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Sort By
-                                </label>
-                                <select
-                                    value={`${filters.sortBy}-${filters.sortOrder}`}
-                                    onChange={(e) => {
-                                        const [sortBy, sortOrder] =
-                                            e.target.value.split('-');
-                                        handleFilterChange('sortBy', sortBy);
-                                        handleFilterChange(
-                                            'sortOrder',
-                                            sortOrder,
-                                        );
-                                    }}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                    aria-label="Sort sales by"
-                                >
-                                    <option value="date-desc">
-                                        Date (Newest First)
-                                    </option>
-                                    <option value="date-asc">
-                                        Date (Oldest First)
-                                    </option>
-                                    <option value="total-desc">
-                                        Amount (High to Low)
-                                    </option>
-                                    <option value="total-asc">
-                                        Amount (Low to High)
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-                        <div className="flex justify-end">
-                            <button
-                                onClick={applyFilters}
-                                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                            >
-                                Apply Filters
-                            </button>
+            <PermissionGuard
+                permission={PERMISSION_KEYS.VIEW_SALES}
+                fallback={
+                    <div className="bg-white rounded-lg shadow-md p-6">
+                        <div className="text-center py-8">
+                            <p className="text-gray-500">
+                                You don't have permission to view sales data.
+                            </p>
                         </div>
                     </div>
-                )}
+                }
+            >
+                <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                        <BranchSelect value={branchId} onChange={setBranchId} />
+                    </div>
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-semibold">
+                            Sales History
+                        </h2>
 
-                {/* Conditionally show either grouped or individual sales */}
-                {filters.groupByDate ? (
-                    <>
-                        {/* Grouped sales table */}
-                        <Table
-                            columns={groupedColumns}
-                            data={groupedSalesData}
-                            actions={groupedActions}
+                        {/* Sales Actions Component */}
+                        <SalesPageActions
+                            showActionsDropdown={showActionsDropdown}
+                            onToggleActionsDropdown={() =>
+                                setShowActionsDropdown(!showActionsDropdown)
+                            }
+                            onToggleFilters={() => setShowFilters(!showFilters)}
+                            onRefresh={() => refetch()}
+                            onToggleGrouping={toggleGrouping}
+                            onCreateSale={() => navigate('/sales/new')}
                             isLoading={isLoading}
-                            emptyMessage={`No sales recorded yet. ${
-                                data?.data
-                                    ? `Raw data has ${data.data.length} items`
-                                    : ''
-                            }`}
+                            isGrouped={!!filters.groupByDate}
+                            actionsDropdownRef={dropdownRef}
                         />
+                    </div>
+                    {/* Filter controls */}
+                    {showFilters && (
+                        <div className="mb-6 p-4 border rounded-md bg-gray-50">
+                            <h3 className="text-lg font-medium mb-4">
+                                Filter Sales
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Start Date
+                                    </label>
+                                    <div className="relative">
+                                        <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                        <Input
+                                            type="date"
+                                            value={filters.startDate || ''}
+                                            onChange={(e) =>
+                                                handleFilterChange(
+                                                    'startDate',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className="pl-10"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        End Date
+                                    </label>
+                                    <div className="relative">
+                                        <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                        <Input
+                                            type="date"
+                                            value={filters.endDate || ''}
+                                            onChange={(e) =>
+                                                handleFilterChange(
+                                                    'endDate',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className="pl-10"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Sort By
+                                    </label>
+                                    <select
+                                        value={`${filters.sortBy}-${filters.sortOrder}`}
+                                        onChange={(e) => {
+                                            const [sortBy, sortOrder] =
+                                                e.target.value.split('-');
+                                            handleFilterChange(
+                                                'sortBy',
+                                                sortBy,
+                                            );
+                                            handleFilterChange(
+                                                'sortOrder',
+                                                sortOrder,
+                                            );
+                                        }}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        aria-label="Sort sales by"
+                                    >
+                                        <option value="date-desc">
+                                            Date (Newest First)
+                                        </option>
+                                        <option value="date-asc">
+                                            Date (Oldest First)
+                                        </option>
+                                        <option value="total-desc">
+                                            Amount (High to Low)
+                                        </option>
+                                        <option value="total-asc">
+                                            Amount (Low to High)
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={applyFilters}
+                                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                >
+                                    Apply Filters
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
-                        {/* Expanded details for a specific date */}
-                        {expandedDate && (
-                            <div className="mt-4 p-4 border border-blue-200 rounded-md bg-blue-50">
-                                <h3 className="text-lg font-medium mb-4">
-                                    Sales Details for{' '}
-                                    {format(parseISO(expandedDate), 'PPP')}
-                                </h3>
-                                {groupedSalesData.find(
-                                    (group) => group.date === expandedDate,
-                                )?.sales && (
-                                    <Table
-                                        columns={saleColumns}
-                                        data={
-                                            groupedSalesData.find(
-                                                (group) =>
-                                                    group.date === expandedDate,
-                                            )!.sales
-                                        }
-                                        actions={saleActions}
-                                        isLoading={false}
-                                        emptyMessage="No sales for this date."
-                                    />
-                                )}
+                    {/* Conditionally show either grouped or individual sales */}
+                    {filters.groupByDate ? (
+                        <>
+                            {/* Grouped sales table */}
+                            <Table
+                                columns={groupedColumns}
+                                data={groupedSalesData}
+                                actions={groupedActions}
+                                isLoading={isLoading}
+                                emptyMessage={`No sales recorded yet. ${
+                                    data?.data
+                                        ? `Raw data has ${data.data.length} items`
+                                        : ''
+                                }`}
+                            />
+
+                            {/* Expanded details for a specific date */}
+                            {expandedDate && (
+                                <div className="mt-4 p-4 border border-blue-200 rounded-md bg-blue-50">
+                                    <h3 className="text-lg font-medium mb-4">
+                                        Sales Details for{' '}
+                                        {format(parseISO(expandedDate), 'PPP')}
+                                    </h3>
+                                    {groupedSalesData.find(
+                                        (group) => group.date === expandedDate,
+                                    )?.sales && (
+                                        <Table
+                                            columns={saleColumns}
+                                            data={
+                                                groupedSalesData.find(
+                                                    (group) =>
+                                                        group.date ===
+                                                        expandedDate,
+                                                )!.sales
+                                            }
+                                            actions={saleActions}
+                                            isLoading={false}
+                                            emptyMessage="No sales for this date."
+                                        />
+                                    )}
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            {/* Individual sales table (ungrouped) */}
+                            <Table
+                                columns={saleColumns}
+                                data={salesData}
+                                actions={saleActions}
+                                isLoading={isLoading}
+                                emptyMessage="No individual sales found."
+                            />
+                        </>
+                    )}
+
+                    {/* Pagination for both view modes */}
+                    {data &&
+                        data.pagination &&
+                        data.pagination.totalPages > 1 && (
+                            <div className="mt-6">
+                                <Pagination
+                                    currentPage={data.pagination.page}
+                                    totalPages={data.pagination.totalPages}
+                                    onPageChange={handlePageChange}
+                                    showInfo={true}
+                                    totalItems={data.pagination.total}
+                                    itemsPerPage={data.pagination.limit}
+                                    size="md"
+                                />
                             </div>
                         )}
-                    </>
-                ) : (
-                    <>
-                        {/* Individual sales table (ungrouped) */}
-                        <Table
-                            columns={saleColumns}
-                            data={salesData}
-                            actions={saleActions}
-                            isLoading={isLoading}
-                            emptyMessage="No individual sales found."
-                        />
-                    </>
-                )}
-
-                {/* Pagination for both view modes */}
-                {data && data.pagination && data.pagination.totalPages > 1 && (
-                    <div className="mt-6">
-                        <Pagination
-                            currentPage={data.pagination.page}
-                            totalPages={data.pagination.totalPages}
-                            onPageChange={handlePageChange}
-                            showInfo={true}
-                            totalItems={data.pagination.total}
-                            itemsPerPage={data.pagination.limit}
-                            size="md"
-                        />
-                    </div>
-                )}
-            </div>
+                </div>
+            </PermissionGuard>
         </DashboardLayout>
     );
 };

@@ -166,4 +166,5 @@ userSchema.index({ pharmacyId: 1, role: 1 }); // Compound index for pharmacy fil
 
 const User = mongoose.model<IUserDoc>('User', userSchema);
 
+export type { IUserDoc };
 export default User;

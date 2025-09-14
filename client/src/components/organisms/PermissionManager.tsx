@@ -8,7 +8,7 @@ import {
     useUserPermissionManagement,
     usePermissionState,
 } from '../../hooks/usePermissions';
-import type { Permission } from '../../api/permission.api';
+import type { Permission } from '../../types/permission.types';
 import {
     FaSearch,
     FaUsers,
@@ -153,7 +153,7 @@ export const PermissionManager: React.FC<PermissionManagerProps> = ({
                             </h2>
                             <p className="text-gray-600 mt-1">
                                 Managing permissions for{' '}
-                                {userPermissions.user.username} (
+                                {userPermissions.user.name} (
                                 {userPermissions.user.role})
                             </p>
                         </div>

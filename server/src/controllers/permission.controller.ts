@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
-import User from '../models/user.model';
+import User, { IUserDoc } from '../models/user.model';
 import PermissionService from '../services/permission.service';
 import {
     ALL_PERMISSIONS,
     PERMISSION_CATEGORIES,
     ROLE_PERMISSIONS,
+    Permission,
     getPermissionsByRole,
     getPermissionDescription,
 } from '../constants/permissions';
@@ -96,7 +97,14 @@ export class PermissionController {
     static async getUserPermissions(req: Request, res: Response) {
         try {
             const { userId } = req.params;
-            const currentUser = req.user as any;
+            const currentUser = req.user;
+
+            if (!currentUser) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Authentication required',
+                });
+            }
 
             // Find the target user
             const user = await User.findById(userId).select('-password');
@@ -108,8 +116,17 @@ export class PermissionController {
             }
 
             // Check if current user can view this user's permissions
+            // For this check, we need to convert token to pseudo-doc for the permission check
+            const currentUserForPermissionCheck = {
+                ...currentUser,
+                _id: currentUser.id,
+            } as any;
+
             if (
-                !PermissionService.canManageUserPermissions(currentUser, user)
+                !PermissionService.canManageUserPermissions(
+                    currentUserForPermissionCheck,
+                    user,
+                )
             ) {
                 return res.status(403).json({
                     success: false,
@@ -119,7 +136,7 @@ export class PermissionController {
 
             const userPermissions = PermissionService.getUserPermissions(user);
             const rolePermissions = getPermissionsByRole(
-                user.role as keyof typeof ROLE_PERMISSIONS,
+                user.role as unknown as keyof typeof ROLE_PERMISSIONS,
             );
             const customPermissions =
                 PermissionService.getCustomPermissions(user);
@@ -129,7 +146,7 @@ export class PermissionController {
                 data: {
                     user: {
                         id: user._id,
-                        username: user.username,
+                        name: user.name,
                         email: user.email,
                         role: user.role,
                     },
@@ -164,7 +181,14 @@ export class PermissionController {
         try {
             const { userId } = req.params;
             const { permissions, resetToRoleDefaults } = req.body;
-            const currentUser = req.user as any;
+            const currentUser = req.user;
+
+            if (!currentUser) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Authentication required',
+                });
+            }
 
             // Validate input
             if (!permissions || !Array.isArray(permissions)) {
@@ -184,8 +208,17 @@ export class PermissionController {
             }
 
             // Check if current user can manage this user's permissions
+            // For this check, we need to convert token to pseudo-doc for the permission check
+            const currentUserForPermissionCheck = {
+                ...currentUser,
+                _id: currentUser.id,
+            } as any;
+
             if (
-                !PermissionService.canManageUserPermissions(currentUser, user)
+                !PermissionService.canManageUserPermissions(
+                    currentUserForPermissionCheck,
+                    user,
+                )
             ) {
                 return res.status(403).json({
                     success: false,
@@ -222,7 +255,7 @@ export class PermissionController {
             const updatedPermissions =
                 PermissionService.getUserPermissions(user);
             const rolePermissions = getPermissionsByRole(
-                user.role as keyof typeof ROLE_PERMISSIONS,
+                user.role as unknown as keyof typeof ROLE_PERMISSIONS,
             );
 
             res.json({
@@ -231,7 +264,7 @@ export class PermissionController {
                 data: {
                     user: {
                         id: user._id,
-                        username: user.username,
+                        name: user.name,
                         email: user.email,
                         role: user.role,
                     },
@@ -266,7 +299,14 @@ export class PermissionController {
         try {
             const { userId } = req.params;
             const { permissions } = req.body;
-            const currentUser = req.user as any;
+            const currentUser = req.user;
+
+            if (!currentUser) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Authentication required',
+                });
+            }
 
             // Validate input
             if (!permissions || !Array.isArray(permissions)) {
@@ -286,8 +326,17 @@ export class PermissionController {
             }
 
             // Check if current user can manage this user's permissions
+            // For this check, we need to convert token to pseudo-doc for the permission check
+            const currentUserForPermissionCheck = {
+                ...currentUser,
+                _id: currentUser.id,
+            } as any;
+
             if (
-                !PermissionService.canManageUserPermissions(currentUser, user)
+                !PermissionService.canManageUserPermissions(
+                    currentUserForPermissionCheck,
+                    user,
+                )
             ) {
                 return res.status(403).json({
                     success: false,
@@ -336,7 +385,14 @@ export class PermissionController {
         try {
             const { userId } = req.params;
             const { permissions } = req.body;
-            const currentUser = req.user as any;
+            const currentUser = req.user;
+
+            if (!currentUser) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Authentication required',
+                });
+            }
 
             // Validate input
             if (!permissions || !Array.isArray(permissions)) {
@@ -356,8 +412,17 @@ export class PermissionController {
             }
 
             // Check if current user can manage this user's permissions
+            // For this check, we need to convert token to pseudo-doc for the permission check
+            const currentUserForPermissionCheck = {
+                ...currentUser,
+                _id: currentUser.id,
+            } as any;
+
             if (
-                !PermissionService.canManageUserPermissions(currentUser, user)
+                !PermissionService.canManageUserPermissions(
+                    currentUserForPermissionCheck,
+                    user,
+                )
             ) {
                 return res.status(403).json({
                     success: false,
@@ -397,7 +462,14 @@ export class PermissionController {
     static async checkPermission(req: Request, res: Response) {
         try {
             const { permission } = req.params;
-            const currentUser = req.user as any;
+            const currentUser = req.user;
+
+            if (!currentUser) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Authentication required',
+                });
+            }
 
             if (!permission) {
                 return res.status(400).json({
@@ -406,9 +478,9 @@ export class PermissionController {
                 });
             }
 
-            const hasPermission = PermissionService.hasPermission(
+            const hasPermission = PermissionService.hasPermissionFromToken(
                 currentUser,
-                permission as any,
+                permission as Permission,
             );
 
             res.json({
@@ -417,8 +489,8 @@ export class PermissionController {
                     permission,
                     hasPermission,
                     user: {
-                        id: currentUser._id,
-                        username: currentUser.username,
+                        id: currentUser.id,
+                        name: currentUser.name,
                         role: currentUser.role,
                     },
                 },
@@ -438,22 +510,29 @@ export class PermissionController {
      */
     static async getCurrentUserPermissions(req: Request, res: Response) {
         try {
-            const currentUser = req.user as any;
+            const currentUser = req.user;
+
+            if (!currentUser) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Authentication required',
+                });
+            }
 
             const userPermissions =
-                PermissionService.getUserPermissions(currentUser);
+                PermissionService.getUserPermissionsFromToken(currentUser);
             const rolePermissions = getPermissionsByRole(
                 currentUser.role as keyof typeof ROLE_PERMISSIONS,
             );
             const customPermissions =
-                PermissionService.getCustomPermissions(currentUser);
+                PermissionService.getCustomPermissionsFromToken(currentUser);
 
             res.json({
                 success: true,
                 data: {
                     user: {
-                        id: currentUser._id,
-                        username: currentUser.username,
+                        id: currentUser.id,
+                        name: currentUser.name,
                         email: currentUser.email,
                         role: currentUser.role,
                     },

@@ -9,6 +9,7 @@ import UserFilters from '../components/organisms/UserFilters';
 import UserList from '../components/organisms/UserList';
 import PermissionManager from '../components/organisms/PermissionManager';
 import PermissionGuard from '../components/atoms/PermissionGuard';
+import { PERMISSION_KEYS } from '../types/permission.types';
 import {
     useUsers,
     useCreateUser,
@@ -142,7 +143,9 @@ const UserManagementPage: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-3 flex-wrap justify-end lg:justify-start">
-                        <PermissionGuard permission="CREATE_USER">
+                        <PermissionGuard
+                            permission={PERMISSION_KEYS.CREATE_USER}
+                        >
                             <Button
                                 onClick={() => {
                                     setShowForm(true);
@@ -176,7 +179,7 @@ const UserManagementPage: React.FC = () => {
 
                 <UserFilters searchTerm={searchTerm} onSearch={handleSearch} />
 
-                <PermissionGuard permission="VIEW_USERS">
+                <PermissionGuard permission={PERMISSION_KEYS.VIEW_USERS}>
                     <UserList
                         users={users?.users || []}
                         isLoading={isLoading}

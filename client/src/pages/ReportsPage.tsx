@@ -6,6 +6,8 @@ import { ReportsPageContent } from '../components/organisms/ReportsPageContent';
 import { ReportsPageSkeleton } from '../components/organisms/ReportsPageSkeleton';
 import { BranchSelect } from '../components/molecules/BranchSelect';
 import { useReportsPage } from '../hooks/useReportsPage';
+import PermissionGuard from '../components/atoms/PermissionGuard';
+import { PERMISSION_KEYS } from '../types/permission.types';
 
 export const ReportsPage: React.FC = () => {
     const {
@@ -43,57 +45,62 @@ export const ReportsPage: React.FC = () => {
 
     return (
         <DashboardLayout>
-            <div className="min-h-screen bg-gray-50">
-                {/* Header */}
-                <ReportsPageHeader
-                    showFilters={showFilters}
-                    showActionsDropdown={showActionsDropdown}
-                    isLoading={isLoading}
-                    isGenerating={isGenerating}
-                    reportData={reportData}
-                    actionsDropdownRef={
-                        actionsDropdownRef as React.RefObject<HTMLDivElement>
-                    }
-                    onToggleFilters={() => setShowFilters(!showFilters)}
-                    onToggleActionsDropdown={() =>
-                        setShowActionsDropdown(!showActionsDropdown)
-                    }
-                    onRefresh={refreshData}
-                    onGenerateReport={handleGenerateReport}
-                    onExportReport={handleExportReport}
-                />
+            <PermissionGuard permission={PERMISSION_KEYS.VIEW_REPORTS}>
+                <div className="min-h-screen bg-gray-50">
+                    {/* Header */}
+                    <ReportsPageHeader
+                        showFilters={showFilters}
+                        showActionsDropdown={showActionsDropdown}
+                        isLoading={isLoading}
+                        isGenerating={isGenerating}
+                        reportData={reportData}
+                        actionsDropdownRef={
+                            actionsDropdownRef as React.RefObject<HTMLDivElement>
+                        }
+                        onToggleFilters={() => setShowFilters(!showFilters)}
+                        onToggleActionsDropdown={() =>
+                            setShowActionsDropdown(!showActionsDropdown)
+                        }
+                        onRefresh={refreshData}
+                        onGenerateReport={handleGenerateReport}
+                        onExportReport={handleExportReport}
+                    />
 
-                {/* Branch Filter */}
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 bg-white border-b">
-                    <div className="flex items-center gap-3">
-                        <BranchSelect value={branchId} onChange={setBranchId} />
+                    {/* Branch Filter */}
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 bg-white border-b">
+                        <div className="flex items-center gap-3">
+                            <BranchSelect
+                                value={branchId}
+                                onChange={setBranchId}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                            {/* Left Sidebar - Filters */}
+                            <ReportsPageFilters
+                                showFilters={showFilters}
+                                filters={filters}
+                                onFiltersChange={handleFilterChange}
+                            />
+
+                            {/* Main Content Area */}
+                            <ReportsPageContent
+                                filters={filters}
+                                reportData={reportData}
+                                reportSummary={reportSummary}
+                                totalRecords={totalRecords}
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                isLoading={isLoading}
+                                onPageChange={handlePageChange}
+                            />
+                        </div>
                     </div>
                 </div>
-
-                {/* Main Content */}
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                        {/* Left Sidebar - Filters */}
-                        <ReportsPageFilters
-                            showFilters={showFilters}
-                            filters={filters}
-                            onFiltersChange={handleFilterChange}
-                        />
-
-                        {/* Main Content Area */}
-                        <ReportsPageContent
-                            filters={filters}
-                            reportData={reportData}
-                            reportSummary={reportSummary}
-                            totalRecords={totalRecords}
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            isLoading={isLoading}
-                            onPageChange={handlePageChange}
-                        />
-                    </div>
-                </div>
-            </div>
+            </PermissionGuard>
         </DashboardLayout>
     );
 };

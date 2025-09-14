@@ -1,43 +1,10 @@
 import api from './api';
-
-export interface Permission {
-    key: string;
-    name: string;
-    description: string;
-    source?: 'role' | 'custom';
-}
-
-export interface PermissionCategory {
-    categoryKey: string;
-    name: string;
-    description: string;
-    icon: string;
-    permissions: Permission[];
-}
-
-export interface UserPermissions {
-    user: {
-        id: string;
-        username: string;
-        email: string;
-        role: string;
-    };
-    permissions: {
-        all: Permission[];
-        roleDefaults: string[];
-        custom: string[];
-    };
-}
-
-export interface PermissionCheckResult {
-    permission: string;
-    hasPermission: boolean;
-    user: {
-        id: string;
-        username: string;
-        role: string;
-    };
-}
+import type {
+    Permission,
+    PermissionCategory,
+    UserPermissions,
+    PermissionCheckResult,
+} from '../types/permission.types';
 
 // Get all available permissions grouped by category
 export const getAllPermissions = async (): Promise<PermissionCategory[]> => {

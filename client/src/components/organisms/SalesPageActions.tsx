@@ -1,4 +1,6 @@
 import React from 'react';
+import PermissionGuard from '../atoms/PermissionGuard';
+import { PERMISSION_KEYS } from '../../types/permission.types';
 import {
     FiMoreVertical,
     FiFilter,
@@ -117,16 +119,20 @@ export const SalesPageActions: React.FC<SalesPageActionsProps> = ({
                             )}
 
                             {/* Create Sale option */}
-                            <button
-                                onClick={() => {
-                                    onCreateSale();
-                                    onToggleActionsDropdown();
-                                }}
-                                className="flex items-center w-full px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 transition-colors border-t border-gray-200"
+                            <PermissionGuard
+                                permission={PERMISSION_KEYS.CREATE_SALE}
                             >
-                                <FiPlus className="h-4 w-4 mr-3" />
-                                Create New Sale
-                            </button>
+                                <button
+                                    onClick={() => {
+                                        onCreateSale();
+                                        onToggleActionsDropdown();
+                                    }}
+                                    className="flex items-center w-full px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 transition-colors border-t border-gray-200"
+                                >
+                                    <FiPlus className="h-4 w-4 mr-3" />
+                                    Create New Sale
+                                </button>
+                            </PermissionGuard>
                         </div>
                     </div>
                 )}
@@ -188,16 +194,20 @@ export const SalesPageActions: React.FC<SalesPageActionsProps> = ({
                     </button>
                 )}
 
-                <button
-                    onClick={onCreateSale}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    aria-label="Create New Sale"
-                    title="Create New Sale"
-                >
-                    <FiPlus className="h-5 w-5 mr-2" />
-                    <span className="hidden xl:inline">Create New Sale</span>
-                    <span className="xl:hidden">Create</span>
-                </button>
+                <PermissionGuard permission={PERMISSION_KEYS.CREATE_SALE}>
+                    <button
+                        onClick={onCreateSale}
+                        className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        aria-label="Create New Sale"
+                        title="Create New Sale"
+                    >
+                        <FiPlus className="h-5 w-5 mr-2" />
+                        <span className="hidden xl:inline">
+                            Create New Sale
+                        </span>
+                        <span className="xl:hidden">Create</span>
+                    </button>
+                </PermissionGuard>
             </div>
         </>
     );

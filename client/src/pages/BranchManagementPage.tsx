@@ -7,19 +7,42 @@ import {
     useUpdateBranch,
     useDeleteBranch,
 } from '../hooks/useBranches';
+import { usePharmacyInfo } from '../hooks/usePharmacy';
 import DashboardLayout from '../layouts/DashboardLayout';
 import LoadingSkeleton from '../components/organisms/LoadingSkeleton';
 import { BranchForm } from '../components/organisms/BranchForm';
 import { BranchList } from '../components/organisms/BranchList';
 import { FaSitemap, FaPlus } from 'react-icons/fa';
 import { Button } from '../components/atoms/Button';
+import PermissionGuard from '../components/atoms/PermissionGuard';
+import { PERMISSION_KEYS } from '../types/permission.types';
 
 export default function BranchManagementPage() {
     const { data: branches, isLoading, error } = useBranches();
+    const { data: pharmacyData } = usePharmacyInfo();
+
+    // Define error interface for better type safety
+    interface ApiError extends Error {
+        response?: {
+            status: number;
+            statusText: string;
+            data?: {
+                error?: string;
+            };
+        };
+    }
+
+    // Define database branch interface that might have _id instead of id
+    interface DatabaseBranch extends Omit<Branch, 'id'> {
+        _id?: string;
+        id?: string;
+    }
+
     const [form, setForm] = useState<
         Omit<Branch, 'id' | 'createdAt' | 'updatedAt'>
     >({
         name: '',
+        pharmacyId: pharmacyData?.pharmacyInfo?._id || '',
         address: {
             street: '',
             city: '',
@@ -70,6 +93,7 @@ export default function BranchManagementPage() {
     function resetForm() {
         setForm({
             name: '',
+            pharmacyId: pharmacyData?.pharmacyInfo?._id || '',
             address: {
                 street: '',
                 city: '',
@@ -89,11 +113,12 @@ export default function BranchManagementPage() {
      * Recursively removes id, _id, createdAt, updatedAt fields from an object.
      */
     function sanitizeBranchData<T>(data: T): T {
-        const omitFields = (obj: any): any => {
+        const omitFields = (obj: unknown): unknown => {
             if (Array.isArray(obj)) return obj.map(omitFields);
             if (obj && typeof obj === 'object') {
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const { id, _id, createdAt, updatedAt, ...rest } = obj;
+                const { id, _id, createdAt, updatedAt, ...rest } =
+                    obj as Record<string, unknown>;
                 Object.keys(rest).forEach((key) => {
                     rest[key] = omitFields(rest[key]);
                 });
@@ -101,7 +126,7 @@ export default function BranchManagementPage() {
             }
             return obj;
         };
-        return omitFields(data);
+        return omitFields(data) as T;
     }
 
     function handleSubmit(e: FormEvent) {
@@ -113,7 +138,7 @@ export default function BranchManagementPage() {
                 { id: editingId, branch: sanitized },
                 {
                     onSuccess: resetForm,
-                    onError: (err: any) => {
+                    onError: (err: ApiError) => {
                         setFormError(
                             err?.response?.data?.error ||
                                 err?.message ||
@@ -125,7 +150,7 @@ export default function BranchManagementPage() {
         } else {
             createBranch.mutate(sanitized, {
                 onSuccess: resetForm,
-                onError: (err: any) => {
+                onError: (err: ApiError) => {
                     setFormError(
                         err?.response?.data?.error ||
                             err?.message ||
@@ -140,6 +165,7 @@ export default function BranchManagementPage() {
         setEditingId(null);
         setForm({
             name: '',
+            pharmacyId: pharmacyData?.pharmacyInfo?._id || '',
             address: {
                 street: '',
                 city: '',
@@ -176,11 +202,12 @@ export default function BranchManagementPage() {
         setDeleteError(null);
         if (!id) return;
         deleteBranch.mutate(id, {
-            onError: (err: any) => {
+            onError: (err: ApiError) => {
                 let msg = 'Failed to delete branch';
-                if (err?.response) {
-                    msg = `Error ${err.response.status}: ${
-                        err.response.data?.error || err.response.statusText
+                const errorResponse = err?.response;
+                if (errorResponse) {
+                    msg = `Error ${errorResponse.status}: ${
+                        errorResponse.data?.error || errorResponse.statusText
                     }`;
                 } else if (err?.message) {
                     msg = err.message;
@@ -206,29 +233,36 @@ export default function BranchManagementPage() {
                         </p>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap justify-end lg:justify-start">
-                        <Button
-                            onClick={() => {
-                                setShowForm((prev) => !prev);
-                                if (editingId) setEditingId(null);
-                                if (!showForm) {
-                                    setForm({
-                                        name: '',
-                                        address: {
-                                            street: '',
-                                            city: '',
-                                            state: '',
-                                            postalCode: '',
-                                            country: '',
-                                        },
-                                        contact: { phone: '', email: '' },
-                                        manager: '',
-                                    });
-                                }
-                            }}
-                            color="primary"
+                        <PermissionGuard
+                            permission={PERMISSION_KEYS.CREATE_BRANCH}
                         >
-                            <FaPlus className="mr-2" /> New Branch
-                        </Button>
+                            <Button
+                                onClick={() => {
+                                    setShowForm((prev) => !prev);
+                                    if (editingId) setEditingId(null);
+                                    if (!showForm) {
+                                        setForm({
+                                            name: '',
+                                            pharmacyId:
+                                                pharmacyData?.pharmacyInfo
+                                                    ?._id || '',
+                                            address: {
+                                                street: '',
+                                                city: '',
+                                                state: '',
+                                                postalCode: '',
+                                                country: '',
+                                            },
+                                            contact: { phone: '', email: '' },
+                                            manager: '',
+                                        });
+                                    }
+                                }}
+                                color="primary"
+                            >
+                                <FaPlus className="mr-2" /> New Branch
+                            </Button>
+                        </PermissionGuard>
                     </div>
                 </div>
                 {error && (
@@ -256,9 +290,9 @@ export default function BranchManagementPage() {
                     </>
                 )}
                 <BranchList
-                    branches={(branches || []).map((b: any) => ({
+                    branches={(branches || []).map((b: DatabaseBranch) => ({
                         ...b,
-                        id: b.id || b._id,
+                        id: b.id || b._id || '',
                     }))}
                     onEdit={handleEdit}
                     onDelete={handleDelete}

@@ -1,6 +1,6 @@
 import React from 'react';
-import { usePermissions } from '../../hooks/usePermissions';
-import PermissionGuard from './PermissionGuard';
+import { usePermissions } from '../hooks/usePermissions';
+import PermissionGuard from '../components/atoms/PermissionGuard';
 
 // Higher-order component for permission-based access
 export const withPermissions = <P extends object>(
@@ -14,20 +14,19 @@ export const withPermissions = <P extends object>(
     },
 ) => {
     const WithPermissionsComponent = (props: P) => {
-        return (
-            <PermissionGuard
-                {...requiredPermissions}
-                fallback={
-                    <div className="text-center py-8">
-                        <p className="text-gray-500">
-                            You don't have permission to access this content.
-                        </p>
-                    </div>
-                }
-            >
-                <WrappedComponent {...props} />
-            </PermissionGuard>
-        );
+        return React.createElement(PermissionGuard, {
+            ...requiredPermissions,
+            fallback: React.createElement(
+                'div',
+                { className: 'text-center py-8' },
+                React.createElement(
+                    'p',
+                    { className: 'text-gray-500' },
+                    "You don't have permission to access this content.",
+                ),
+            ),
+            children: React.createElement(WrappedComponent, props),
+        });
     };
 
     WithPermissionsComponent.displayName = `withPermissions(${

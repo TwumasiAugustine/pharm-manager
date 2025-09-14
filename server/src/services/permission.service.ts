@@ -1,5 +1,7 @@
 import User from '../models/user.model';
-import type { IUserDoc } from '../types/user.types';
+import type { IUserDoc } from '../models/user.model';
+import { UserRole } from '../types/user.types';
+import { ITokenPayload } from '../types/auth.types';
 import {
     ALL_PERMISSIONS,
     ROLE_PERMISSIONS,
@@ -21,7 +23,7 @@ export class PermissionService {
         }
 
         // Super admin has all permissions
-        if (user.role === 'SUPER_ADMIN') {
+        if (user.role === UserRole.SUPER_ADMIN) {
             return true;
         }
 
@@ -71,7 +73,7 @@ export class PermissionService {
         }
 
         // Super admin has all permissions
-        if (user.role === 'SUPER_ADMIN') {
+        if (user.role === UserRole.SUPER_ADMIN) {
             return Object.values(ALL_PERMISSIONS);
         }
 
@@ -182,7 +184,7 @@ export class PermissionService {
      * Set custom permissions for a user (override role defaults)
      */
     static setCustomPermissions(
-        user: User,
+        user: IUserDoc,
         permissions: Permission[],
     ): Permission[] {
         // Validate permissions
@@ -196,7 +198,7 @@ export class PermissionService {
     /**
      * Reset user permissions to role defaults
      */
-    static resetToRoleDefaults(user: User): Permission[] {
+    static resetToRoleDefaults(user: IUserDoc): Permission[] {
         const rolePermissions =
             ROLE_PERMISSIONS[user.role as keyof typeof ROLE_PERMISSIONS] || [];
         return rolePermissions as Permission[];
@@ -222,19 +224,25 @@ export class PermissionService {
     /**
      * Check if user can manage another user's permissions
      */
-    static canManageUserPermissions(manager: User, targetUser: User): boolean {
+    static canManageUserPermissions(
+        manager: IUserDoc,
+        targetUser: IUserDoc,
+    ): boolean {
         // Super admin can manage anyone
-        if (manager.role === 'SUPER_ADMIN') {
+        if (manager.role === UserRole.SUPER_ADMIN) {
             return true;
         }
 
         // Cannot manage super admin permissions
-        if (targetUser.role === 'SUPER_ADMIN') {
+        if (targetUser.role === UserRole.SUPER_ADMIN) {
             return false;
         }
 
         // Admin can manage non-admin users
-        if (manager.role === 'ADMIN' && targetUser.role !== 'ADMIN') {
+        if (
+            manager.role === UserRole.ADMIN &&
+            targetUser.role !== UserRole.ADMIN
+        ) {
             return true;
         }
 
@@ -260,6 +268,118 @@ export class PermissionService {
             ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS] || [];
         return (rolePermissions as readonly string[]).includes(permission);
     }
+
+    // ====================
+    // TOKEN PAYLOAD ADAPTERS
+    // ====================
+    // These methods work with ITokenPayload from JWT tokens to provide
+    // type-safe permission checking without requiring database lookups
+
+    /**
+     * Check if a token user has a specific permission
+     */
+    static hasPermissionFromToken(
+        tokenUser: ITokenPayload,
+        permission: Permission,
+    ): boolean {
+        if (!tokenUser || !permission) {
+            return false;
+        }
+
+        // Super admin has all permissions
+        if (tokenUser.role === UserRole.SUPER_ADMIN) {
+            return true;
+        }
+
+        // Check if user has the permission in their custom permissions array
+        if (
+            tokenUser.permissions &&
+            tokenUser.permissions.includes(permission)
+        ) {
+            return true;
+        }
+
+        // Check if user's role has the permission by default
+        const rolePermissions =
+            ROLE_PERMISSIONS[tokenUser.role as keyof typeof ROLE_PERMISSIONS];
+        return rolePermissions
+            ? (rolePermissions as readonly string[]).includes(permission)
+            : false;
+    }
+
+    /**
+     * Check if a token user has any of the specified permissions
+     */
+    static hasAnyPermissionFromToken(
+        tokenUser: ITokenPayload,
+        permissions: Permission[],
+    ): boolean {
+        return permissions.some((permission) =>
+            this.hasPermissionFromToken(tokenUser, permission),
+        );
+    }
+
+    /**
+     * Check if a token user has all of the specified permissions
+     */
+    static hasAllPermissionsFromToken(
+        tokenUser: ITokenPayload,
+        permissions: Permission[],
+    ): boolean {
+        return permissions.every((permission) =>
+            this.hasPermissionFromToken(tokenUser, permission),
+        );
+    }
+
+    /**
+     * Get all permissions for a token user (role-based + custom)
+     */
+    static getUserPermissionsFromToken(tokenUser: ITokenPayload): Permission[] {
+        if (!tokenUser) {
+            return [];
+        }
+
+        // Super admin has all permissions
+        if (tokenUser.role === UserRole.SUPER_ADMIN) {
+            return Object.values(ALL_PERMISSIONS);
+        }
+
+        // Get role-based permissions
+        const rolePermissions =
+            ROLE_PERMISSIONS[tokenUser.role as keyof typeof ROLE_PERMISSIONS] ||
+            [];
+
+        // Combine with custom permissions (avoid duplicates)
+        const customPermissions = tokenUser.permissions || [];
+        const allPermissions = [
+            ...new Set([...rolePermissions, ...customPermissions]),
+        ];
+
+        return allPermissions as Permission[];
+    }
+
+    /**
+     * Get permissions that are explicitly granted beyond role defaults
+     */
+    static getCustomPermissionsFromToken(
+        tokenUser: ITokenPayload,
+    ): Permission[] {
+        if (!tokenUser || !tokenUser.permissions) {
+            return [];
+        }
+
+        const rolePermissions =
+            ROLE_PERMISSIONS[tokenUser.role as keyof typeof ROLE_PERMISSIONS] ||
+            [];
+
+        // Filter out permissions that are already granted by role
+        const customOnly = tokenUser.permissions.filter(
+            (permission) =>
+                !(rolePermissions as readonly string[]).includes(permission),
+        );
+
+        return customOnly as Permission[];
+    }
 }
 
 // Export middleware function for route protection
@@ -274,7 +394,7 @@ export const requirePermission = (permission: Permission) => {
             });
         }
 
-        if (!PermissionService.hasPermission(user, permission)) {
+        if (!PermissionService.hasPermissionFromToken(user, permission)) {
             return res.status(403).json({
                 success: false,
                 message: `Permission denied. Required permission: ${permission}`,
@@ -297,7 +417,7 @@ export const requireAnyPermission = (permissions: Permission[]) => {
             });
         }
 
-        if (!PermissionService.hasAnyPermission(user, permissions)) {
+        if (!PermissionService.hasAnyPermissionFromToken(user, permissions)) {
             return res.status(403).json({
                 success: false,
                 message: `Permission denied. Required permissions: ${permissions.join(', ')}`,
@@ -320,7 +440,7 @@ export const requireAllPermissions = (permissions: Permission[]) => {
             });
         }
 
-        if (!PermissionService.hasAllPermissions(user, permissions)) {
+        if (!PermissionService.hasAllPermissionsFromToken(user, permissions)) {
             return res.status(403).json({
                 success: false,
                 message: `Permission denied. Required permissions: ${permissions.join(', ')}`,

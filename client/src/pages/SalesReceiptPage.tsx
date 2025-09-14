@@ -4,6 +4,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../components/atoms/Button';
 import DashboardLayout from '../layouts/DashboardLayout';
 import Receipt from '../components/molecules/Receipt';
+import PermissionGuard from '../components/atoms/PermissionGuard';
+import { PERMISSION_KEYS } from '../types/permission.types';
 import {
     Alert,
     AlertTitle,
@@ -12,7 +14,6 @@ import {
 import { getErrorMessage } from '../utils/error';
 import { useSale } from '../hooks/useSales';
 import saleApi from '../api/sale.api';
-import { useAuthStore } from '../store/auth.store';
 import { useDrugs } from '../hooks/useDrugs';
 import { usePharmacyInfo } from '../hooks/usePharmacy';
 import { useSafeNotify } from '../utils/useSafeNotify';
@@ -23,7 +24,6 @@ const SalesReceiptPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const notify = useSafeNotify();
-    const { user } = useAuthStore();
     const [shortCodeInput, setShortCodeInput] = React.useState('');
     const [finalizing, setFinalizing] = React.useState(false);
     const [finalizeError, setFinalizeError] = React.useState<string | null>(
@@ -155,11 +155,8 @@ const SalesReceiptPage: React.FC = () => {
 
     if (!enhancedSale) return null;
 
-    // Show finalize/print UI if not finalized, user has FINALIZE_SALE permission, and shortCode exists
-    const canFinalize =
-        !enhancedSale.finalized &&
-        user?.permissions?.includes('FINALIZE_SALE') &&
-        enhancedSale.shortCode;
+    // Show finalize/print UI if not finalized and shortCode exists
+    const canShowFinalizeUI = !enhancedSale.finalized && enhancedSale.shortCode;
 
     return (
         <DashboardLayout>
@@ -170,86 +167,90 @@ const SalesReceiptPage: React.FC = () => {
                         drugs={drugs}
                         pharmacyInfo={pharmacyInfo?.pharmacyInfo}
                     />
-                    {canFinalize ? (
-                        <div className="mt-8 mx-auto max-w-md">
-                            <div className="bg-white p-6 rounded-xl shadow-lg border border-blue-100">
-                                <div className="text-center mb-6">
-                                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <svg
-                                            className="w-8 h-8 text-blue-600"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth="2"
-                                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                                            />
-                                        </svg>
-                                    </div>
-                                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                                        Finalize Sale
-                                    </h3>
-                                    <p className="text-sm text-gray-600">
-                                        Enter the sale short code to finalize
-                                        and enable printing
-                                    </p>
-                                </div>
-                                <input
-                                    type="text"
-                                    value={shortCodeInput}
-                                    onChange={(e) =>
-                                        setShortCodeInput(
-                                            e.target.value.toUpperCase(),
-                                        )
-                                    }
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-center font-mono text-xl tracking-wider focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                                    placeholder="Enter short code"
-                                    maxLength={8}
-                                    disabled={finalizing}
-                                />
-                                {finalizeError && (
-                                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                                        <p className="text-red-600 text-sm text-center">
-                                            {finalizeError}
+                    {canShowFinalizeUI ? (
+                        <PermissionGuard
+                            permission={PERMISSION_KEYS.FINALIZE_SALE}
+                        >
+                            <div className="mt-8 mx-auto max-w-md">
+                                <div className="bg-white p-6 rounded-xl shadow-lg border border-blue-100">
+                                    <div className="text-center mb-6">
+                                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <svg
+                                                className="w-8 h-8 text-blue-600"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                                />
+                                            </svg>
+                                        </div>
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                            Finalize Sale
+                                        </h3>
+                                        <p className="text-sm text-gray-600">
+                                            Enter the sale short code to
+                                            finalize and enable printing
                                         </p>
                                     </div>
-                                )}
-                                <Button
-                                    onClick={async () => {
-                                        setFinalizing(true);
-                                        setFinalizeError(null);
-                                        try {
-                                            await saleApi.finalizeSaleByShortCode(
-                                                shortCodeInput,
-                                            );
-                                            notify.success(
-                                                'Sale finalized! You can now print the receipt.',
-                                            );
-                                        } catch (e) {
-                                            setFinalizeError(
-                                                (e as any)?.response?.data
-                                                    ?.message ||
-                                                    'Invalid or expired code',
-                                            );
-                                        } finally {
-                                            setFinalizing(false);
+                                    <input
+                                        type="text"
+                                        value={shortCodeInput}
+                                        onChange={(e) =>
+                                            setShortCodeInput(
+                                                e.target.value.toUpperCase(),
+                                            )
                                         }
-                                    }}
-                                    isLoading={finalizing}
-                                    className="w-full mt-4 bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
-                                    disabled={
-                                        !shortCodeInput.trim() || finalizing
-                                    }
-                                >
-                                    {finalizing
-                                        ? 'Finalizing...'
-                                        : 'Finalize & Enable Print'}
-                                </Button>
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-center font-mono text-xl tracking-wider focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                                        placeholder="Enter short code"
+                                        maxLength={8}
+                                        disabled={finalizing}
+                                    />
+                                    {finalizeError && (
+                                        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                            <p className="text-red-600 text-sm text-center">
+                                                {finalizeError}
+                                            </p>
+                                        </div>
+                                    )}
+                                    <Button
+                                        onClick={async () => {
+                                            setFinalizing(true);
+                                            setFinalizeError(null);
+                                            try {
+                                                await saleApi.finalizeSaleByShortCode(
+                                                    shortCodeInput,
+                                                );
+                                                notify.success(
+                                                    'Sale finalized! You can now print the receipt.',
+                                                );
+                                            } catch (e) {
+                                                setFinalizeError(
+                                                    (e as any)?.response?.data
+                                                        ?.message ||
+                                                        'Invalid or expired code',
+                                                );
+                                            } finally {
+                                                setFinalizing(false);
+                                            }
+                                        }}
+                                        isLoading={finalizing}
+                                        className="w-full mt-4 bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
+                                        disabled={
+                                            !shortCodeInput.trim() || finalizing
+                                        }
+                                    >
+                                        {finalizing
+                                            ? 'Finalizing...'
+                                            : 'Finalize & Enable Print'}
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
+                        </PermissionGuard>
                     ) : (
                         <div className="mt-8 flex justify-center gap-4 print:hidden">
                             <Button

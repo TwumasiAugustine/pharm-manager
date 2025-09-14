@@ -17,6 +17,8 @@ import CashierShortCodeInput from '../components/organisms/CashierShortCodeInput
 import FinalizedSaleDisplay from '../components/organisms/FinalizedSaleDisplay';
 import PharmacistShortCodeDisplay from '../components/organisms/PharmacistShortCodeDisplay';
 import CreateSaleForm from '../components/organisms/CreateSaleForm';
+import PermissionGuard from '../components/atoms/PermissionGuard';
+import { PERMISSION_KEYS } from '../types/permission.types';
 import { CustomerSelect } from '../components/molecules/CustomerSelect';
 import saleApi from '../api/sale.api';
 import { useNavigate } from 'react-router-dom';
@@ -205,7 +207,16 @@ const SalesNewPage: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
                 {/* Cashier: Always show code input if short code is required */}
                 {effectiveRequireShortCode && isCashier && (
-                    <>
+                    <PermissionGuard
+                        permission={PERMISSION_KEYS.FINALIZE_SALE}
+                        fallback={
+                            <div className="text-center py-8">
+                                <p className="text-gray-500">
+                                    You don't have permission to finalize sales.
+                                </p>
+                            </div>
+                        }
+                    >
                         <h2 className="text-xl font-bold text-center mb-4">
                             Enter Sale Short Code
                         </h2>
@@ -227,7 +238,7 @@ const SalesNewPage: React.FC = () => {
                                 }
                             />
                         )}
-                    </>
+                    </PermissionGuard>
                 )}
                 {/* Pharmacist and admin: Customer selection and sale form */}
                 {!isCashier && (

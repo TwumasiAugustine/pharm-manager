@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardHeader, CardContent } from './Card';
-import { Badge } from '../atoms/Badge';
+import Badge from '../atoms/Badge';
 import { useUserPermissions } from '../../hooks/usePermissions';
 import { FaUser, FaShieldAlt, FaPlus, FaEye } from 'react-icons/fa';
 
@@ -47,7 +47,7 @@ export const PermissionSummary: React.FC<PermissionSummaryProps> = ({
                     <FaUser className="h-5 w-5 text-gray-600" />
                     <div>
                         <h3 className="text-lg font-semibold text-gray-900">
-                            {user.username}
+                            {user.name}
                         </h3>
                         <p className="text-sm text-gray-600">{user.email}</p>
                     </div>
