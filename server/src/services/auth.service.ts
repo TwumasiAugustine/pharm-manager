@@ -314,8 +314,11 @@ export class AuthService {
             if (!branch) {
                 throw new NotFoundError('Branch not found');
             }
-            // Ensure branch belongs to the same pharmacy
-            if (branch.pharmacyId.toString() !== adminPharmacyId) {
+            // Ensure branch belongs to the same pharmacy (only if we have adminPharmacyId)
+            if (
+                adminPharmacyId &&
+                branch.pharmacyId.toString() !== adminPharmacyId
+            ) {
                 throw new UnauthorizedError(
                     'Cannot assign user to branch from different pharmacy',
                 );
@@ -326,13 +329,16 @@ export class AuthService {
         const normalizedEmail = normalizeEmail(data.email);
 
         // Prevent duplicate emails within the same pharmacy
-        const existing = await User.findOne({
-            email: normalizedEmail,
-            pharmacyId: adminPharmacyId,
-        });
+        const emailQuery: any = { email: normalizedEmail };
+        if (adminPharmacyId) {
+            emailQuery.pharmacyId = adminPharmacyId;
+        }
+
+        const existing = await User.findOne(emailQuery);
         if (existing) {
             throw new ConflictError(
-                'A user with this email already exists in this pharmacy',
+                'A user with this email already exists' +
+                    (adminPharmacyId ? ' in this pharmacy' : ''),
             );
         }
 
@@ -342,9 +348,13 @@ export class AuthService {
             ...data,
             email: normalizedEmail,
             password: hashedPassword,
-            pharmacyId: new mongoose.Types.ObjectId(adminPharmacyId),
             isFirstSetup: data.role === 'admin' ? true : false,
         };
+
+        // Only set pharmacyId if adminPharmacyId is provided
+        if (adminPharmacyId) {
+            userData.pharmacyId = new mongoose.Types.ObjectId(adminPharmacyId);
+        }
 
         // Super admin cannot have FINALIZE_SALE permission
         if (
@@ -379,10 +389,13 @@ export class AuthService {
         data: IUserWithBranchId,
         adminPharmacyId: string,
     ) {
-        const user = await User.findOne({
-            _id: id,
-            pharmacyId: adminPharmacyId,
-        });
+        // Build query based on whether we have pharmacyId or not (for super admin without pharmacy)
+        const query: any = { _id: id };
+        if (adminPharmacyId) {
+            query.pharmacyId = adminPharmacyId;
+        }
+
+        const user = await User.findOne(query);
         if (!user) {
             throw new NotFoundError('User not found or access denied');
         }
@@ -396,8 +409,11 @@ export class AuthService {
             if (!branch) {
                 throw new NotFoundError('Branch not found');
             }
-            // Ensure branch belongs to the same pharmacy
-            if (branch.pharmacyId.toString() !== adminPharmacyId) {
+            // Ensure branch belongs to the same pharmacy (only if we have adminPharmacyId)
+            if (
+                adminPharmacyId &&
+                branch.pharmacyId.toString() !== adminPharmacyId
+            ) {
                 throw new UnauthorizedError(
                     'Cannot assign user to branch from different pharmacy',
                 );
@@ -408,13 +424,19 @@ export class AuthService {
         if (data.email) {
             data.email = normalizeEmail(data.email);
             // Prevent duplicate emails within the same pharmacy (except for self)
-            const existing = await User.findOne({
+            const emailQuery: any = {
                 email: data.email,
-                pharmacyId: adminPharmacyId,
-            });
-            if (existing && existing._id.toString() !== id) {
+                _id: { $ne: id },
+            };
+            if (adminPharmacyId) {
+                emailQuery.pharmacyId = adminPharmacyId;
+            }
+
+            const existing = await User.findOne(emailQuery);
+            if (existing) {
                 throw new ConflictError(
-                    'A user with this email already exists in this pharmacy',
+                    'A user with this email already exists' +
+                        (adminPharmacyId ? ' in this pharmacy' : ''),
                 );
             }
         }
@@ -460,10 +482,13 @@ export class AuthService {
     }
 
     async deleteUser(id: string, adminPharmacyId: string) {
-        const user = await User.findOne({
-            _id: id,
-            pharmacyId: adminPharmacyId,
-        });
+        // Build query based on whether we have pharmacyId or not (for super admin without pharmacy)
+        const query: any = { _id: id };
+        if (adminPharmacyId) {
+            query.pharmacyId = adminPharmacyId;
+        }
+
+        const user = await User.findOne(query);
         if (!user) {
             throw new NotFoundError('User not found or access denied');
         }
@@ -477,10 +502,13 @@ export class AuthService {
         permissions: string[],
         adminPharmacyId: string,
     ) {
-        const user = await User.findOne({
-            _id: userId,
-            pharmacyId: adminPharmacyId,
-        });
+        // Build query based on whether we have pharmacyId or not (for super admin without pharmacy)
+        const query: any = { _id: userId };
+        if (adminPharmacyId) {
+            query.pharmacyId = adminPharmacyId;
+        }
+
+        const user = await User.findOne(query);
         if (!user) {
             throw new NotFoundError('User not found or access denied');
         }

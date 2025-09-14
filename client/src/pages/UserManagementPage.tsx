@@ -7,6 +7,8 @@ import { BranchSelect } from '../components/molecules/BranchSelect';
 import UserForm from '../components/organisms/UserForm';
 import UserFilters from '../components/organisms/UserFilters';
 import UserList from '../components/organisms/UserList';
+import PermissionManager from '../components/organisms/PermissionManager';
+import PermissionGuard from '../components/atoms/PermissionGuard';
 import {
     useUsers,
     useCreateUser,
@@ -15,7 +17,6 @@ import {
 } from '../hooks/useUsers';
 import { useSafeNotify } from '../utils/useSafeNotify';
 import type { IUser } from '../types/user.types';
-import { userApi } from '../api/user.api';
 import { UserRole } from '../types/user.types';
 
 const UserManagementPage: React.FC = () => {
@@ -112,73 +113,51 @@ const UserManagementPage: React.FC = () => {
         }
     };
 
-    // Permission assignment state
+    // Permission management state
     const [permissionUserId, setPermissionUserId] = useState<string | null>(
         null,
     );
-    const [currentPermissionUser, setCurrentPermissionUser] =
-        useState<IUser | null>(null);
-    const [permissions, setPermissions] = useState<string[]>([]);
-    const [assigning, setAssigning] = useState(false);
-
-    const handlePermissionChange = (perm: string) => {
-        setPermissions((prev) =>
-            prev.includes(perm)
-                ? prev.filter((p) => p !== perm)
-                : [...prev, perm],
-        );
-    };
-
-    const handleAssignPermissions = async () => {
-        if (!permissionUserId) return;
-        setAssigning(true);
-        try {
-            await userApi.assignPermissions(permissionUserId, permissions);
-            notify.success('Permissions updated');
-            setPermissionUserId(null);
-            setCurrentPermissionUser(null);
-        } catch {
-            notify.error('Failed to update permissions');
-        } finally {
-            setAssigning(false);
-        }
-    };
 
     // Handler to open permission modal for a user
     const openPermissionModal = (user: IUser) => {
         setPermissionUserId(user._id);
-        setCurrentPermissionUser(user);
-        setPermissions(user.permissions ?? []);
+    };
+
+    const closePermissionModal = () => {
+        setPermissionUserId(null);
     };
 
     return (
         <DashboardLayout>
-            <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div className="container mx-auto px-4 py-6">
+                <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold flex items-center">
-                            <FaUsers className="mr-2 text-blue-500" />
+                        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                            <FaUsers className="text-blue-600" />
                             User Management
                         </h1>
-                        <p className="mt-1 text-sm text-gray-600">
-                            Manage your pharmacy users and permissions
+                        <p className="text-gray-600 mt-1">
+                            Manage users and their permissions
                         </p>
                     </div>
+
                     <div className="flex items-center gap-3 flex-wrap justify-end lg:justify-start">
-                        <Button
-                            onClick={() => {
-                                setShowForm(true);
-                                setEditUserId(null);
-                            }}
-                            color="primary"
-                        >
-                            <FaUserPlus className="mr-2" /> New User
-                        </Button>
+                        <PermissionGuard permission="CREATE_USER">
+                            <Button
+                                onClick={() => {
+                                    setShowForm(true);
+                                    setEditUserId(null);
+                                }}
+                                color="primary"
+                            >
+                                <FaUserPlus className="mr-2" /> New User
+                            </Button>
+                        </PermissionGuard>
                     </div>
                 </div>
 
                 {/* Branch Filter */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 mb-4">
                     <BranchSelect value={branchId} onChange={setBranchId} />
                 </div>
 
@@ -192,72 +171,29 @@ const UserManagementPage: React.FC = () => {
                             setEditUserId(null);
                         }}
                         editUserId={editUserId}
-                        isLoading={createUser.isPending || updateUser.isPending}
                     />
                 )}
-                <UserFilters searchTerm={searchTerm} onSearch={handleSearch} />
-                <UserList
-                    users={users?.users || []}
-                    isLoading={isLoading}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onAssignPermissions={openPermissionModal}
-                />
 
-                {/* Permission Assignment Modal */}
+                <UserFilters searchTerm={searchTerm} onSearch={handleSearch} />
+
+                <PermissionGuard permission="VIEW_USERS">
+                    <UserList
+                        users={users?.users || []}
+                        isLoading={isLoading}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onAssignPermissions={openPermissionModal}
+                    />
+                </PermissionGuard>
+
+                {/* Permission Management Modal */}
                 {permissionUserId && (
-                    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-                            <h2 className="text-lg font-bold mb-4">
-                                Assign Permissions
-                            </h2>
-                            <div className="space-y-2 mb-4">
-                                <label className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={permissions.includes(
-                                            'FINALIZE_SALE',
-                                        )}
-                                        onChange={() =>
-                                            handlePermissionChange(
-                                                'FINALIZE_SALE',
-                                            )
-                                        }
-                                        disabled={
-                                            currentPermissionUser?.role ===
-                                            UserRole.SUPER_ADMIN
-                                        }
-                                        className="mr-2"
-                                    />
-                                    Can finalize/print sales (FINALIZE_SALE)
-                                    {currentPermissionUser?.role ===
-                                        UserRole.SUPER_ADMIN && (
-                                        <span className="ml-2 text-xs text-gray-500">
-                                            (Not available for Super Admin)
-                                        </span>
-                                    )}
-                                </label>
-                                {/* Add more permissions here as needed */}
-                            </div>
-                            <div className="flex gap-2 justify-end">
-                                <Button
-                                    onClick={() => {
-                                        setPermissionUserId(null);
-                                        setCurrentPermissionUser(null);
-                                    }}
-                                    color="secondary"
-                                    disabled={assigning}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    onClick={handleAssignPermissions}
-                                    color="primary"
-                                    isLoading={assigning}
-                                >
-                                    Save
-                                </Button>
-                            </div>
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-auto">
+                            <PermissionManager
+                                userId={permissionUserId}
+                                onClose={closePermissionModal}
+                            />
                         </div>
                     </div>
                 )}

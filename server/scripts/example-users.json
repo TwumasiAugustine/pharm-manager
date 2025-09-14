@@ -1,0 +1,69 @@
+[
+    {
+        "name": "Super Administrator",
+        "email": "super.admin@pharmacy.com",
+        "password": "SuperSecure123!",
+        "role": "super-admin",
+        "permissions": [
+            "CREATE_USER",
+            "UPDATE_USER",
+            "DELETE_USER",
+            "VIEW_USERS",
+            "MANAGE_PERMISSIONS",
+            "MANAGE_PHARMACY",
+            "MANAGE_BRANCHES",
+            "VIEW_REPORTS",
+            "MANAGE_DRUGS",
+            "MANAGE_CUSTOMERS",
+            "VIEW_SALES"
+        ]
+    },
+    {
+        "name": "Main Pharmacy Admin",
+        "email": "admin@pharmacy.com",
+        "password": "AdminPass123!",
+        "role": "admin",
+        "pharmacyId": "REPLACE_WITH_ACTUAL_PHARMACY_ID",
+        "permissions": [
+            "CREATE_USER",
+            "UPDATE_USER",
+            "VIEW_USERS",
+            "MANAGE_PERMISSIONS",
+            "MANAGE_BRANCHES",
+            "VIEW_REPORTS",
+            "MANAGE_DRUGS",
+            "MANAGE_CUSTOMERS",
+            "VIEW_SALES"
+        ]
+    },
+    {
+        "name": "Senior Pharmacist",
+        "email": "pharmacist@pharmacy.com",
+        "password": "PharmPass123!",
+        "role": "pharmacist",
+        "pharmacyId": "REPLACE_WITH_ACTUAL_PHARMACY_ID",
+        "branchId": "REPLACE_WITH_ACTUAL_BRANCH_ID",
+        "permissions": [
+            "VIEW_USERS",
+            "MANAGE_DRUGS",
+            "VIEW_SALES",
+            "FINALIZE_SALE",
+            "MANAGE_CUSTOMERS",
+            "VIEW_REPORTS"
+        ]
+    },
+    {
+        "name": "Lead Cashier",
+        "email": "cashier@pharmacy.com",
+        "password": "CashierPass123!",
+        "role": "cashier",
+        "pharmacyId": "REPLACE_WITH_ACTUAL_PHARMACY_ID",
+        "branchId": "REPLACE_WITH_ACTUAL_BRANCH_ID",
+        "permissions": [
+            "VIEW_SALES",
+            "CREATE_SALE",
+            "VIEW_CUSTOMERS",
+            "MANAGE_CUSTOMERS"
+        ]
+    }
+]

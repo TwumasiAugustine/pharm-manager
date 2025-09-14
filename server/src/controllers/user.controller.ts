@@ -20,7 +20,8 @@ export const assignPermissions = async (req: Request, res: Response) => {
             });
         }
 
-        if (!req.user.pharmacyId) {
+        // Allow super admin to assign permissions even without pharmacyId (for initial setup)
+        if (!req.user.pharmacyId && req.user.role !== UserRole.SUPER_ADMIN) {
             return res.status(400).json({
                 success: false,
                 message: 'Pharmacy ID is required',
@@ -33,7 +34,7 @@ export const assignPermissions = async (req: Request, res: Response) => {
         const user = await userService.assignPermissions(
             userId,
             permissions,
-            req.user.pharmacyId,
+            req.user.pharmacyId || '', // Pass empty string for super admin without pharmacy
         );
 
         res.json({ success: true, user });
@@ -81,8 +82,9 @@ export const checkAdminFirstSetup = async (req: Request, res: Response) => {
 
 export class UserController {
     private userService: UserService;
+
     constructor() {
-        this.userService = userService; // Use the singleton instance
+        this.userService = new UserService();
     }
 
     async getUsers(req: Request, res: Response, next: NextFunction) {
@@ -106,7 +108,11 @@ export class UserController {
 
     async createUser(req: Request, res: Response, next: NextFunction) {
         try {
-            if (!req.user?.pharmacyId) {
+            // Allow super admin to create users even without pharmacyId (for initial setup)
+            if (
+                !req.user?.pharmacyId &&
+                req.user?.role !== UserRole.SUPER_ADMIN
+            ) {
                 res.status(400).json({
                     success: false,
                     message: 'Pharmacy ID is required',
@@ -116,11 +122,9 @@ export class UserController {
 
             const user = await this.userService.createUser(
                 req.body,
-                req.user.pharmacyId,
+                req.user.pharmacyId || '', // Pass empty string for super admin without pharmacy
             );
-            res.status(201).json(
-                successResponse(user, 'User created successfully'),
-            );
+            res.json(successResponse(user, 'User created successfully'));
         } catch (error) {
             next(error);
         }
@@ -128,7 +132,11 @@ export class UserController {
 
     async updateUser(req: Request, res: Response, next: NextFunction) {
         try {
-            if (!req.user?.pharmacyId) {
+            // Allow super admin to update users even without pharmacyId (for initial setup)
+            if (
+                !req.user?.pharmacyId &&
+                req.user?.role !== UserRole.SUPER_ADMIN
+            ) {
                 res.status(400).json({
                     success: false,
                     message: 'Pharmacy ID is required',
@@ -139,7 +147,7 @@ export class UserController {
             const user = await this.userService.updateUser(
                 req.params.id,
                 req.body,
-                req.user.pharmacyId,
+                req.user.pharmacyId || '', // Pass empty string for super admin without pharmacy
             );
             res.json(successResponse(user, 'User updated successfully'));
         } catch (error) {
@@ -149,7 +157,11 @@ export class UserController {
 
     async deleteUser(req: Request, res: Response, next: NextFunction) {
         try {
-            if (!req.user?.pharmacyId) {
+            // Allow super admin to delete users even without pharmacyId (for initial setup)
+            if (
+                !req.user?.pharmacyId &&
+                req.user?.role !== UserRole.SUPER_ADMIN
+            ) {
                 res.status(400).json({
                     success: false,
                     message: 'Pharmacy ID is required',
@@ -159,7 +171,7 @@ export class UserController {
 
             await this.userService.deleteUser(
                 req.params.id,
-                req.user.pharmacyId,
+                req.user.pharmacyId || '', // Pass empty string for super admin without pharmacy
             );
             res.json(successResponse(null, 'User deleted successfully'));
         } catch (error) {
