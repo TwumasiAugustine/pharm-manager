@@ -2,12 +2,14 @@ import Customer from '../models/customer.model';
 import { NotFoundError } from '../utils/errors';
 import { Sale } from '../models/sale.model';
 import { Types } from 'mongoose';
+import { AssignmentService } from './assignment.service';
 
 export class CustomerService {
     /**
      * Create a new customer
      * @param data - The data for the new customer
      * @param userBranchId - The branch ID to assign the customer to
+     * @param userPharmacyId - The pharmacy ID from the user's context
      * @returns The newly created customer object
      */
     async createCustomer(
@@ -18,9 +20,19 @@ export class CustomerService {
             address?: string;
         },
         userBranchId?: string,
+        userPharmacyId?: string,
     ) {
+        // Get pharmacy ID (use user's pharmacy or default)
+        let pharmacyId: string;
+        if (userPharmacyId) {
+            pharmacyId = userPharmacyId;
+        } else {
+            pharmacyId = await AssignmentService.getDefaultPharmacyId();
+        }
+
         const customerData = {
             ...data,
+            pharmacyId: new Types.ObjectId(pharmacyId),
             branch: userBranchId ? new Types.ObjectId(userBranchId) : undefined,
         };
 

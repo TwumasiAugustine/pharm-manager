@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IPharmacyInfo extends Document {
     name: string;
     requireSaleShortCode?: boolean; // Admin-controlled feature toggle
+    shortCodeExpiryMinutes?: number; // Time in minutes before short code expires (default: 15)
     address: {
         street: string;
         city: string;
@@ -43,6 +44,7 @@ const PharmacyInfoSchema: Schema = new Schema(
         operatingHours: { type: String, required: true },
         slogan: { type: String, required: true },
         requireSaleShortCode: { type: Boolean, default: false },
+        shortCodeExpiryMinutes: { type: Number, default: 15 }, // Default 15 minutes expiry
     },
     {
         timestamps: true,

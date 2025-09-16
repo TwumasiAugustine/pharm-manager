@@ -160,7 +160,6 @@ userSchema.methods.comparePassword = async function (
 
 // Indexes for better query performance
 userSchema.index({ pharmacyId: 1 });
-userSchema.index({ email: 1 }); // Unique index already handled by schema
 userSchema.index({ pharmacyId: 1, role: 1 }); // Compound index for pharmacy filtering with role
 
 const User = mongoose.model<IUserDoc>('User', userSchema);

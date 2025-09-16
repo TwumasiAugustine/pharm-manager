@@ -6,15 +6,20 @@ import {
     updateBranch,
     deleteBranch,
 } from '../controllers/branch.controller';
-import { authorizeAdminLevel } from '../middlewares/authorize.middleware';
+import {
+    authorizeAdminLevel,
+    authorizeAuthenticated,
+} from '../middlewares/authorize.middleware';
 import { authenticate } from '../middlewares/auth.middleware';
 
 const router = express.Router();
 
-// All branch management endpoints require admin level access (admin or super_admin)
+// Branch creation, update, and deletion require admin level access
 router.post('/', authenticate, authorizeAdminLevel(), createBranch);
-router.get('/', authenticate, authorizeAdminLevel(), getBranches);
 router.put('/:id', authenticate, authorizeAdminLevel(), updateBranch);
 router.delete('/:id', authenticate, authorizeAdminLevel(), deleteBranch);
+
+// Branch listing is available to all authenticated users (for dropdowns, displays)
+router.get('/', authenticate, authorizeAuthenticated(), getBranches);
 
 export default router;

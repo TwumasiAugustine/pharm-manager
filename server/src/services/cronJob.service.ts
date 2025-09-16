@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { ExpiryService } from '../services/expiry.service';
 import { AuditLogService } from '../services/audit-log.service';
 import { UserActivityService } from '../services/user-activity.service';
+import { ExpiredSaleCleanupService } from '../services/expired-sale-cleanup.service';
 import { io } from '../../server';
 
 class CronJobService {
@@ -379,6 +380,57 @@ class CronJobService {
                     'Error during weekly summary reports generation:',
                     error,
                 );
+            }
+        });
+
+        // Run every 10 minutes to cleanup expired unfinalised sales
+        cron.schedule('*/10 * * * *', async () => {
+            const startTime = Date.now();
+            try {
+                console.log('Running expired sale cleanup...');
+
+                // Emit job started
+                io.emit('cron-job-triggered', {
+                    jobName: 'Expired Sale Cleanup',
+                    jobType: 'expired-sale-cleanup',
+                    timestamp: new Date().toISOString(),
+                });
+
+                const cleanedUpCount = await ExpiredSaleCleanupService.cleanupExpiredSales();
+
+                // Emit job completed
+                const duration = Date.now() - startTime;
+                io.emit('cron-job-completed', {
+                    jobName: 'Expired Sale Cleanup',
+                    jobType: 'expired-sale-cleanup',
+                    timestamp: new Date().toISOString(),
+                    duration: duration,
+                    result: { cleanedUpCount },
+                });
+
+                if (cleanedUpCount > 0) {
+                    // Emit specific notification for sale cleanup
+                    io.emit('expired-sales-cleaned', {
+                        count: cleanedUpCount,
+                        timestamp: new Date().toISOString(),
+                    });
+                }
+
+                console.log(
+                    `Expired sale cleanup completed. ${cleanedUpCount} sales cleaned up`,
+                );
+            } catch (error) {
+                // Emit job failed
+                io.emit('cron-job-failed', {
+                    jobName: 'Expired Sale Cleanup',
+                    jobType: 'expired-sale-cleanup',
+                    timestamp: new Date().toISOString(),
+                    error:
+                        error instanceof Error
+                            ? error.message
+                            : 'Unknown error',
+                });
+                console.error('Error during expired sale cleanup:', error);
             }
         });
 

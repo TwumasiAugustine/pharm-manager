@@ -162,3 +162,48 @@ export const checkAdminFirstSetup = async (req: Request, res: Response) => {
         });
     }
 };
+
+// Admin level: Update short code settings
+export const updateShortCodeSettings = async (req: Request, res: Response) => {
+    try {
+        if (
+            !req.user ||
+            (req.user.role !== 'admin' && req.user.role !== 'super_admin')
+        ) {
+            throw new UnauthorizedError(
+                'Only admin level users can update short code settings',
+            );
+        }
+
+        const { requireSaleShortCode, shortCodeExpiryMinutes } = req.body;
+
+        const updateData: any = {};
+        if (typeof requireSaleShortCode === 'boolean') {
+            updateData.requireSaleShortCode = requireSaleShortCode;
+        }
+        if (typeof shortCodeExpiryMinutes === 'number' && shortCodeExpiryMinutes > 0) {
+            updateData.shortCodeExpiryMinutes = shortCodeExpiryMinutes;
+        }
+
+        const info = await PharmacyInfo.findOneAndUpdate(
+            {},
+            updateData,
+            { new: true, upsert: true }
+        );
+
+        res.json({
+            success: true,
+            message: 'Short code settings updated successfully',
+            data: {
+                requireSaleShortCode: info.requireSaleShortCode,
+                shortCodeExpiryMinutes: info.shortCodeExpiryMinutes,
+            },
+        });
+    } catch (error) {
+        console.error('Error updating short code settings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update short code settings',
+        });
+    }
+};

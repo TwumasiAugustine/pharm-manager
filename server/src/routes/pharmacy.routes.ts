@@ -4,10 +4,14 @@ import {
     fetchPharmacyInfo,
     modifyPharmacyInfo,
     checkPharmacyConfigStatus,
+    updateShortCodeSettings,
 } from '../controllers/pharmacy.controller';
 import { checkAdminFirstSetup } from '../controllers/user.controller';
 import { authenticate } from '../middlewares/auth.middleware';
-import { authorizeAdminLevel } from '../middlewares/authorize.middleware';
+import {
+    authorizeAdminLevel,
+    authorizeAuthenticated,
+} from '../middlewares/authorize.middleware';
 import { csrfProtection } from '../middlewares/csrf.middleware';
 
 const router = Router();
@@ -24,11 +28,11 @@ router.post(
 // Expose pharmacy configuration status (public)
 router.get('/status', checkPharmacyConfigStatus);
 
-// Admin level: Get pharmacy info
+// Authenticated users: Get pharmacy info (read-only for cashiers/pharmacists)
 router.get(
     '/pharmacy-info',
     authenticate,
-    authorizeAdminLevel(),
+    authorizeAuthenticated(),
     fetchPharmacyInfo,
 );
 
@@ -46,6 +50,15 @@ router.get(
     authenticate,
     authorizeAdminLevel(),
     checkAdminFirstSetup,
+);
+
+// Admin level: Update short code settings
+router.put(
+    '/short-code-settings',
+    authenticate,
+    csrfProtection,
+    authorizeAdminLevel(),
+    updateShortCodeSettings,
 );
 
 export default router;

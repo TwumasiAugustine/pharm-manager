@@ -361,12 +361,11 @@ export class AuthService {
             );
         }
 
-        const hashedPassword = await bcrypt.hash(autoAssignedData.password, 10);
-
+        // Note: Password will be hashed by the User model's pre-save hook
         const userData: any = {
             ...autoAssignedData,
             email: normalizedEmail,
-            password: hashedPassword,
+            password: autoAssignedData.password, // Let the model handle hashing
             isFirstSetup: autoAssignedData.role === 'admin' ? true : false,
         };
 

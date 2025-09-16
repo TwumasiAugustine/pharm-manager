@@ -14,6 +14,7 @@ import expiryRoutes from './expiry.routes';
 import auditLogRoutes from './audit-log.routes';
 import userActivityRoutes from './user-activity.routes';
 import cronRoutes from './cron.routes';
+import expiredSaleCleanupRoutes from './expired-sale-cleanup.routes';
 import permissionRoutes from './permission.routes';
 
 const router = Router();
@@ -57,6 +58,7 @@ router.use('/expiry', expiryRoutes);
 router.use('/audit-logs', auditLogRoutes);
 router.use('/user-activities', userActivityRoutes);
 router.use('/cron', cronRoutes);
+router.use('/expired-sales', expiredSaleCleanupRoutes);
 router.use('/permissions', permissionRoutes);
 
 export default router;

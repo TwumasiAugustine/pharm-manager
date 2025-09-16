@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { CustomerService } from '../services/customer.service';
+import { AssignmentService } from '../services/assignment.service';
 import { successResponse } from '../utils/response';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 
@@ -73,10 +74,31 @@ export class CustomerController {
      */
     async createCustomer(req: Request, res: Response, next: NextFunction) {
         try {
-            const userBranchId = req.user!.branchId;
+            // Safely get user branchId or use default assignment
+            let userBranchId: string | undefined;
+
+            if (req.user?.branchId) {
+                userBranchId = req.user.branchId;
+            } else {
+                // If user doesn't have branchId, try to get default branch
+                try {
+                    userBranchId = await AssignmentService.getDefaultBranchId();
+                    console.log(
+                        `🏢 Using default branch for customer creation: ${userBranchId}`,
+                    );
+                } catch (error) {
+                    // If no default branch available, proceed without branch assignment
+                    console.warn(
+                        '⚠️ No branch available for customer assignment',
+                    );
+                    userBranchId = undefined;
+                }
+            }
+
             const newCustomer = await customerService.createCustomer(
                 req.body,
                 userBranchId,
+                req.user?.pharmacyId, // Pass user's pharmacyId
             );
             res.status(201).json(
                 successResponse(

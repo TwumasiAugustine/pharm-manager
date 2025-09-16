@@ -68,3 +68,19 @@ export const authorizeAdminLevel = () => {
         next();
     };
 };
+
+/**
+ * Middleware to authorize all authenticated users for read operations
+ * This allows cashiers and pharmacists to read necessary information
+ */
+export const authorizeAuthenticated = () => {
+    return (req: Request, res: Response, next: NextFunction) => {
+        const user = req.user;
+
+        if (!user || !user.role) {
+            return next(new ForbiddenError('Authentication required'));
+        }
+
+        next();
+    };
+};

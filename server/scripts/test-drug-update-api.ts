@@ -76,7 +76,6 @@ async function testDrugUpdateAPI(): Promise<void> {
         console.log('Update data:', updateData);
 
         // Make HTTP request to the update endpoint
-        const fetch = (await import('node-fetch')).default;
         const response = await fetch(
             `http://localhost:5000/api/drugs/${existingDrug._id}`,
             {
