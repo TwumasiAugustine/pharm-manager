@@ -7,6 +7,7 @@ import mongoose from 'mongoose';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 import { CustomerService } from './customer.service';
 import { AssignmentService } from './assignment.service';
+import { UserRole } from '../types/user.types';
 
 // Helper type for mapped sale objects
 type MappedSaleItem = {
@@ -502,7 +503,7 @@ export class SaleService {
         const query: any = {};
 
         // If not super admin, filter by branch
-        if (userRole && userRole !== 'super_admin' && userBranchId) {
+        if (userRole && userRole !== UserRole.SUPER_ADMIN && userBranchId) {
             query.branch = userBranchId;
         }
 
@@ -649,7 +650,7 @@ export class SaleService {
         const query: any = { _id: id };
 
         // If not super admin, filter by branch
-        if (userRole && userRole !== 'super_admin' && userBranchId) {
+        if (userRole && userRole !== UserRole.SUPER_ADMIN && userBranchId) {
             query.branch = userBranchId;
         }
 

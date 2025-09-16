@@ -6,6 +6,7 @@ import { SaleService } from '../services/sale.service';
 import { AssignmentService } from '../services/assignment.service';
 import { successResponse } from '../utils/response';
 import { logAuditEvent } from '../middlewares/audit.middleware';
+import { UserRole } from '../types/user.types';
 
 const saleService = new SaleService();
 
@@ -104,7 +105,7 @@ export class SaleController {
             if (!req.user) throw new UnauthorizedError('Not authenticated');
 
             // Super admin cannot finalize sales - they have all other permissions but not this
-            if (req.user.role === 'super_admin') {
+            if (req.user.role === UserRole.SUPER_ADMIN) {
                 throw new UnauthorizedError(
                     'Super admin cannot finalize sales',
                 );

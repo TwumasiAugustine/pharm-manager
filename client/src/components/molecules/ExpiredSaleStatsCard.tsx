@@ -54,7 +54,7 @@ export const ExpiredSaleStatsCard: React.FC = () => {
         );
     }
 
-    const hasExpiredSales = stats.expiredSalesCount > 0;
+    const hasExpiredSales = (stats.expiredSalesCount || 0) > 0;
 
     return (
         <Card>
@@ -77,7 +77,7 @@ export const ExpiredSaleStatsCard: React.FC = () => {
                             </span>
                         </div>
                         <p className="text-2xl font-bold text-orange-900">
-                            {stats.expiredSalesCount}
+                            {stats.expiredSalesCount || 0}
                         </p>
                     </div>
 
@@ -89,7 +89,7 @@ export const ExpiredSaleStatsCard: React.FC = () => {
                             </span>
                         </div>
                         <p className="text-lg font-bold text-red-900">
-                            ${stats.totalValue.toFixed(2)}
+                            ${(stats.totalValue || 0).toFixed(2)}
                         </p>
                     </div>
 
@@ -116,10 +116,10 @@ export const ExpiredSaleStatsCard: React.FC = () => {
                                     Manual Cleanup Available
                                 </h4>
                                 <p className="text-sm text-yellow-800 mb-3">
-                                    There are {stats.expiredSalesCount} expired
-                                    sale(s) that can be cleaned up manually.
-                                    This will restore drug quantities and remove
-                                    expired sales.
+                                    There are {stats.expiredSalesCount || 0}{' '}
+                                    expired sale(s) that can be cleaned up
+                                    manually. This will restore drug quantities
+                                    and remove expired sales.
                                 </p>
                             </div>
                             <button

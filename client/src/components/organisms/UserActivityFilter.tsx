@@ -1,6 +1,7 @@
 import React from 'react';
 import type { UserActivityFilters } from '../../types/user-activity.types';
 import { FaFilter, FaTimes } from 'react-icons/fa';
+import { useDebounceFunction } from '../../hooks/useDebounceFunction';
 
 interface UserActivityFilterProps {
     filters: UserActivityFilters;
@@ -13,11 +14,27 @@ export const UserActivityFilter: React.FC<UserActivityFilterProps> = ({
     onFilterChange,
     isLoading,
 }) => {
+    // Debounced handlers for text inputs
+    const debouncedTextChange = useDebounceFunction(onFilterChange, 500);
+
     const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
     ) => {
         const { name, value } = e.target;
-        onFilterChange({ [name]: value });
+
+        // Convert empty strings to undefined for enum properties
+        const processedValue =
+            (name === 'activityType' || name === 'resource') && value === ''
+                ? undefined
+                : value;
+
+        // Use debounced handler for text inputs (userId, sessionId, ipAddress)
+        if (name === 'userId' || name === 'sessionId' || name === 'ipAddress') {
+            debouncedTextChange({ [name]: processedValue });
+        } else {
+            // Immediate update for select fields
+            onFilterChange({ [name]: processedValue });
+        }
     };
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,8 +48,8 @@ export const UserActivityFilter: React.FC<UserActivityFilterProps> = ({
         onFilterChange({
             userId: '',
             sessionId: '',
-            activityType: '',
-            resource: '',
+            activityType: undefined,
+            resource: undefined,
             startDate: '',
             endDate: '',
             ipAddress: '',

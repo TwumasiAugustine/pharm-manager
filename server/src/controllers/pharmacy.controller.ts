@@ -1,5 +1,8 @@
+import { Request, Response } from 'express';
 import PharmacyInfo from '../models/pharmacy-info.model';
 import { UnauthorizedError } from '../utils/errors';
+import { UserRole } from '../types/user.types';
+
 // Admin level: Toggle requireSaleShortCode feature
 export const toggleSaleShortCodeFeature = async (
     req: Request,
@@ -7,7 +10,8 @@ export const toggleSaleShortCodeFeature = async (
 ) => {
     if (
         !req.user ||
-        (req.user.role !== 'admin' && req.user.role !== 'super_admin')
+        (req.user.role !== UserRole.ADMIN &&
+            req.user.role !== UserRole.SUPER_ADMIN)
     ) {
         throw new UnauthorizedError(
             'Only admin level users can toggle this feature',
@@ -24,7 +28,6 @@ export const toggleSaleShortCodeFeature = async (
         requireSaleShortCode: info.requireSaleShortCode,
     });
 };
-import { Request, Response } from 'express';
 import {
     getPharmacyInfo,
     updatePharmacyInfo,
@@ -83,7 +86,10 @@ export const modifyPharmacyInfo = async (req: Request, res: Response) => {
         const updatedInfo = await updatePharmacyInfo(req.body);
 
         // Mark admin's first setup as complete
-        if (req.user?.role === 'admin' || req.user?.role === 'super_admin') {
+        if (
+            req.user?.role === UserRole.ADMIN ||
+            req.user?.role === UserRole.SUPER_ADMIN
+        ) {
             await User.findByIdAndUpdate(req.user.id, { isFirstSetup: false });
         }
 
@@ -168,7 +174,8 @@ export const updateShortCodeSettings = async (req: Request, res: Response) => {
     try {
         if (
             !req.user ||
-            (req.user.role !== 'admin' && req.user.role !== 'super_admin')
+            (req.user.role !== UserRole.ADMIN &&
+                req.user.role !== UserRole.SUPER_ADMIN)
         ) {
             throw new UnauthorizedError(
                 'Only admin level users can update short code settings',

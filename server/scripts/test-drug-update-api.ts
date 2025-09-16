@@ -15,6 +15,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 import { Drug } from '../src/models/drug.model';
 import User from '../src/models/user.model';
+import { UserRole } from '../src/types/user.types';
 
 async function testDrugUpdateAPI(): Promise<void> {
     try {
@@ -29,7 +30,7 @@ async function testDrugUpdateAPI(): Promise<void> {
 
         // Find an existing drug and super admin user
         const existingDrug = await Drug.findOne();
-        const superAdmin = await User.findOne({ role: 'super_admin' });
+        const superAdmin = await User.findOne({ role: UserRole.SUPER_ADMIN });
 
         if (!existingDrug) {
             console.log('❌ No existing drugs found to test update');

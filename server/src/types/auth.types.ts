@@ -1,9 +1,4 @@
-export enum UserRole {
-    SUPER_ADMIN = 'super_admin',
-    ADMIN = 'admin',
-    PHARMACIST = 'pharmacist',
-    CASHIER = 'cashier',
-}
+import { UserRole } from './user.types';
 
 export interface IUser {
     _id: string;

@@ -13,6 +13,7 @@ import type {
 } from 'react-hook-form';
 import type { DrugFormValues } from '../../validations/drug.validation';
 import { DOSAGE_FORMS } from '../../data/drugs';
+import { useDebounce } from '../../hooks/useDebounce';
 
 interface DrugAdvancedFieldsProps {
     register: UseFormRegister<DrugFormValues>;
@@ -28,9 +29,10 @@ export const DrugAdvancedFields: React.FC<DrugAdvancedFieldsProps> = ({
     // Dosage Form Autocomplete
     const [dosageSearch, setDosageSearch] = useState('');
     const [showDosageResults, setShowDosageResults] = useState(false);
-    const filteredDosages = dosageSearch
+    const debouncedDosageSearch = useDebounce(dosageSearch, 300);
+    const filteredDosages = debouncedDosageSearch
         ? DOSAGE_FORMS.filter((d) =>
-              d.toLowerCase().includes(dosageSearch.toLowerCase()),
+              d.toLowerCase().includes(debouncedDosageSearch.toLowerCase()),
           )
         : DOSAGE_FORMS;
 

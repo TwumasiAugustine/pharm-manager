@@ -9,7 +9,7 @@ import {
 } from '../hooks/usePharmacy';
 import type { PharmacyInfo } from '../api/pharmacy.api';
 import { useAuthStore } from '../store/auth.store';
-import { UserRole } from '../types/auth.types';
+import { UserRole } from '../types/user.types';
 import DashboardLayout from '../layouts/DashboardLayout';
 import {
     Card,

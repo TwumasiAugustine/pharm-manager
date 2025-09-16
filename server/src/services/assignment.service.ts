@@ -8,6 +8,7 @@ import mongoose, { Types } from 'mongoose';
 import PharmacyInfo from '../models/pharmacy-info.model';
 import Branch from '../models/branch.model';
 import { BadRequestError } from '../utils/errors';
+import { UserRole } from '../types/user.types';
 
 export class AssignmentService {
     /**
@@ -94,7 +95,7 @@ export class AssignmentService {
                 );
             } catch (error) {
                 // Don't fail if pharmacy assignment fails for super admin
-                if (updatedData.role !== 'super_admin') {
+                if (updatedData.role !== UserRole.SUPER_ADMIN) {
                     throw error;
                 }
             }
@@ -110,8 +111,8 @@ export class AssignmentService {
             } catch (error) {
                 // Don't fail if branch assignment fails for admin/super_admin
                 if (
-                    updatedData.role !== 'admin' &&
-                    updatedData.role !== 'super_admin'
+                    updatedData.role !== UserRole.ADMIN &&
+                    updatedData.role !== UserRole.SUPER_ADMIN
                 ) {
                     throw error;
                 }

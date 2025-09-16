@@ -6,6 +6,7 @@ import type {
     IExpiryStats,
     IExpiryNotification,
 } from '../types/expiry.types';
+import { UserRole } from '../types/user.types';
 
 export class ExpiryService {
     /**
@@ -44,7 +45,7 @@ export class ExpiryService {
 
         // Branch filtering logic - use provided branchId or user's branch
         const filterBranchId = branchId || userBranchId;
-        if (userRole && userRole !== 'super_admin' && filterBranchId) {
+        if (userRole && userRole !== UserRole.SUPER_ADMIN && filterBranchId) {
             query.branch = filterBranchId;
         } else if (branchId) {
             // Super admin can filter by specific branch if provided

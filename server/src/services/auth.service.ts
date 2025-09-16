@@ -16,8 +16,8 @@ import {
     ISignupRequest,
     ITokenPayload,
     IUser,
-    UserRole,
 } from '../types/auth.types';
+import { UserRole } from '../types/user.types';
 
 // Extended interface for user operations that include branchId
 interface IUserWithBranchId extends Partial<IUser> {
@@ -271,7 +271,7 @@ export class AuthService {
         }
 
         // If not super admin, filter by branch
-        if (userRole && userRole !== 'super_admin' && userBranchId) {
+        if (userRole && userRole !== UserRole.SUPER_ADMIN && userBranchId) {
             query.branch = userBranchId;
         }
 
@@ -309,7 +309,9 @@ export class AuthService {
         // Auto-assign pharmacy and branch if not provided
         const autoAssignedData = await AssignmentService.autoAssignUserIds(
             data,
-            ['pharmacist', 'cashier'].includes(data.role || ''), // Require branch for non-admin roles
+            [UserRole.PHARMACIST, UserRole.CASHIER].includes(
+                data.role as UserRole,
+            ), // Require branch for non-admin roles
         );
 
         // Use auto-assigned pharmacy ID if adminPharmacyId is not provided
@@ -366,7 +368,8 @@ export class AuthService {
             ...autoAssignedData,
             email: normalizedEmail,
             password: autoAssignedData.password, // Let the model handle hashing
-            isFirstSetup: autoAssignedData.role === 'admin' ? true : false,
+            isFirstSetup:
+                autoAssignedData.role === UserRole.ADMIN ? true : false,
         };
 
         // Set pharmacyId if we have one
@@ -378,7 +381,7 @@ export class AuthService {
 
         // Super admin cannot have FINALIZE_SALE permission
         if (
-            autoAssignedData.role === 'super_admin' &&
+            autoAssignedData.role === UserRole.SUPER_ADMIN &&
             autoAssignedData.permissions?.includes('FINALIZE_SALE')
         ) {
             userData.permissions = autoAssignedData.permissions.filter(
@@ -474,7 +477,8 @@ export class AuthService {
 
         // Super admin cannot have FINALIZE_SALE permission
         if (
-            (data.role === 'super_admin' || user.role === 'super_admin') &&
+            (data.role === UserRole.SUPER_ADMIN ||
+                user.role === UserRole.SUPER_ADMIN) &&
             data.permissions?.includes('FINALIZE_SALE')
         ) {
             updateData.permissions = data.permissions.filter(

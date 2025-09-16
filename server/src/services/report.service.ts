@@ -11,6 +11,7 @@ import type {
 } from '../types/report.types';
 import puppeteer from 'puppeteer';
 import { Types } from 'mongoose';
+import { UserRole } from '../types/user.types';
 
 export class ReportService {
     /**
@@ -40,7 +41,7 @@ export class ReportService {
             // Branch filtering logic - use provided branchId or user's branch
             const filterBranchId = branchId || userBranchId;
             const effectiveBranchId =
-                userRole && userRole !== 'super_admin' && filterBranchId
+                userRole && userRole !== UserRole.SUPER_ADMIN && filterBranchId
                     ? filterBranchId
                     : branchId;
 

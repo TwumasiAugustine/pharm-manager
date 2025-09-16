@@ -8,7 +8,7 @@ import {
     IUpdateDrugRequest,
     IPaginatedDrugsResponse,
 } from '../types/drug.types';
-import { UserRole } from '../types/auth.types';
+import { UserRole } from '../types/user.types';
 import {
     NotFoundError,
     BadRequestError,

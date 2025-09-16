@@ -3,6 +3,7 @@ import { NotFoundError } from '../utils/errors';
 import { Sale } from '../models/sale.model';
 import { Types } from 'mongoose';
 import { AssignmentService } from './assignment.service';
+import { UserRole } from '../types/user.types';
 
 export class CustomerService {
     /**
@@ -59,7 +60,7 @@ export class CustomerService {
         const query: any = {};
 
         // If not super admin, filter by branch
-        if (userRole && userRole !== 'super_admin' && userBranchId) {
+        if (userRole && userRole !== UserRole.SUPER_ADMIN && userBranchId) {
             query.branch = userBranchId;
         }
 
@@ -100,7 +101,7 @@ export class CustomerService {
         const query: any = { _id: id };
 
         // If not super admin, filter by branch
-        if (userRole && userRole !== 'super_admin' && userBranchId) {
+        if (userRole && userRole !== UserRole.SUPER_ADMIN && userBranchId) {
             query.branch = userBranchId;
         }
 

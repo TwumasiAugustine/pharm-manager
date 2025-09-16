@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useDebounceFunction } from '../../hooks/useDebounceFunction';
 
 /**
  * Props for SearchBar component
@@ -33,12 +34,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     onFocus,
     onBlur,
 }) => {
-    // Timeout for debouncing
-    const [debounceTimeout, setDebounceTimeout] = useState<ReturnType<
-        typeof setTimeout
-    > | null>(null);
+    // Use debounced search function
+    const debouncedSearch = useDebounceFunction(onSearch, 500);
 
-    const { register, watch } = useForm<SearchFormValues>({
+    const { watch, setValue } = useForm<SearchFormValues>({
         resolver: zodResolver(searchSchema),
         defaultValues: {
             query: initialValue,
@@ -48,38 +47,24 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     // Get the current query value
     const queryValue = watch('query');
 
+    // Update form when initialValue changes
+    useEffect(() => {
+        setValue('query', initialValue || '');
+    }, [initialValue, setValue]);
+
     // Handle input change with debounce
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
-
-        // Clear existing timeout
-        if (debounceTimeout) {
-            clearTimeout(debounceTimeout);
-        }
-
-        // Set new timeout to debounce search
-        const timeout = setTimeout(() => {
-            onSearch(value);
-        }, 500); // 500ms debounce time
-
-        setDebounceTimeout(timeout);
+        setValue('query', value); // Update form state
+        debouncedSearch(value);
     };
-
-    // Cleanup on unmount
-    React.useEffect(() => {
-        return () => {
-            if (debounceTimeout) {
-                clearTimeout(debounceTimeout);
-            }
-        };
-    }, [debounceTimeout]);
 
     return (
         <div className={`relative ${className}`}>
             <div className="relative">
                 <input
                     type="text"
-                    {...register('query')}
+                    value={queryValue || ''}
                     onChange={handleInputChange}
                     placeholder={placeholder}
                     className="w-full px-4 py-2 pl-10 pr-12 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"

@@ -1,11 +1,4 @@
-export type UserRole = 'super_admin' | 'admin' | 'pharmacist' | 'cashier';
-
-export const UserRole = {
-    SUPER_ADMIN: 'super_admin' as UserRole,
-    ADMIN: 'admin' as UserRole,
-    PHARMACIST: 'pharmacist' as UserRole,
-    CASHIER: 'cashier' as UserRole,
-};
+import { UserRole } from './user.types';
 
 export interface User {
     id: string;

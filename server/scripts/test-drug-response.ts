@@ -14,7 +14,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 import { Drug } from '../src/models/drug.model';
 import { DrugService } from '../src/services/drug.service';
-import { UserRole } from '../src/types/auth.types';
+import { UserRole } from '../src/types/user.types';
 
 async function testDrugResponseFormat(): Promise<void> {
     try {

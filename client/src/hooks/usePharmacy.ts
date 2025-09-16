@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { pharmacyApi, type PharmacyInfo } from '../api/pharmacy.api';
 import { useSafeNotify } from '../utils/useSafeNotify';
 import { useAuthStore } from '../store/auth.store';
+import { UserRole } from '../types/user.types';
 
 export const usePharmacyInfo = () => {
     const notify = useSafeNotify();
@@ -52,7 +53,10 @@ export const useUpdatePharmacyInfo = () => {
 
     return useMutation({
         mutationFn: (data: PharmacyInfo) => {
-            if (user?.role !== 'admin' && user?.role !== 'super_admin') {
+            if (
+                user?.role !== UserRole.ADMIN &&
+                user?.role !== UserRole.SUPER_ADMIN
+            ) {
                 const error = new Error(
                     'You are not authorized to perform this action.',
                 );

@@ -9,6 +9,7 @@ import {
     initializeUserSession,
     endUserSession,
 } from '../middlewares/user-activity.middleware';
+import { UserRole } from '../types/user.types';
 
 const authService = new AuthService();
 
@@ -372,7 +373,8 @@ export class AuthController {
         try {
             if (
                 !req.user ||
-                (req.user.role !== 'admin' && req.user.role !== 'super_admin')
+                (req.user.role !== UserRole.ADMIN &&
+                    req.user.role !== UserRole.SUPER_ADMIN)
             ) {
                 res.status(403).json({
                     success: false,

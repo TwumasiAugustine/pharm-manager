@@ -4,6 +4,7 @@ import { FaPills, FaTrademark } from 'react-icons/fa';
 import type { UseFormRegister, FieldErrors } from 'react-hook-form';
 import type { DrugFormValues } from '../../validations/drug.validation';
 import { DRUG_NAMES, BRANDS } from '../../data/drugs';
+import { useDebounce } from '../../hooks/useDebounce';
 
 interface DrugBasicFieldsProps {
     register: UseFormRegister<DrugFormValues>;
@@ -23,14 +24,16 @@ export const DrugBasicFields: React.FC<DrugBasicFieldsProps> = ({
     // Drug Name Autocomplete
     const [nameSearch, setNameSearch] = useState(valueName || '');
     const [showNameResults, setShowNameResults] = useState(false);
-    const filteredNames = nameSearch
+    const debouncedNameSearch = useDebounce(nameSearch, 300);
+    const filteredNames = debouncedNameSearch
         ? DRUG_NAMES.filter((n) =>
-              n.toLowerCase().includes(nameSearch.toLowerCase()),
+              n.toLowerCase().includes(debouncedNameSearch.toLowerCase()),
           )
         : DRUG_NAMES;
 
     // Brand Autocomplete
     const [brandSearch, setBrandSearch] = useState(valueBrand || '');
+    const debouncedBrandSearch = useDebounce(brandSearch, 300);
     // Keep local state in sync with form value (for edit mode)
     useEffect(() => {
         setNameSearch(valueName);
@@ -39,9 +42,9 @@ export const DrugBasicFields: React.FC<DrugBasicFieldsProps> = ({
         setBrandSearch(valueBrand);
     }, [valueBrand]);
     const [showBrandResults, setShowBrandResults] = useState(false);
-    const filteredBrands = brandSearch
+    const filteredBrands = debouncedBrandSearch
         ? BRANDS.filter((b) =>
-              b.toLowerCase().includes(brandSearch.toLowerCase()),
+              b.toLowerCase().includes(debouncedBrandSearch.toLowerCase()),
           )
         : BRANDS;
 
