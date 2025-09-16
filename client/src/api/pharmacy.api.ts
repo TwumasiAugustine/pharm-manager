@@ -19,6 +19,7 @@ export interface PharmacyInfo {
     operatingHours: string;
     slogan: string;
     requireSaleShortCode?: boolean;
+    shortCodeExpiryMinutes?: number;
     _id?: string;
     __v?: number;
     createdAt?: string;
@@ -89,6 +90,7 @@ export const pharmacyApi = {
                     taxId: '',
                     operatingHours: '',
                     requireSaleShortCode: false,
+                    shortCodeExpiryMinutes: 15,
                 };
                 isConfigured = false;
             }
@@ -116,6 +118,10 @@ export const pharmacyApi = {
                     typeof pharmacyInfo.requireSaleShortCode === 'boolean'
                         ? pharmacyInfo.requireSaleShortCode
                         : false,
+                shortCodeExpiryMinutes:
+                    typeof pharmacyInfo.shortCodeExpiryMinutes === 'number'
+                        ? pharmacyInfo.shortCodeExpiryMinutes
+                        : 15,
                 _id: pharmacyInfo._id,
                 __v: pharmacyInfo.__v,
                 createdAt: pharmacyInfo.createdAt,
@@ -163,6 +169,25 @@ export const pharmacyApi = {
     checkAdminFirstSetup: async (): Promise<{ isFirstSetup: boolean }> => {
         const response = await api.get<{ isFirstSetup: boolean }>(
             '/pharmacy/admin-first-setup',
+        );
+        return response.data;
+    },
+
+    // Update short code settings (admin only)
+    updateShortCodeSettings: async (settings: {
+        requireSaleShortCode?: boolean;
+        shortCodeExpiryMinutes?: number;
+    }): Promise<{
+        success: boolean;
+        message: string;
+        data: {
+            requireSaleShortCode: boolean;
+            shortCodeExpiryMinutes: number;
+        };
+    }> => {
+        const response = await api.patch(
+            '/pharmacy/short-code-settings',
+            settings,
         );
         return response.data;
     },

@@ -10,7 +10,7 @@ export interface CronJobCompletedEvent {
     jobType: string;
     timestamp: string;
     duration?: number;
-    result?: any;
+    result?: unknown;
 }
 
 export interface CronJobFailedEvent {
@@ -24,3 +24,11 @@ export type CronJobSocketEvent =
     | CronJobTriggeredEvent
     | CronJobCompletedEvent
     | CronJobFailedEvent;
+
+// Expired sale cleanup events
+export interface ExpiredSalesCleanedEvent {
+    count: number;
+    timestamp: string;
+}
+
+export type ExpiredSaleSocketEvent = ExpiredSalesCleanedEvent;

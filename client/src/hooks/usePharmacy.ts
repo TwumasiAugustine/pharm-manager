@@ -35,6 +35,7 @@ export const usePharmacyInfo = () => {
                         taxId: '',
                         operatingHours: '',
                         requireSaleShortCode: false,
+                        shortCodeExpiryMinutes: 15,
                     },
                     isConfigured: false,
                 };
@@ -102,6 +103,37 @@ export const useCheckAdminFirstSetup = () => {
         queryKey: ['adminFirstSetup'],
         queryFn: async () => {
             return await pharmacyApi.checkAdminFirstSetup();
+        },
+    });
+};
+
+export const useUpdateShortCodeSettings = () => {
+    const queryClient = useQueryClient();
+    const notify = useSafeNotify();
+    const { user } = useAuthStore();
+
+    return useMutation({
+        mutationFn: (settings: {
+            requireSaleShortCode?: boolean;
+            shortCodeExpiryMinutes?: number;
+        }) => {
+            if (user?.role !== 'admin' && user?.role !== 'super_admin') {
+                const error = new Error(
+                    'You are not authorized to perform this action.',
+                );
+                notify.error(error.message);
+                return Promise.reject(error);
+            }
+            return pharmacyApi.updateShortCodeSettings(settings);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['pharmacyInfo'] });
+            notify.success('Short code settings updated successfully!');
+        },
+        onError: (error: Error) => {
+            notify.error(
+                error.message || 'Failed to update short code settings',
+            );
         },
     });
 };

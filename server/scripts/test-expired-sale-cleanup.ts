@@ -3,15 +3,45 @@
  * This script creates a test sale with short code and shows how cleanup works
  */
 
-import '../src/config/db';
+import * as dotenv from 'dotenv';
+import mongoose from 'mongoose';
 import { Sale } from '../src/models/sale.model';
 import { Drug } from '../src/models/drug.model';
 import PharmacyInfo from '../src/models/pharmacy-info.model';
 import { ExpiredSaleCleanupService } from '../src/services/expired-sale-cleanup.service';
 import { AssignmentService } from '../src/services/assignment.service';
 
+// Load environment variables
+dotenv.config();
+
+async function connectToDatabase() {
+    try {
+        // Use environment variable or fallback to test database
+        const mongoUri =
+            process.env.MONGO_URI || 'mongodb://localhost:27017/pharmacy-test';
+
+        console.log('🔌 Connecting to database...');
+        await mongoose.connect(mongoUri, {
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 10000,
+        });
+        console.log('✅ Database connected successfully\n');
+    } catch (error) {
+        console.error('❌ Database connection failed:', error);
+        console.log('\n💡 Troubleshooting:');
+        console.log('   1. Make sure MongoDB is running locally');
+        console.log('   2. Check if MONGO_URI in .env is correct');
+        console.log('   3. For local MongoDB: mongod --dbpath C:\\data\\db');
+        console.log('   4. Or use Docker: docker run -d -p 27017:27017 mongo');
+        process.exit(1);
+    }
+}
+
 async function testExpiredSaleCleanup() {
     try {
+        // Connect to database first
+        await connectToDatabase();
+
         console.log('🧪 Testing expired sale cleanup functionality...\n');
 
         // Step 1: Setup pharmacy with short code feature enabled
@@ -35,26 +65,32 @@ async function testExpiredSaleCleanup() {
 
             testDrug = await Drug.create({
                 name: 'Test Drug for Cleanup',
-                manufacturer: 'Test Manufacturer',
+                brand: 'Test Brand', // Required field
+                category: 'test',
+                dosageForm: 'tablet', // Required field
+                ableToSell: true,
+                drugsInCarton: 100,
+                unitsPerCarton: 20, // Required field
+                packsPerCarton: 4, // Required field
                 quantity: 100, // Initial quantity
                 pricePerUnit: 10,
                 pricePerPack: 50,
                 pricePerCarton: 200,
-                costPrice: 5,
-                unitsPerPack: 5,
-                packsPerCarton: 4,
-                category: 'test',
+                costPrice: 5, // Required field
                 expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
                 batchNumber: 'TEST-001',
+                requiresPrescription: false,
+                supplier: 'Test Supplier',
+                location: 'Test Location',
                 pharmacyId: pharmacyId,
-                branchId: branchId,
+                branch: branchId, // Required field (note: it's 'branch' not 'branchId')
             });
             console.log(
                 `✅ Created test drug: ${testDrug.name} (ID: ${testDrug._id})`,
             );
         } else {
-            // Update quantity to 100 for consistent testing
-            testDrug.quantity = 100;
+            // Update quantity to 8000 for consistent testing
+            testDrug.quantity = 8000;
             await testDrug.save();
             console.log(
                 `✅ Using existing test drug: ${testDrug.name} (ID: ${testDrug._id})`,
@@ -121,9 +157,9 @@ async function testExpiredSaleCleanup() {
         console.log('🔍 Step 6: Verify drug quantity restoration...');
         const updatedDrug = await Drug.findById(testDrug._id);
         console.log(`   Drug quantity after cleanup: ${updatedDrug?.quantity}`);
-        console.log(`   Expected quantity: 100`);
+        console.log(`   Expected quantity: 8000`);
 
-        if (updatedDrug?.quantity === 100) {
+        if (updatedDrug?.quantity === 8000) {
             console.log('✅ Drug quantity successfully restored!\n');
         } else {
             console.log('❌ Drug quantity NOT restored correctly!\n');
@@ -165,6 +201,12 @@ async function testExpiredSaleCleanup() {
     } catch (error) {
         console.error('❌ Test failed:', error);
         process.exit(1);
+    } finally {
+        // Disconnect from database
+        if (mongoose.connection.readyState === 1) {
+            await mongoose.disconnect();
+            console.log('🔌 Database disconnected');
+        }
     }
 }
 

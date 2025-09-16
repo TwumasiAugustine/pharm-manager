@@ -122,7 +122,12 @@ export class SaleController {
             if (!sale) {
                 throw new BadRequestError('Invalid or expired code');
             }
-            // Check if code is expired (older than 10 minutes)
+
+            // Get pharmacy settings for expiry time
+            const pharmacyInfo = await PharmacyInfo.findOne();
+            const expiryMinutes = pharmacyInfo?.shortCodeExpiryMinutes || 15; // Default 15 minutes
+
+            // Check if code is expired based on configurable time
             const now = new Date();
             const createdAt =
                 sale.createdAt instanceof Date
@@ -130,9 +135,9 @@ export class SaleController {
                     : new Date(sale.createdAt);
             const diffMs = now.getTime() - createdAt.getTime();
             const diffMinutes = diffMs / (1000 * 60);
-            if (diffMinutes > 10) {
+            if (diffMinutes > expiryMinutes) {
                 throw new BadRequestError(
-                    'Short code has expired. Please ask the pharmacist to generate a new one.',
+                    `Short code has expired. Please ask the pharmacist to generate a new one. (Expired after ${expiryMinutes} minutes)`,
                 );
             }
             // If already finalized, allow printing (do not update again)

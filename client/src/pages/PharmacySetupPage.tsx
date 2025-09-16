@@ -2,7 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '../components/atoms/Input';
-import { useUpdatePharmacyInfo, usePharmacyInfo } from '../hooks/usePharmacy';
+import {
+    useUpdatePharmacyInfo,
+    usePharmacyInfo,
+    useUpdateShortCodeSettings,
+} from '../hooks/usePharmacy';
 import type { PharmacyInfo } from '../api/pharmacy.api';
 import { useAuthStore } from '../store/auth.store';
 import { UserRole } from '../types/auth.types';
@@ -14,6 +18,7 @@ import {
     CardTitle,
 } from '../components/molecules/Card';
 import { Alert, AlertDescription } from '../components/molecules/Alert';
+import { ExpiredSaleStatsCard } from '../components/molecules/ExpiredSaleStatsCard';
 import { pharmacyApi } from '../api/pharmacy.api';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -34,11 +39,14 @@ const PharmacySetupPage: React.FC = () => {
     const navigate = useNavigate();
     const { user } = useAuthStore();
     const { mutate: updatePharmacy, isPending } = useUpdatePharmacyInfo();
+    const { mutate: updateShortCodeSettings, isPending: isUpdatingSettings } =
+        useUpdateShortCodeSettings();
     const { data: pharmacyData, isLoading, error } = usePharmacyInfo();
     const [defaultValues, setDefaultValues] = useState<PharmacyInfo | null>(
         null,
     );
     const [requireShortCode, setRequireShortCode] = useState(false);
+    const [shortCodeExpiryMinutes, setShortCodeExpiryMinutes] = useState(15);
     const [toggleLoading, setToggleLoading] = useState(false);
     const queryClient = useQueryClient();
 
@@ -47,6 +55,11 @@ const PharmacySetupPage: React.FC = () => {
         if (pharmacyData?.pharmacyInfo?.requireSaleShortCode !== undefined) {
             setRequireShortCode(
                 !!pharmacyData.pharmacyInfo.requireSaleShortCode,
+            );
+        }
+        if (pharmacyData?.pharmacyInfo?.shortCodeExpiryMinutes !== undefined) {
+            setShortCodeExpiryMinutes(
+                pharmacyData.pharmacyInfo.shortCodeExpiryMinutes,
             );
         }
     }, [pharmacyData]);
@@ -65,6 +78,17 @@ const PharmacySetupPage: React.FC = () => {
         } finally {
             setToggleLoading(false);
         }
+    };
+
+    const handleUpdateExpiryMinutes = (minutes: number) => {
+        if (minutes < 1 || minutes > 1440) {
+            // 1 minute to 24 hours
+            return;
+        }
+        setShortCodeExpiryMinutes(minutes);
+        updateShortCodeSettings({
+            shortCodeExpiryMinutes: minutes,
+        });
     };
 
     // Check if user is an admin or super admin
@@ -174,55 +198,188 @@ const PharmacySetupPage: React.FC = () => {
                                     </p>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <FiShield className="h-4 w-4 text-blue-600" />
-                                                    <h4 className="font-semibold text-blue-900">
-                                                        Sale Short Code Security
-                                                    </h4>
+                                    <div className="space-y-4">
+                                        {/* Short Code Toggle */}
+                                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <FiShield className="h-4 w-4 text-blue-600" />
+                                                        <h4 className="font-semibold text-blue-900">
+                                                            Sale Short Code
+                                                            Security
+                                                        </h4>
+                                                    </div>
+                                                    <p className="text-sm text-blue-700">
+                                                        When enabled, cashiers
+                                                        must enter a generated
+                                                        short code to finalize
+                                                        and print sales
+                                                        receipts.
+                                                    </p>
                                                 </div>
-                                                <p className="text-sm text-blue-700">
-                                                    When enabled, cashiers must
-                                                    enter a generated short code
-                                                    to finalize and print sales
-                                                    receipts.
-                                                </p>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={handleToggleShortCode}
-                                                disabled={toggleLoading}
-                                                className={`
-                                                    ml-4 px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2
-                                                    ${
-                                                        requireShortCode
-                                                            ? 'bg-green-600 text-white hover:bg-green-700'
-                                                            : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                                                <button
+                                                    type="button"
+                                                    onClick={
+                                                        handleToggleShortCode
                                                     }
-                                                    disabled:opacity-50 disabled:cursor-not-allowed
-                                                `}
-                                            >
-                                                {toggleLoading ? (
-                                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                                                ) : requireShortCode ? (
-                                                    <>
-                                                        <FiCheck className="h-4 w-4" />
-                                                        Enabled
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <FiX className="h-4 w-4" />
-                                                        Disabled
-                                                    </>
-                                                )}
-                                            </button>
+                                                    disabled={toggleLoading}
+                                                    className={`
+                                                        ml-4 px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2
+                                                        ${
+                                                            requireShortCode
+                                                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                                                : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                                                        }
+                                                        disabled:opacity-50 disabled:cursor-not-allowed
+                                                    `}
+                                                >
+                                                    {toggleLoading ? (
+                                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                                    ) : requireShortCode ? (
+                                                        <>
+                                                            <FiCheck className="h-4 w-4" />
+                                                            Enabled
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <FiX className="h-4 w-4" />
+                                                            Disabled
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
                                         </div>
+
+                                        {/* Expiry Time Configuration */}
+                                        {requireShortCode && (
+                                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                                                <div className="flex items-start gap-4">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <FiClock className="h-4 w-4 text-amber-600" />
+                                                            <h4 className="font-semibold text-amber-900">
+                                                                Short Code
+                                                                Expiry Time
+                                                            </h4>
+                                                        </div>
+                                                        <p className="text-sm text-amber-700 mb-3">
+                                                            Set how long short
+                                                            codes remain valid
+                                                            before expiring.
+                                                            Expired sales are
+                                                            automatically
+                                                            cleaned up and drug
+                                                            quantities are
+                                                            restored.
+                                                        </p>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <input
+                                                                    type="number"
+                                                                    min="1"
+                                                                    max="1440"
+                                                                    value={
+                                                                        shortCodeExpiryMinutes
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) => {
+                                                                        const value =
+                                                                            parseInt(
+                                                                                e
+                                                                                    .target
+                                                                                    .value,
+                                                                            );
+                                                                        if (
+                                                                            !isNaN(
+                                                                                value,
+                                                                            )
+                                                                        ) {
+                                                                            setShortCodeExpiryMinutes(
+                                                                                value,
+                                                                            );
+                                                                        }
+                                                                    }}
+                                                                    onBlur={() =>
+                                                                        handleUpdateExpiryMinutes(
+                                                                            shortCodeExpiryMinutes,
+                                                                        )
+                                                                    }
+                                                                    className="w-20 px-3 py-1 border border-amber-300 rounded-md text-amber-900 bg-white focus:border-amber-500 focus:outline-none"
+                                                                    disabled={
+                                                                        isUpdatingSettings
+                                                                    }
+                                                                />
+                                                                <span className="text-sm text-amber-700 font-medium">
+                                                                    minutes
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        handleUpdateExpiryMinutes(
+                                                                            15,
+                                                                        )
+                                                                    }
+                                                                    className="px-2 py-1 text-xs bg-amber-200 text-amber-800 rounded hover:bg-amber-300 transition-colors"
+                                                                    disabled={
+                                                                        isUpdatingSettings
+                                                                    }
+                                                                >
+                                                                    15m
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        handleUpdateExpiryMinutes(
+                                                                            30,
+                                                                        )
+                                                                    }
+                                                                    className="px-2 py-1 text-xs bg-amber-200 text-amber-800 rounded hover:bg-amber-300 transition-colors"
+                                                                    disabled={
+                                                                        isUpdatingSettings
+                                                                    }
+                                                                >
+                                                                    30m
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        handleUpdateExpiryMinutes(
+                                                                            60,
+                                                                        )
+                                                                    }
+                                                                    className="px-2 py-1 text-xs bg-amber-200 text-amber-800 rounded hover:bg-amber-300 transition-colors"
+                                                                    disabled={
+                                                                        isUpdatingSettings
+                                                                    }
+                                                                >
+                                                                    1h
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-xs text-amber-600 mt-2">
+                                                            Range: 1 minute to
+                                                            1440 minutes (24
+                                                            hours)
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
                         )}
+
+                        {/* Expired Sale Monitoring */}
+                        {requireShortCode &&
+                            (user?.role === UserRole.ADMIN ||
+                                user?.role === UserRole.SUPER_ADMIN) && (
+                                <ExpiredSaleStatsCard />
+                            )}
 
                         {/* Main Information Cards Grid */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
