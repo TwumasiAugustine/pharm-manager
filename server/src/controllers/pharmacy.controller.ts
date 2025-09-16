@@ -181,15 +181,17 @@ export const updateShortCodeSettings = async (req: Request, res: Response) => {
         if (typeof requireSaleShortCode === 'boolean') {
             updateData.requireSaleShortCode = requireSaleShortCode;
         }
-        if (typeof shortCodeExpiryMinutes === 'number' && shortCodeExpiryMinutes > 0) {
+        if (
+            typeof shortCodeExpiryMinutes === 'number' &&
+            shortCodeExpiryMinutes > 0
+        ) {
             updateData.shortCodeExpiryMinutes = shortCodeExpiryMinutes;
         }
 
-        const info = await PharmacyInfo.findOneAndUpdate(
-            {},
-            updateData,
-            { new: true, upsert: true }
-        );
+        const info = await PharmacyInfo.findOneAndUpdate({}, updateData, {
+            new: true,
+            upsert: true,
+        });
 
         res.json({
             success: true,

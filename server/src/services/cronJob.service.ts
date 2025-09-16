@@ -396,7 +396,8 @@ class CronJobService {
                     timestamp: new Date().toISOString(),
                 });
 
-                const cleanedUpCount = await ExpiredSaleCleanupService.cleanupExpiredSales();
+                const cleanedUpCount =
+                    await ExpiredSaleCleanupService.cleanupExpiredSales();
 
                 // Emit job completed
                 const duration = Date.now() - startTime;

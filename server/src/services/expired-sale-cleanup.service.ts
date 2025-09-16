@@ -20,14 +20,18 @@ export class ExpiredSaleCleanupService {
             // Get pharmacy settings
             const pharmacyInfo = await PharmacyInfo.findOne();
             if (!pharmacyInfo?.requireSaleShortCode) {
-                console.log('ℹ️ Short code feature not enabled, skipping cleanup');
+                console.log(
+                    'ℹ️ Short code feature not enabled, skipping cleanup',
+                );
                 return 0;
             }
 
             const expiryMinutes = pharmacyInfo.shortCodeExpiryMinutes || 15;
             const expiryTime = new Date(Date.now() - expiryMinutes * 60 * 1000);
 
-            console.log(`⏰ Looking for unfinalised sales older than ${expiryMinutes} minutes (before ${expiryTime.toISOString()})`);
+            console.log(
+                `⏰ Looking for unfinalised sales older than ${expiryMinutes} minutes (before ${expiryTime.toISOString()})`,
+            );
 
             // Find expired unfinalised sales
             const expiredSales = await Sale.find({
@@ -36,13 +40,17 @@ export class ExpiredSaleCleanupService {
                 createdAt: { $lt: expiryTime }, // Created before expiry time
             }).populate('items.drug');
 
-            console.log(`📦 Found ${expiredSales.length} expired unfinalised sales`);
+            console.log(
+                `📦 Found ${expiredSales.length} expired unfinalised sales`,
+            );
 
             let cleanedUpCount = 0;
 
             for (const sale of expiredSales) {
                 try {
-                    console.log(`🔄 Processing expired sale: ${sale._id} (created: ${sale.createdAt})`);
+                    console.log(
+                        `🔄 Processing expired sale: ${sale._id} (created: ${sale.createdAt})`,
+                    );
 
                     // Restore drug quantities for each item
                     await this.restoreDrugQuantities(sale);
@@ -52,16 +60,19 @@ export class ExpiredSaleCleanupService {
 
                     cleanedUpCount++;
                     console.log(`✅ Cleaned up expired sale: ${sale._id}`);
-
                 } catch (itemError) {
-                    console.error(`❌ Error cleaning up sale ${sale._id}:`, itemError);
+                    console.error(
+                        `❌ Error cleaning up sale ${sale._id}:`,
+                        itemError,
+                    );
                     // Continue with other sales even if one fails
                 }
             }
 
-            console.log(`🎉 Cleanup completed. ${cleanedUpCount} sales cleaned up.`);
+            console.log(
+                `🎉 Cleanup completed. ${cleanedUpCount} sales cleaned up.`,
+            );
             return cleanedUpCount;
-
         } catch (error) {
             console.error('❌ Error during expired sale cleanup:', error);
             throw error;
@@ -73,30 +84,41 @@ export class ExpiredSaleCleanupService {
      * @param sale - The sale to restore quantities for
      */
     private static async restoreDrugQuantities(sale: any): Promise<void> {
-        console.log(`📋 Restoring quantities for ${sale.items.length} items in sale ${sale._id}`);
+        console.log(
+            `📋 Restoring quantities for ${sale.items.length} items in sale ${sale._id}`,
+        );
 
         for (const item of sale.items) {
             try {
                 const drugId = item.drug._id || item.drug;
                 const quantityToRestore = item.quantity;
 
-                console.log(`🔄 Restoring ${quantityToRestore} units for drug ${drugId}`);
+                console.log(
+                    `🔄 Restoring ${quantityToRestore} units for drug ${drugId}`,
+                );
 
                 // Update drug quantity by adding back the sold quantity
                 const updateResult = await Drug.findByIdAndUpdate(
                     drugId,
                     { $inc: { quantity: quantityToRestore } },
-                    { new: true }
+                    { new: true },
                 );
 
                 if (updateResult) {
-                    console.log(`✅ Restored ${quantityToRestore} units to drug ${drugId}. New quantity: ${updateResult.quantity}`);
+                    console.log(
+                        `✅ Restored ${quantityToRestore} units to drug ${drugId}. New quantity: ${updateResult.quantity}`,
+                    );
                 } else {
-                    console.warn(`⚠️ Drug ${drugId} not found, could not restore quantity`);
+                    console.warn(
+                        `⚠️ Drug ${drugId} not found, could not restore quantity`,
+                    );
                 }
-
             } catch (itemError) {
-                console.error(`❌ Error restoring quantity for item:`, item, itemError);
+                console.error(
+                    `❌ Error restoring quantity for item:`,
+                    item,
+                    itemError,
+                );
                 // Continue with other items even if one fails
             }
         }
@@ -116,9 +138,7 @@ export class ExpiredSaleCleanupService {
         const expiryMinutes = pharmacyInfo.shortCodeExpiryMinutes || 15;
         const expiryTime = new Date(Date.now() - expiryMinutes * 60 * 1000);
 
-        return !sale.finalized && 
-               sale.shortCode && 
-               sale.createdAt < expiryTime;
+        return !sale.finalized && sale.shortCode && sale.createdAt < expiryTime;
     }
 
     /**
@@ -145,8 +165,12 @@ export class ExpiredSaleCleanupService {
         }).sort({ createdAt: 1 });
 
         const count = expiredSales.length;
-        const totalValue = expiredSales.reduce((sum, sale) => sum + (sale.totalAmount || 0), 0);
-        const oldestExpired = expiredSales.length > 0 ? expiredSales[0].createdAt : undefined;
+        const totalValue = expiredSales.reduce(
+            (sum, sale) => sum + (sale.totalAmount || 0),
+            0,
+        );
+        const oldestExpired =
+            expiredSales.length > 0 ? expiredSales[0].createdAt : undefined;
 
         return { count, totalValue, oldestExpired };
     }

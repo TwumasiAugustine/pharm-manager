@@ -13,13 +13,14 @@ export class ExpiredSaleCleanupController {
      */
     async cleanupExpiredSales(req: Request, res: Response, next: NextFunction) {
         try {
-            const cleanedUpCount = await ExpiredSaleCleanupService.cleanupExpiredSales();
-            
+            const cleanedUpCount =
+                await ExpiredSaleCleanupService.cleanupExpiredSales();
+
             res.status(200).json(
                 successResponse(
                     { cleanedUpCount },
                     `Successfully cleaned up ${cleanedUpCount} expired sales`,
-                )
+                ),
             );
         } catch (error) {
             next(error);
@@ -32,12 +33,12 @@ export class ExpiredSaleCleanupController {
     async getExpiredSaleStats(req: Request, res: Response, next: NextFunction) {
         try {
             const stats = await ExpiredSaleCleanupService.getExpiredSaleStats();
-            
+
             res.status(200).json(
                 successResponse(
                     stats,
                     'Expired sale statistics retrieved successfully',
-                )
+                ),
             );
         } catch (error) {
             next(error);

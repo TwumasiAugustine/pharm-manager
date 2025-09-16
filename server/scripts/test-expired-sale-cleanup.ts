@@ -22,7 +22,7 @@ async function testExpiredSaleCleanup() {
                 requireSaleShortCode: true,
                 shortCodeExpiryMinutes: 1, // 1 minute for testing
             },
-            { upsert: true }
+            { upsert: true },
         );
         console.log('✅ Pharmacy configured with 1-minute expiry time\n');
 
@@ -32,7 +32,7 @@ async function testExpiredSaleCleanup() {
         if (!testDrug) {
             const pharmacyId = await AssignmentService.getDefaultPharmacyId();
             const branchId = await AssignmentService.getDefaultBranchId();
-            
+
             testDrug = await Drug.create({
                 name: 'Test Drug for Cleanup',
                 manufacturer: 'Test Manufacturer',
@@ -49,12 +49,16 @@ async function testExpiredSaleCleanup() {
                 pharmacyId: pharmacyId,
                 branchId: branchId,
             });
-            console.log(`✅ Created test drug: ${testDrug.name} (ID: ${testDrug._id})`);
+            console.log(
+                `✅ Created test drug: ${testDrug.name} (ID: ${testDrug._id})`,
+            );
         } else {
             // Update quantity to 100 for consistent testing
             testDrug.quantity = 100;
             await testDrug.save();
-            console.log(`✅ Using existing test drug: ${testDrug.name} (ID: ${testDrug._id})`);
+            console.log(
+                `✅ Using existing test drug: ${testDrug.name} (ID: ${testDrug._id})`,
+            );
         }
         console.log(`   Initial quantity: ${testDrug.quantity}\n`);
 
@@ -62,15 +66,17 @@ async function testExpiredSaleCleanup() {
         console.log('🛒 Step 3: Create test sale with short code...');
         const pharmacyId = await AssignmentService.getDefaultPharmacyId();
         const branchId = await AssignmentService.getDefaultBranchId();
-        
+
         const testSale = await Sale.create({
-            items: [{
-                drug: testDrug._id,
-                quantity: 15, // Sell 15 units
-                priceAtSale: testDrug.pricePerUnit,
-                saleType: 'unit',
-                profit: 5,
-            }],
+            items: [
+                {
+                    drug: testDrug._id,
+                    quantity: 15, // Sell 15 units
+                    priceAtSale: testDrug.pricePerUnit,
+                    saleType: 'unit',
+                    profit: 5,
+                },
+            ],
             totalAmount: 150,
             totalProfit: 75,
             soldBy: pharmacyId, // Using pharmacy ID as dummy user
@@ -105,15 +111,18 @@ async function testExpiredSaleCleanup() {
 
         // Step 5: Run cleanup
         console.log('🧹 Step 5: Running expired sale cleanup...');
-        const cleanedUpCount = await ExpiredSaleCleanupService.cleanupExpiredSales();
-        console.log(`✅ Cleanup completed. ${cleanedUpCount} sales cleaned up\n`);
+        const cleanedUpCount =
+            await ExpiredSaleCleanupService.cleanupExpiredSales();
+        console.log(
+            `✅ Cleanup completed. ${cleanedUpCount} sales cleaned up\n`,
+        );
 
         // Step 6: Verify drug quantity restored
         console.log('🔍 Step 6: Verify drug quantity restoration...');
         const updatedDrug = await Drug.findById(testDrug._id);
         console.log(`   Drug quantity after cleanup: ${updatedDrug?.quantity}`);
         console.log(`   Expected quantity: 100`);
-        
+
         if (updatedDrug?.quantity === 100) {
             console.log('✅ Drug quantity successfully restored!\n');
         } else {
@@ -136,14 +145,23 @@ async function testExpiredSaleCleanup() {
 
         console.log('\n🎉 Expired sale cleanup test completed successfully!');
         console.log('\n📝 Summary:');
-        console.log('   - Sales with short codes that are not finalized within the expiry time are automatically deleted');
-        console.log('   - Drug quantities are restored to their previous state');
-        console.log('   - The cleanup runs automatically every 10 minutes via cron job');
-        console.log('   - Admins can manually trigger cleanup via API: POST /api/expired-sales/cleanup-expired');
-        console.log('   - Admins can check stats via API: GET /api/expired-sales/expired-stats');
+        console.log(
+            '   - Sales with short codes that are not finalized within the expiry time are automatically deleted',
+        );
+        console.log(
+            '   - Drug quantities are restored to their previous state',
+        );
+        console.log(
+            '   - The cleanup runs automatically every 10 minutes via cron job',
+        );
+        console.log(
+            '   - Admins can manually trigger cleanup via API: POST /api/expired-sales/cleanup-expired',
+        );
+        console.log(
+            '   - Admins can check stats via API: GET /api/expired-sales/expired-stats',
+        );
 
         process.exit(0);
-
     } catch (error) {
         console.error('❌ Test failed:', error);
         process.exit(1);

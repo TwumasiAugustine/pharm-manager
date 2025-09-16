@@ -15,7 +15,7 @@ router.post(
     '/cleanup-expired',
     authenticate,
     authorizeAdminLevel(),
-    expiredSaleCleanupController.cleanupExpiredSales
+    expiredSaleCleanupController.cleanupExpiredSales,
 );
 
 // Admin only: Get stats about expired sales
@@ -23,7 +23,7 @@ router.get(
     '/expired-stats',
     authenticate,
     authorizeAdminLevel(),
-    expiredSaleCleanupController.getExpiredSaleStats
+    expiredSaleCleanupController.getExpiredSaleStats,
 );
 
 export default router;
