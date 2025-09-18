@@ -18,7 +18,7 @@ import { FormSection } from './DrugFormSection';
 import { useDebounce } from '../../hooks/useDebounce';
 import { FaSave } from 'react-icons/fa';
 import { useAuthStore } from '../../store/auth.store';
-import { UserRole } from '../../types/auth.types';
+import { UserRole } from '../../types/user.types';
 
 /**
  * Props for DrugForm component

@@ -15,7 +15,7 @@ import { useAuthStore } from '../store/auth.store';
 import { useNavigate } from 'react-router-dom';
 import { useSafeNotify } from '../utils/useSafeNotify';
 import { pharmacyApi } from '../api/pharmacy.api';
-import { UserRole } from '../types/auth.types';
+import { UserRole } from '../types/user.types';
 
 export const useLogin = () => {
     const queryClient = useQueryClient();

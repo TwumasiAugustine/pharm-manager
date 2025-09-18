@@ -22,7 +22,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Import models after environment is loaded
 import User from '../src/models/user.model';
-import { UserRole } from '../src/types/auth.types';
+import { UserRole } from '../src/types/user.types';
 import {
     USER_PERMISSIONS,
     PHARMACY_PERMISSIONS,

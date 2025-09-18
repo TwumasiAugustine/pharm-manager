@@ -8,8 +8,16 @@ import { BranchSelect } from '../components/molecules/BranchSelect';
 import { useExpiryPage } from '../hooks/useExpiryPage';
 import PermissionGuard from '../components/atoms/PermissionGuard';
 import { PERMISSION_KEYS } from '../types/permission.types';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 
 export const ExpiryPage: React.FC = () => {
+    // Generate SEO metadata for the expiry page
+    const seoData = useSEO({
+        ...SEO_PRESETS.expiry,
+        structuredDataType: 'WebApplication',
+    });
+
     const {
         // State
         user,
@@ -42,6 +50,9 @@ export const ExpiryPage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            {/* SEO Metadata - React 19 will hoist to <head> */}
+            <SEOMetadata {...seoData} />
+
             <PermissionGuard permission={PERMISSION_KEYS.VIEW_EXPIRY_ALERTS}>
                 <div className="min-h-full bg-gray-50 -m-4 sm:-m-6">
                     {/* Header */}

@@ -53,7 +53,7 @@ router.get(
 );
 
 // Admin level: Update short code settings
-router.put(
+router.patch(
     '/short-code-settings',
     authenticate,
     csrfProtection,

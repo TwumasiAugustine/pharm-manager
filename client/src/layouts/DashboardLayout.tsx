@@ -3,7 +3,7 @@ import { useLogout } from '../hooks/useAuth';
 import { useAuthStore } from '../store/auth.store';
 import { Link, useLocation } from 'react-router-dom';
 import type { User } from '../types/auth.types';
-import { UserRole } from '../types/auth.types';
+import { UserRole } from '../types/user.types';
 import {
     FaSignOutAlt,
     FaUser,

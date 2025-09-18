@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { UserRole } from '../types/auth.types';
+import { UserRole } from '../types/user.types';
 
 import { IBranch } from '../types/branch.types';
 

@@ -8,8 +8,16 @@ import { BranchSelect } from '../components/molecules/BranchSelect';
 import { useReportsPage } from '../hooks/useReportsPage';
 import PermissionGuard from '../components/atoms/PermissionGuard';
 import { PERMISSION_KEYS } from '../types/permission.types';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 
 export const ReportsPage: React.FC = () => {
+    // Generate SEO metadata for the reports page
+    const seoData = useSEO({
+        ...SEO_PRESETS.reports,
+        structuredDataType: 'WebApplication',
+    });
+
     const {
         // State
         showFilters,
@@ -45,6 +53,9 @@ export const ReportsPage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            {/* SEO Metadata - React 19 will hoist to <head> */}
+            <SEOMetadata {...seoData} />
+
             <PermissionGuard permission={PERMISSION_KEYS.VIEW_REPORTS}>
                 <div className="min-h-screen bg-gray-50">
                     {/* Header */}

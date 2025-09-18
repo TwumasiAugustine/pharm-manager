@@ -7,7 +7,7 @@ import { Pagination } from '../molecules/Pagination';
 import { SearchBar } from '../molecules/SearchBar';
 import type { Drug } from '../../types/drug.types';
 import { useAuthStore } from '../../store/auth.store';
-import { UserRole } from '../../types/auth.types';
+import { UserRole } from '../../types/user.types';
 
 /**
  * DrugList component to display and manage the list of drugs.

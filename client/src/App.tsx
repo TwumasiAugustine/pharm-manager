@@ -9,7 +9,7 @@ import CronJobNotifications from './components/organisms/CronJobNotifications';
 import ErrorBoundary from './components/ErrorBoundary';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProtectedRoute } from './components/molecules/ProtectedRoute';
-import { UserRole } from './types/auth.types';
+import { UserRole } from './types/user.types';
 import { socketService } from './services/socket.service';
 
 // Lazy load all pages

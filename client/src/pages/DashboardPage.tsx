@@ -9,6 +9,8 @@ import { ProfitMarginAnalysisChart } from '../components/molecules/ProfitMarginA
 import { LowStockDrugs } from '../components/molecules/LowStockDrugs';
 import { useDashboardAnalytics } from '../hooks/useDashboard';
 import type { DashboardFilters } from '../types/dashboard.types';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 
 const DashboardPage: React.FC = () => {
     const [filters, setFilters] = React.useState<DashboardFilters>({
@@ -23,12 +25,22 @@ const DashboardPage: React.FC = () => {
         isError,
     } = useDashboardAnalytics(filters);
 
+    // Generate SEO metadata for the dashboard
+    const seoData = useSEO({
+        ...SEO_PRESETS.dashboard,
+        structuredDataType: 'WebApplication',
+        preloadFonts: true,
+    });
+
     const handleFilterChange = (newFilters: DashboardFilters) => {
         setFilters(newFilters);
     };
 
     return (
         <DashboardLayout>
+            {/* SEO Metadata - React 19 will hoist to <head> */}
+            <SEOMetadata {...seoData} />
+
             <div className="space-y-4 sm:space-y-6">
                 {/* Header Section - Responsive */}
                 <div className="flex flex-col space-y-4 lg:flex-row lg:justify-between lg:items-start lg:space-y-0 lg:space-x-4">

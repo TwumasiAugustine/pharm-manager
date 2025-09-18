@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { UserRole } from '../types/auth.types';
+import { UserRole } from '../types/user.types';
 export const drugCreateSchema = z.object({
     name: z.string().min(2).max(100),
     brand: z.string().min(2).max(100),

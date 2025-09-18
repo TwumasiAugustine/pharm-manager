@@ -2,10 +2,21 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaExclamationCircle, FaHome } from 'react-icons/fa';
 import DashboardLayout from '../layouts/DashboardLayout';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 
 const NotFoundPage: React.FC = () => {
+    // Generate SEO metadata for the 404 page
+    const seoData = useSEO({
+        ...SEO_PRESETS.notFound,
+        structuredDataType: 'WebApplication',
+    });
+
     return (
         <DashboardLayout>
+            {/* SEO Metadata - React 19 will hoist to <head> */}
+            <SEOMetadata {...seoData} />
+
             <div className="min-h-[70vh] flex flex-col items-center justify-center">
                 <div className="text-center">
                     <div className="mx-auto h-24 w-24 flex items-center justify-center rounded-full bg-red-100 mb-8">

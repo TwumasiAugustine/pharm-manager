@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { SaleController } from '../controllers/sale.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { authorize } from '../middlewares/authorize.middleware';
-import { UserRole } from '../types/auth.types';
+import { UserRole } from '../types/user.types';
 import { validate } from '../middlewares/validation.middleware';
 import { createSaleSchema } from '../validations/sale.validation';
 import { csrfProtection } from '../middlewares/csrf.middleware';

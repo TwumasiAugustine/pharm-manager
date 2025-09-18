@@ -6,6 +6,8 @@ import { DrugForm } from '../components/organisms/DrugForm';
 import { useCreateDrug } from '../hooks/useDrugs';
 import PermissionGuard from '../components/atoms/PermissionGuard';
 import { PERMISSION_KEYS } from '../types/permission.types';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 import {
     FiPlus,
     FiMoreVertical,
@@ -25,6 +27,12 @@ const DrugsPage: React.FC = () => {
     const [showActionsDropdown, setShowActionsDropdown] = useState(false);
     const actionsDropdownRef = useRef<HTMLDivElement>(null);
     const createDrug = useCreateDrug();
+
+    // Generate SEO metadata for the inventory page
+    const seoData = useSEO({
+        ...SEO_PRESETS.inventory,
+        structuredDataType: 'WebApplication',
+    });
 
     // Close actions dropdown when clicking outside
     useEffect(() => {
@@ -56,6 +64,9 @@ const DrugsPage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            {/* SEO Metadata - React 19 will hoist to <head> */}
+            <SEOMetadata {...seoData} />
+
             <PermissionGuard
                 permission={PERMISSION_KEYS.VIEW_DRUGS}
                 fallback={
