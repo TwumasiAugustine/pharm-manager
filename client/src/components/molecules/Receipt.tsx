@@ -4,6 +4,7 @@ import type { Sale } from '../../types/sale.types';
 import type { Drug } from '../../types/drug.types';
 import type { PharmacyInfo } from '../../api/pharmacy.api';
 import { formatGHSDisplayAmount } from '../../utils/currency';
+import { Badge } from '../atoms/Badge';
 
 interface ReceiptProps {
     sale: Sale;
@@ -175,9 +176,13 @@ const Receipt: React.FC<ReceiptProps> = ({ sale, drugs, pharmacyInfo }) => {
                                                 Brand: {displayBrand}
                                             </p>
                                         </div>
-                                        <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 capitalize ml-2">
+                                        <Badge
+                                            variant="info"
+                                            size="sm"
+                                            className="ml-2 capitalize"
+                                        >
                                             {item.saleType}
-                                        </span>
+                                        </Badge>
                                     </div>
                                     <div className="grid grid-cols-3 gap-2 text-xs">
                                         <div>
@@ -315,9 +320,13 @@ const Receipt: React.FC<ReceiptProps> = ({ sale, drugs, pharmacyInfo }) => {
                                                 </p>
                                             </td>
                                             <td className="text-center p-2 sm:p-4">
-                                                <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 capitalize">
+                                                <Badge
+                                                    variant="info"
+                                                    size="sm"
+                                                    className="capitalize"
+                                                >
                                                     {item.saleType}
-                                                </span>
+                                                </Badge>
                                             </td>
                                             <td className="text-right p-2 sm:p-4 font-medium">
                                                 {item.quantity}

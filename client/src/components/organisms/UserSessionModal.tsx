@@ -3,6 +3,7 @@ import { useUserSession } from '../../hooks/useUserActivity';
 import { Modal } from '../../components/molecules/Modal';
 import { LoadingSpinner } from '../../components/atoms/LoadingSpinner';
 import { ErrorMessage } from '../../components/atoms/ErrorMessage';
+import { Badge } from '../atoms/Badge';
 import {
     FaUser,
     FaClock,
@@ -85,15 +86,12 @@ export const UserSessionModal: React.FC<UserSessionModalProps> = ({
                         </p>
                         <p>
                             <strong>Status:</strong>{' '}
-                            <span
-                                className={`px-2 py-1 rounded-full text-xs ${
-                                    session.isActive
-                                        ? 'bg-green-100 text-green-800'
-                                        : 'bg-red-100 text-red-800'
-                                }`}
+                            <Badge
+                                variant={session.isActive ? 'success' : 'danger'}
+                                size="sm"
                             >
                                 {session.isActive ? 'Active' : 'Inactive'}
-                            </span>
+                            </Badge>
                         </p>
                     </div>
 

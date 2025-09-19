@@ -1,7 +1,4 @@
-import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import React, { useEffect, useState } from 'react';
 import { useDebounceFunction } from '../../hooks/useDebounceFunction';
 import { useURLSearch } from '../../hooks/useURLSearch';
 
@@ -21,13 +18,6 @@ interface SearchBarProps {
     debounceMs?: number;
 }
 
-// Validation schema for search input
-const searchSchema = z.object({
-    query: z.string().trim(),
-});
-
-type SearchFormValues = z.infer<typeof searchSchema>;
-
 /**
  * Reusable search bar component with debounced input and URL synchronization
  */
@@ -42,45 +32,64 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     enableURLSync = true,
     debounceMs = 500,
 }) => {
-    // URL search management
-    const { searchQuery, setSearchQuery, clearSearch } = useURLSearch({
+    // Local state for immediate UI updates
+    const [inputValue, setInputValue] = useState('');
+
+    // URL search management (only when enabled)
+    const { searchQuery, setSearchQuery } = useURLSearch({
         paramName: urlParamName,
         debounceMs,
         onSearchChange: onSearch,
     });
 
-    // Use debounced search function for non-URL updates
+    // Debounced search for non-URL mode
     const debouncedSearch = useDebounceFunction(onSearch, debounceMs);
 
-    const { watch, setValue } = useForm<SearchFormValues>({
-        resolver: zodResolver(searchSchema),
-        defaultValues: {
-            query: enableURLSync ? searchQuery : initialValue,
-        },
-    });
-
-    // Get the current query value
-    const queryValue = watch('query');
-
-    // Sync form with URL when URL changes
+    // Initialize input value
     useEffect(() => {
-        if (enableURLSync && searchQuery !== queryValue) {
-            setValue('query', searchQuery || '');
+        if (enableURLSync) {
+            setInputValue(searchQuery || '');
+        } else {
+            setInputValue(initialValue || '');
         }
-    }, [searchQuery, setValue, enableURLSync, queryValue]);
+    }, [enableURLSync, searchQuery, initialValue]);
 
-    // Update form when initialValue changes (for non-URL mode)
-    useEffect(() => {
-        if (!enableURLSync) {
-            setValue('query', initialValue || '');
-        }
-    }, [initialValue, setValue, enableURLSync]);
-
-    // Handle input change with debounce
+    // Handle input change
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
-        setValue('query', value); // Update form state
-        debouncedSearch(value);
+
+        // Update local state immediately for responsive UI
+        setInputValue(value);
+
+        // Handle search based on mode
+        if (enableURLSync) {
+            setSearchQuery(value);
+        } else {
+            debouncedSearch(value);
+        }
+    };
+
+    // Handle Enter key
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (enableURLSync) {
+                setSearchQuery(inputValue);
+            } else {
+                onSearch(inputValue);
+            }
+        }
+    };
+
+    // Handle search button click
+    const handleSearchClick = () => {
+        if (inputValue) {
+            if (enableURLSync) {
+                setSearchQuery(inputValue);
+            } else {
+                onSearch(inputValue);
+            }
+        }
     };
 
     return (
@@ -88,17 +97,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             <div className="relative">
                 <input
                     type="text"
-                    value={queryValue || ''}
+                    value={inputValue}
                     onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
                     placeholder={placeholder}
                     className="w-full px-4 py-2 pl-10 pr-12 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            const value = e.currentTarget.value;
-                            onSearch(value);
-                        }
-                    }}
                     onFocus={onFocus}
                     onBlur={onBlur}
                 />
@@ -121,9 +124,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 <button
                     type="button"
                     className="absolute inset-y-0 right-0 flex items-center px-3 text-blue-600 bg-transparent rounded-r-md hover:text-blue-800"
-                    onClick={() => {
-                        if (queryValue) onSearch(queryValue);
-                    }}
+                    onClick={handleSearchClick}
                 >
                     Search
                 </button>

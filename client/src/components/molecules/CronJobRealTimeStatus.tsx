@@ -6,6 +6,7 @@ import {
     FaTimesCircle,
 } from 'react-icons/fa';
 import { socketService } from '../../services/socket.service';
+import { Badge } from '../atoms/Badge';
 import type {
     CronJobTriggeredEvent,
     CronJobCompletedEvent,
@@ -99,31 +100,31 @@ const CronJobRealTimeStatus: React.FC<CronJobRealTimeStatusProps> = ({
         switch (status) {
             case 'running':
                 return (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <Badge variant="primary" size="sm">
                         <FaSpinner className="animate-spin mr-1" />
                         Running
-                    </span>
+                    </Badge>
                 );
             case 'completed':
                 return (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <Badge variant="success" size="sm">
                         <FaCheckCircle className="mr-1" />
                         Completed
-                    </span>
+                    </Badge>
                 );
             case 'failed':
                 return (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    <Badge variant="danger" size="sm">
                         <FaTimesCircle className="mr-1" />
                         Failed
-                    </span>
+                    </Badge>
                 );
             default:
                 return (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    <Badge variant="secondary" size="sm">
                         <FaCircle className="mr-1" />
                         Idle
-                    </span>
+                    </Badge>
                 );
         }
     };

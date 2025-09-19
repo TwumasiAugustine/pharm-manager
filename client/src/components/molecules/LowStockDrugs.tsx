@@ -1,6 +1,7 @@
 import React from 'react';
 import { FiAlertTriangle, FiPackage } from 'react-icons/fi';
 import type { LowStockDrug } from '../../types/dashboard.types';
+import { Badge } from '../atoms/Badge';
 
 interface LowStockDrugsProps {
     data: LowStockDrug[];
@@ -54,12 +55,11 @@ export const LowStockDrugs: React.FC<LowStockDrugsProps> = ({
         );
     }
 
-    const getStockLevelColor = (quantity: number) => {
-        if (quantity === 0) return 'text-red-600 bg-red-50 border-red-200';
-        if (quantity <= 5) return 'text-red-600 bg-red-50 border-red-200';
-        if (quantity <= 10)
-            return 'text-orange-600 bg-orange-50 border-orange-200';
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+    const getStockLevelVariant = (quantity: number): 'danger' | 'warning' => {
+        if (quantity === 0) return 'danger';
+        if (quantity <= 5) return 'danger';
+        if (quantity <= 10) return 'danger';
+        return 'warning';
     };
 
     const getStockLevelLabel = (quantity: number) => {
@@ -75,9 +75,9 @@ export const LowStockDrugs: React.FC<LowStockDrugsProps> = ({
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     <FiAlertTriangle className="text-red-500" />
                     Low Stock Alert
-                    <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
+                    <Badge variant="danger" size="sm">
                         {data.length}
-                    </span>
+                    </Badge>
                 </h3>
             </div>
 
@@ -125,13 +125,14 @@ export const LowStockDrugs: React.FC<LowStockDrugsProps> = ({
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <span
-                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStockLevelColor(
+                                <Badge
+                                    variant={getStockLevelVariant(
                                         drug.quantity,
-                                    )}`}
+                                    )}
+                                    size="sm"
                                 >
                                     {getStockLevelLabel(drug.quantity)}
-                                </span>
+                                </Badge>
                                 <div className="text-right">
                                     <p className="text-sm font-bold text-gray-900">
                                         {drug.quantity}

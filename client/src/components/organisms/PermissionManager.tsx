@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent } from '../molecules/Card';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
+import { Badge } from '../atoms/Badge';
 import {
     useAllPermissions,
     useUserPermissions,
@@ -339,14 +340,14 @@ export const PermissionManager: React.FC<PermissionManagerProps> = ({
                                                                         }
                                                                     </h4>
                                                                     {isRoleDefault && (
-                                                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                        <Badge variant="success" size="sm">
                                                                             Role
-                                                                        </span>
+                                                                        </Badge>
                                                                     )}
                                                                     {isCustom && (
-                                                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                                        <Badge variant="info" size="sm">
                                                                             Custom
-                                                                        </span>
+                                                                        </Badge>
                                                                     )}
                                                                 </div>
                                                                 <p className="text-xs text-gray-600 mt-1">

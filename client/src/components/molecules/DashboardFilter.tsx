@@ -12,30 +12,39 @@ export const DashboardFilter: React.FC<DashboardFilterProps> = ({
     onFiltersChange,
 }) => {
     const handlePeriodChange = (period: DashboardFilters['period']) => {
-        onFiltersChange({
+        console.log('Period changed to:', period);
+        const newFilters = {
             ...filters,
             period,
             startDate: undefined,
             endDate: undefined,
-        });
+        };
+        console.log('Calling onFiltersChange with:', newFilters);
+        onFiltersChange(newFilters);
     };
 
     const handleDateChange = (
         field: 'startDate' | 'endDate',
         value: string,
     ) => {
-        onFiltersChange({
+        console.log(`${field} changed to:`, value);
+        const newFilters = {
             ...filters,
             [field]: value,
             period: undefined,
-        });
+        };
+        console.log('Calling onFiltersChange with:', newFilters);
+        onFiltersChange(newFilters);
     };
 
     const handleBranchChange = (branchId: string) => {
-        onFiltersChange({
+        console.log('Branch changed to:', branchId);
+        const newFilters = {
             ...filters,
             branchId: branchId || undefined,
-        });
+        };
+        console.log('Calling onFiltersChange with:', newFilters);
+        onFiltersChange(newFilters);
     };
 
     const clearFilters = () => {
@@ -109,7 +118,9 @@ export const DashboardFilter: React.FC<DashboardFilterProps> = ({
                 <div className="flex items-center justify-between space-x-4">
                     {/* Branch Filter */}
                     <div className="flex flex-col">
-                        <label className="text-sm font-medium text-gray-700 mb-2">Branch</label>
+                        <label className="text-sm font-medium text-gray-700 mb-2">
+                            Branch
+                        </label>
                         <div className="w-48">
                             <BranchSelect
                                 value={filters.branchId || ''}
@@ -119,7 +130,9 @@ export const DashboardFilter: React.FC<DashboardFilterProps> = ({
                     </div>
                     {/* Clear Filters */}
                     <div className="flex flex-col">
-                        <label className="text-sm font-medium text-gray-700 mb-2">Clear</label>
+                        <label className="text-sm font-medium text-gray-700 mb-2">
+                            Clear
+                        </label>
                         <button
                             onClick={clearFilters}
                             className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"

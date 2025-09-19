@@ -28,6 +28,7 @@ export interface ExpiryDrug {
     branchName?: string;
     // Additional drug info
     requiresPrescription?: boolean;
+    ableToSell?: boolean;
     supplier?: string;
     location?: string;
     alertLevel: 'expired' | 'critical' | 'warning' | 'notice';

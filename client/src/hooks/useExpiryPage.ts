@@ -5,6 +5,7 @@ import { useSafeNotify } from '../utils/useSafeNotify';
 import { useAuthStore } from '../store/auth.store';
 import type { ExpiryFilters } from '../types/expiry.types';
 import { formatGHSDisplayAmount } from '../utils/currency';
+import { useURLFilters } from './useURLSearch';
 
 export const useExpiryPage = () => {
     const { user } = useAuthStore();
@@ -16,12 +17,27 @@ export const useExpiryPage = () => {
     const notificationsDropdownRef = useRef<HTMLDivElement>(null);
     const notify = useSafeNotify();
     const { triggerExpiryNotifications } = useCronTriggers();
-    const [branchId, setBranchId] = useState<string>('');
-    const [filters, setFilters] = useState<ExpiryFilters>({
-        daysRange: 30,
-        alertLevel: undefined,
-        category: '',
-    });
+
+    // URL-based filters for expiry page
+    const { filters, setFilter } = useURLFilters(
+        {
+            daysRange: 30,
+            alertLevel: undefined as
+                | 'expired'
+                | 'critical'
+                | 'warning'
+                | 'notice'
+                | undefined,
+            category: '',
+            branchId: '',
+        },
+        {
+            debounceMs: 300,
+            onFiltersChange: (newFilters) => {
+                console.log('Expiry filters changed:', newFilters);
+            },
+        },
+    );
 
     // Close dropdowns when clicking outside
     useEffect(() => {
@@ -82,7 +98,7 @@ export const useExpiryPage = () => {
         isLoading: drugsLoading,
         isStatsLoading,
         refreshData,
-    } = useExpiry({ ...filters, branchId });
+    } = useExpiry({ ...filters, branchId: filters.branchId });
 
     // Defensive programming: ensure notifications is an array
     const safeNotifications = Array.isArray(notifications) ? notifications : [];
@@ -91,7 +107,12 @@ export const useExpiryPage = () => {
     ).length;
 
     const handleFilterChange = (newFilters: ExpiryFilters) => {
-        setFilters(newFilters);
+        // Update URL filters using setFilter for each changed property
+        Object.entries(newFilters).forEach(([key, value]) => {
+            if (key in filters) {
+                setFilter(key as keyof typeof filters, value);
+            }
+        });
     };
 
     const handleExportData = () => {
@@ -153,7 +174,7 @@ export const useExpiryPage = () => {
         showFilters,
         showActionsDropdown,
         filters,
-        branchId,
+        branchId: filters.branchId || '',
         expiringDrugs,
         expiryStats,
         notifications: safeNotifications,
@@ -170,7 +191,7 @@ export const useExpiryPage = () => {
         setShowNotifications,
         setShowFilters,
         setShowActionsDropdown,
-        setBranchId,
+        setBranchId: (branchId: string) => setFilter('branchId', branchId),
         handleFilterChange,
         handleExportData,
         refreshData,

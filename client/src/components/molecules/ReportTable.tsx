@@ -7,6 +7,7 @@ import {
     FiShoppingBag,
 } from 'react-icons/fi';
 import { useNumberFormatter } from '../../hooks/useDisplayMode';
+import { Badge } from '../atoms/Badge';
 import type { ReportDataItem, ReportFilters } from '../../types/report.types';
 
 interface ReportTableProps {
@@ -20,7 +21,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     reportType,
     isLoading,
 }) => {
-    const {  formatCurrency } = useNumberFormatter();
+    const { formatCurrency } = useNumberFormatter();
 
     if (isLoading) {
         return (
@@ -151,20 +152,22 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                             </div>
                         </td>
                         <td className="px-6 py-4">
-                            <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            <Badge
+                                variant={
                                     item.saleType === 'unit'
-                                        ? 'bg-blue-100 text-blue-800'
+                                        ? 'info'
                                         : item.saleType === 'pack'
-                                        ? 'bg-green-100 text-green-800'
+                                        ? 'success'
                                         : item.saleType === 'carton'
-                                        ? 'bg-purple-100 text-purple-800'
-                                        : 'bg-gray-100 text-gray-800'
-                                }`}
+                                        ? 'secondary'
+                                        : 'outline'
+                                }
+                                size="sm"
+                                className="flex items-center gap-1"
                             >
-                                <FiShoppingBag className="h-3 w-3 mr-1" />
+                                <FiShoppingBag className="h-3 w-3" />
                                 {item.saleType?.toUpperCase() || 'UNIT'}
-                            </span>
+                            </Badge>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
                             {item.quantity}
@@ -259,21 +262,6 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                           )
                         : 0;
 
-                const getStatusColor = (status?: string) => {
-                    switch (status) {
-                        case 'expired':
-                            return 'bg-red-100 text-red-800';
-                        case 'critical':
-                            return 'bg-red-100 text-red-800';
-                        case 'warning':
-                            return 'bg-yellow-100 text-yellow-800';
-                        case 'notice':
-                            return 'bg-orange-100 text-orange-800';
-                        default:
-                            return 'bg-green-100 text-green-800';
-                    }
-                };
-
                 return (
                     <>
                         <td className="px-6 py-4">
@@ -309,29 +297,38 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                             </div>
                         </td>
                         <td className="px-6 py-4">
-                            <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                                    item.expiryStatus,
-                                )}`}
+                            <Badge
+                                variant={
+                                    item.expiryStatus === 'expired' ||
+                                    item.expiryStatus === 'critical'
+                                        ? 'danger'
+                                        : item.expiryStatus === 'warning'
+                                        ? 'warning'
+                                        : item.expiryStatus === 'notice'
+                                        ? 'warning'
+                                        : 'success'
+                                }
+                                size="sm"
                             >
                                 {item.expiryStatus?.toUpperCase() ||
                                     (daysLeft <= 0 ? 'EXPIRED' : 'GOOD')}
-                            </span>
+                            </Badge>
                         </td>
                         <td className="px-6 py-4">
-                            <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            <Badge
+                                variant={
                                     daysLeft <= 0
-                                        ? 'bg-red-100 text-red-800'
+                                        ? 'danger'
                                         : daysLeft <= 30
-                                        ? 'bg-yellow-100 text-yellow-800'
+                                        ? 'warning'
                                         : daysLeft <= 90
-                                        ? 'bg-orange-100 text-orange-800'
-                                        : 'bg-green-100 text-green-800'
-                                }`}
+                                        ? 'warning'
+                                        : 'success'
+                                }
+                                size="sm"
                             >
                                 {daysLeft <= 0 ? 'Expired' : `${daysLeft} days`}
-                            </span>
+                            </Badge>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
                             {item.quantity}

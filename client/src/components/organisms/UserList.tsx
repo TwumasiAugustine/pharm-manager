@@ -1,6 +1,7 @@
 import React from 'react';
 import { Table } from '../molecules/Table';
 import { FaEye, FaUserPlus } from 'react-icons/fa';
+import { Badge } from '../atoms/Badge';
 import type { IUser } from '../../types/user.types';
 import { useBranches } from '../../hooks/useBranches';
 
@@ -73,9 +74,9 @@ const UserList: React.FC<UserListProps> = ({
                                 managerMap[userId]
                             ) {
                                 return (
-                                    <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                                    <Badge variant="success" size="sm">
                                         Manager of {managerMap[userId]}
-                                    </span>
+                                    </Badge>
                                 );
                             }
                             return <span className="text-gray-400">—</span>;

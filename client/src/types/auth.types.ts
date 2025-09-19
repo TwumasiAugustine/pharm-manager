@@ -1,5 +1,8 @@
 import { UserRole } from './user.types';
 
+// Re-export UserRole for convenience
+export { UserRole } from './user.types';
+
 export interface User {
     id: string;
     _id?: string;

@@ -1,6 +1,7 @@
 import React from 'react';
 import type { ExpiryFilters } from '../../types/expiry.types';
 import { BranchSelect } from './BranchSelect';
+import { Badge } from '../atoms/Badge';
 
 interface ExpiryFilterProps {
     filters: ExpiryFilters;
@@ -167,36 +168,37 @@ export const ExpiryFilter: React.FC<ExpiryFilterProps> = ({
                                 </span>
                                 <div className="flex gap-1">
                                     {filters.daysRange !== 90 && (
-                                        <span className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded text-xs font-medium">
+                                        <Badge variant="primary" size="sm">
                                             {filters.daysRange}d
-                                        </span>
+                                        </Badge>
                                     )}
                                     {filters.alertLevel && (
-                                        <span
-                                            className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                                        <Badge
+                                            variant={
                                                 filters.alertLevel === 'expired'
-                                                    ? 'bg-red-100 text-red-800'
+                                                    ? 'danger'
                                                     : filters.alertLevel ===
                                                       'critical'
-                                                    ? 'bg-orange-100 text-orange-800'
+                                                    ? 'warning'
                                                     : filters.alertLevel ===
                                                       'warning'
-                                                    ? 'bg-yellow-100 text-yellow-800'
-                                                    : 'bg-blue-100 text-blue-800'
-                                            }`}
+                                                    ? 'warning'
+                                                    : 'primary'
+                                            }
+                                            size="sm"
                                         >
                                             {filters.alertLevel}
-                                        </span>
+                                        </Badge>
                                     )}
                                     {filters.category && (
-                                        <span className="bg-green-100 text-green-800 px-1.5 py-0.5 rounded text-xs font-medium">
+                                        <Badge variant="success" size="sm">
                                             {filters.category}
-                                        </span>
+                                        </Badge>
                                     )}
                                     {filters.branchId && (
-                                        <span className="bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded text-xs font-medium">
+                                        <Badge variant="info" size="sm">
                                             branch
-                                        </span>
+                                        </Badge>
                                     )}
                                 </div>
                             </div>
@@ -303,34 +305,35 @@ export const ExpiryFilter: React.FC<ExpiryFilterProps> = ({
                         <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
                             <span className="font-medium">Active Filters:</span>
                             {filters.daysRange !== 90 && (
-                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md">
+                                <Badge variant="primary" size="sm">
                                     {filters.daysRange} days
-                                </span>
+                                </Badge>
                             )}
                             {filters.alertLevel && (
-                                <span
-                                    className={`px-2 py-1 rounded-md ${
+                                <Badge
+                                    variant={
                                         filters.alertLevel === 'expired'
-                                            ? 'bg-red-100 text-red-800'
+                                            ? 'danger'
                                             : filters.alertLevel === 'critical'
-                                            ? 'bg-orange-100 text-orange-800'
+                                            ? 'warning'
                                             : filters.alertLevel === 'warning'
-                                            ? 'bg-yellow-100 text-yellow-800'
-                                            : 'bg-blue-100 text-blue-800'
-                                    }`}
+                                            ? 'warning'
+                                            : 'primary'
+                                    }
+                                    size="sm"
                                 >
                                     {filters.alertLevel}
-                                </span>
+                                </Badge>
                             )}
                             {filters.category && (
-                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-md">
+                                <Badge variant="success" size="sm">
                                     Category: {filters.category}
-                                </span>
+                                </Badge>
                             )}
                             {filters.branchId && (
-                                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md">
+                                <Badge variant="info" size="sm">
                                     Branch
-                                </span>
+                                </Badge>
                             )}
                         </div>
                     </div>

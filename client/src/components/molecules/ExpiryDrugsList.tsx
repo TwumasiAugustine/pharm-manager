@@ -11,6 +11,7 @@ import {
 } from 'react-icons/fi';
 import type { ExpiryDrug } from '../../types/expiry.types';
 import { formatGHSDisplayAmount } from '../../utils/currency';
+import { Badge } from '../atoms/Badge';
 
 interface ExpiryDrugsListProps {
     drugs: ExpiryDrug[];
@@ -37,18 +38,20 @@ const DrugCard: React.FC<DrugCardProps> = ({ drug }) => {
         }
     };
 
-    const getAlertColors = (alertLevel: string) => {
+    const getAlertVariant = (
+        alertLevel: string,
+    ): 'danger' | 'warning' | 'info' | 'secondary' => {
         switch (alertLevel) {
             case 'expired':
-                return 'bg-red-50 border-red-200 text-red-800';
+                return 'danger';
             case 'critical':
-                return 'bg-orange-50 border-orange-200 text-orange-800';
+                return 'warning';
             case 'warning':
-                return 'bg-yellow-50 border-yellow-200 text-yellow-800';
+                return 'warning';
             case 'notice':
-                return 'bg-blue-50 border-blue-200 text-blue-800';
+                return 'info';
             default:
-                return 'bg-gray-50 border-gray-200 text-gray-800';
+                return 'secondary';
         }
     };
 
@@ -94,11 +97,27 @@ const DrugCard: React.FC<DrugCardProps> = ({ drug }) => {
                                         <span>{drug.dosageForm}</span>
                                     </>
                                 )}
-                                {drug.requiresPrescription && (
-                                    <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium">
-                                        Prescription Required
-                                    </span>
-                                )}
+                                <div className="flex flex-wrap gap-2">
+                                    {drug.requiresPrescription && (
+                                        <Badge variant="secondary" size="sm">
+                                            Prescription Required
+                                        </Badge>
+                                    )}
+                                    {drug.ableToSell !== undefined && (
+                                        <Badge
+                                            variant={
+                                                drug.ableToSell
+                                                    ? 'success'
+                                                    : 'danger'
+                                            }
+                                            size="sm"
+                                        >
+                                            {drug.ableToSell
+                                                ? 'Available for Sale'
+                                                : 'Not for Sale'}
+                                        </Badge>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -209,19 +228,13 @@ const DrugCard: React.FC<DrugCardProps> = ({ drug }) => {
 
                 {/* Alert Status */}
                 <div className="flex flex-col items-end text-right">
-                    <div
-                        className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium mb-3 ${
-                            drug.alertLevel === 'expired'
-                                ? 'bg-red-100 text-red-800 border border-red-200'
-                                : drug.alertLevel === 'critical'
-                                ? 'bg-orange-100 text-orange-800 border border-orange-200'
-                                : drug.alertLevel === 'warning'
-                                ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                                : 'bg-blue-100 text-blue-800 border border-blue-200'
-                        }`}
+                    <Badge
+                        variant={getAlertVariant(drug.alertLevel)}
+                        size="md"
+                        className="mb-3"
                     >
                         {drug.alertLevel.toUpperCase()}
-                    </div>
+                    </Badge>
                     <div className="text-sm text-gray-600">
                         <p className="font-medium">{getAlertText(drug)}</p>
                         <p className="mt-1">

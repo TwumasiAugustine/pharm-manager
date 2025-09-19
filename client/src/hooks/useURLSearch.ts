@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useURLParams } from './useURLParams';
 import { useDebounceFunction } from './useDebounceFunction';
 
@@ -164,13 +164,18 @@ export const useURLFilters = <T extends Record<string, unknown>>(
             } else if (typeof value === 'object' && value !== null) {
                 paramsToSet[key] = encodeURIComponent(JSON.stringify(value));
             } else {
-                paramsToSet[key] = value;
+                paramsToSet[key] = String(value);
             }
         });
 
         setParams(paramsToSet, { replace: true });
-        onFiltersChange?.(currentFilters);
     }, debounceMs);
+
+    // Trigger onFiltersChange when filters actually change
+    const currentFiltersString = JSON.stringify(currentFilters);
+    useEffect(() => {
+        onFiltersChange?.(currentFilters);
+    }, [currentFiltersString, onFiltersChange]);
 
     // Update specific filter
     const setFilter = useCallback(

@@ -11,13 +11,24 @@ import { useDashboardAnalytics } from '../hooks/useDashboard';
 import type { DashboardFilters } from '../types/dashboard.types';
 import SEOMetadata from '../components/atoms/SEOMetadata';
 import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
+import { useURLFilters } from '../hooks/useURLSearch';
 
 const DashboardPage: React.FC = () => {
-    const [filters, setFilters] = React.useState<DashboardFilters>({
-        period: 'week',
-        startDate: '',
-        endDate: '',
-    });
+    // URL-based filters for dashboard
+    const { filters, setFilter, setFilters } = useURLFilters(
+        {
+            period: 'week' as const,
+            startDate: undefined as string | undefined,
+            endDate: undefined as string | undefined,
+            branchId: undefined as string | undefined,
+        },
+        {
+            debounceMs: 300,
+            onFiltersChange: (newFilters) => {
+                console.log('Dashboard filters changed:', newFilters);
+            },
+        },
+    );
 
     const {
         data: dashboardData,
@@ -33,6 +44,7 @@ const DashboardPage: React.FC = () => {
     });
 
     const handleFilterChange = (newFilters: DashboardFilters) => {
+        // Update URL filters using setFilters to handle all changes at once
         setFilters(newFilters);
     };
 

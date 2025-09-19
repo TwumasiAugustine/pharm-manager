@@ -15,6 +15,7 @@ import {
     FiEye,
 } from 'react-icons/fi';
 import type { AuditLogResponse } from '../../types/audit-log.types';
+import { Badge } from '../atoms/Badge';
 
 interface AuditLogTableProps {
     data: AuditLogResponse[];
@@ -60,41 +61,45 @@ const getActionIcon = (action: string) => {
     }
 };
 
-const getActionColor = (action: string) => {
+const getActionVariant = (
+    action: string,
+): 'success' | 'danger' | 'info' | 'warning' | 'secondary' => {
     switch (action) {
         case 'LOGIN':
-            return 'bg-green-100 text-green-800';
+            return 'success';
         case 'LOGOUT':
-            return 'bg-red-100 text-red-800';
+            return 'danger';
         case 'CREATE':
-            return 'bg-blue-100 text-blue-800';
+            return 'info';
         case 'UPDATE':
-            return 'bg-yellow-100 text-yellow-800';
+            return 'warning';
         case 'DELETE':
-            return 'bg-red-100 text-red-800';
+            return 'danger';
         case 'VIEW':
-            return 'bg-gray-100 text-gray-800';
+            return 'secondary';
         default:
-            return 'bg-gray-100 text-gray-800';
+            return 'secondary';
     }
 };
 
-const getResourceColor = (resource: string) => {
+const getResourceVariant = (
+    resource: string,
+): 'secondary' | 'success' | 'info' | 'warning' | 'primary' => {
     switch (resource) {
         case 'USER':
-            return 'bg-purple-100 text-purple-800';
+            return 'secondary';
         case 'DRUG':
-            return 'bg-green-100 text-green-800';
+            return 'success';
         case 'SALE':
-            return 'bg-blue-100 text-blue-800';
+            return 'info';
         case 'CUSTOMER':
-            return 'bg-orange-100 text-orange-800';
+            return 'warning';
         case 'REPORT':
-            return 'bg-indigo-100 text-indigo-800';
+            return 'primary';
         case 'SYSTEM':
-            return 'bg-gray-100 text-gray-800';
+            return 'secondary';
         default:
-            return 'bg-gray-100 text-gray-800';
+            return 'secondary';
     }
 };
 
@@ -168,30 +173,30 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({
                             <tr key={log.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
-                                        <span
-                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getActionColor(
+                                        <Badge
+                                            variant={getActionVariant(
                                                 log.action,
-                                            )}`}
+                                            )}
+                                            size="sm"
+                                            className="flex items-center gap-1"
                                         >
                                             {getActionIcon(log.action)}
-                                            <span className="ml-1">
-                                                {log.action}
-                                            </span>
-                                        </span>
+                                            <span>{log.action}</span>
+                                        </Badge>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
-                                        <span
-                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getResourceColor(
+                                        <Badge
+                                            variant={getResourceVariant(
                                                 log.resource,
-                                            )}`}
+                                            )}
+                                            size="sm"
+                                            className="flex items-center gap-1"
                                         >
                                             {getResourceIcon(log.resource)}
-                                            <span className="ml-1">
-                                                {log.resource}
-                                            </span>
-                                        </span>
+                                            <span>{log.resource}</span>
+                                        </Badge>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">

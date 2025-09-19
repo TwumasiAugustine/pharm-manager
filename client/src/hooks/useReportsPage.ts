@@ -3,6 +3,7 @@ import { useReports } from './useReports';
 import { useSafeNotify } from '../utils/useSafeNotify';
 import { useDisplayMode } from './useDisplayMode';
 import type { ReportFilters } from '../types/report.types';
+import { useURLFilters } from './useURLSearch';
 
 export const useReportsPage = () => {
     const [showFilters, setShowFilters] = useState(true);
@@ -10,20 +11,29 @@ export const useReportsPage = () => {
     const actionsDropdownRef = useRef<HTMLDivElement>(null);
     const notify = useSafeNotify();
     const { setExportMode } = useDisplayMode();
-    const [branchId, setBranchId] = useState<string>('');
-    const [filters, setFilters] = useState<ReportFilters>({
-        dateRange: {
-            start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split('T')[0],
-            end: new Date().toISOString().split('T')[0],
+
+    // URL-based filters for reports page
+    const { filters, setFilter } = useURLFilters(
+        {
+            dateRange: {
+                start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                    .toISOString()
+                    .split('T')[0],
+                end: new Date().toISOString().split('T')[0],
+            },
+            reportType: 'sales' as const,
+            format: 'table' as const,
+            page: 1,
+            limit: 5, // Set limit to 5 for screen display
+            branchId: '',
         },
-        reportType: 'sales',
-        format: 'table',
-        page: 1,
-        limit: 5, // Set limit to 5 for screen display
-        branchId: branchId,
-    });
+        {
+            debounceMs: 300,
+            onFiltersChange: (newFilters) => {
+                console.log('Report filters changed:', newFilters);
+            },
+        },
+    );
 
     // Close actions dropdown when clicking outside
     useEffect(() => {
@@ -45,11 +55,6 @@ export const useReportsPage = () => {
         };
     }, [showActionsDropdown]);
 
-    // Update filters when branchId changes
-    useEffect(() => {
-        setFilters((prev) => ({ ...prev, branchId: branchId }));
-    }, [branchId]);
-
     const {
         reportData,
         reportSummary,
@@ -61,14 +66,19 @@ export const useReportsPage = () => {
         generateReport,
         exportReport,
         refreshData,
-    } = useReports(filters);
+    } = useReports({ ...filters, branchId: filters.branchId });
 
     const handleFilterChange = (newFilters: ReportFilters) => {
-        setFilters({ ...newFilters, page: 1 }); // Reset to first page when filters change
+        // Update URL filters using setFilter for each changed property
+        Object.entries({ ...newFilters, page: 1 }).forEach(([key, value]) => {
+            if (key in filters) {
+                setFilter(key as keyof typeof filters, value);
+            }
+        });
     };
 
     const handlePageChange = (page: number) => {
-        setFilters((prev) => ({ ...prev, page }));
+        setFilter('page', page);
     };
 
     const handleExportReport = async (format: 'pdf' | 'csv') => {
@@ -111,7 +121,7 @@ export const useReportsPage = () => {
         showFilters,
         showActionsDropdown,
         filters,
-        branchId,
+        branchId: filters.branchId || '',
         reportData,
         reportSummary,
         totalRecords,
@@ -126,11 +136,12 @@ export const useReportsPage = () => {
         // Actions
         setShowFilters,
         setShowActionsDropdown,
-        setBranchId,
+        setBranchId: (branchId: string) => setFilter('branchId', branchId),
         handleFilterChange,
         handlePageChange,
         handleExportReport,
         handleGenerateReport,
         refreshData,
+        notify,
     };
 };

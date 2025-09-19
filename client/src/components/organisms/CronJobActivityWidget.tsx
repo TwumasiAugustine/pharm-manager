@@ -6,6 +6,7 @@ import {
     FaSpinner,
 } from 'react-icons/fa';
 import { socketService } from '../../services/socket.service';
+import { Badge } from '../atoms/Badge';
 import type {
     CronJobTriggeredEvent,
     CronJobCompletedEvent,
@@ -175,20 +176,18 @@ const CronJobActivityWidget: React.FC = () => {
                                         )}
                                     </div>
                                 </div>
-                                <span
-                                    className={`
-                                    inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                    ${
+                                <Badge
+                                    variant={
                                         event.status === 'triggered'
-                                            ? 'bg-blue-100 text-blue-800'
+                                            ? 'primary'
                                             : event.status === 'completed'
-                                            ? 'bg-green-100 text-green-800'
-                                            : 'bg-red-100 text-red-800'
+                                            ? 'success'
+                                            : 'danger'
                                     }
-                                `}
+                                    size="sm"
                                 >
                                     {event.status}
-                                </span>
+                                </Badge>
                             </div>
                         </div>
                     ))

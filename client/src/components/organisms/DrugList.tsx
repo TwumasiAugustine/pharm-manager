@@ -5,6 +5,7 @@ import { Table } from '../molecules/Table';
 import type { TableColumn, TableAction } from '../molecules/Table';
 import { Pagination } from '../molecules/Pagination';
 import { SearchBar } from '../molecules/SearchBar';
+import { Badge } from '../atoms/Badge';
 import type { Drug } from '../../types/drug.types';
 import { useAuthStore } from '../../store/auth.store';
 import { UserRole } from '../../types/user.types';
@@ -252,8 +253,18 @@ export const DrugList: React.FC<DrugListProps> = ({
                                     {
                                         header: 'Able To Sell',
                                         accessor: 'ableToSell',
-                                        cell: (value: boolean) =>
-                                            value ? 'Yes' : 'No',
+                                        cell: (value: boolean) => (
+                                            <Badge
+                                                variant={
+                                                    value ? 'success' : 'danger'
+                                                }
+                                                size="sm"
+                                            >
+                                                {value
+                                                    ? 'Available'
+                                                    : 'Not Available'}
+                                            </Badge>
+                                        ),
                                     },
                                     {
                                         header: 'Drugs In Carton',
@@ -304,6 +315,20 @@ export const DrugList: React.FC<DrugListProps> = ({
                                     {
                                         header: 'Requires Prescription',
                                         accessor: 'requiresPrescription',
+                                        cell: (value: boolean) => (
+                                            <Badge
+                                                variant={
+                                                    value
+                                                        ? 'secondary'
+                                                        : 'outline'
+                                                }
+                                                size="sm"
+                                            >
+                                                {value
+                                                    ? 'Required'
+                                                    : 'Not Required'}
+                                            </Badge>
+                                        ),
                                     },
                                     {
                                         header: 'Created At',
