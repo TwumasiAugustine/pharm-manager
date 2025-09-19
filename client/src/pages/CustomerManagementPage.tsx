@@ -9,18 +9,43 @@ import { SearchBar } from '../components/molecules/SearchBar';
 import type { CreateCustomerRequest } from '../types/customer.types';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { BranchSelect } from '../components/molecules/BranchSelect';
-import { useDebounce } from '../hooks/useDebounce';
+import { useURLFilters } from '../hooks/useURLSearch';
 import { FaUsers, FaUserPlus, FaSync, FaDownload } from 'react-icons/fa';
 import { FiMoreVertical } from 'react-icons/fi';
 import PermissionGuard from '../components/atoms/PermissionGuard';
 import { PERMISSION_KEYS } from '../types/permission.types';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 
 const CustomerManagementPage: React.FC = () => {
-    const [branchId, setBranchId] = useState<string>('');
     const [showForm, setShowForm] = useState(false);
     const [showActionsDropdown, setShowActionsDropdown] = useState(false);
     const actionsDropdownRef = useRef<HTMLDivElement>(null);
     const notify = useSafeNotify();
+    const navigate = useNavigate();
+
+    // SEO configuration
+    const seoData = useSEO({
+        ...SEO_PRESETS.customers,
+        canonicalPath: '/customers',
+    });
+
+    // URL-based filters for customer management
+    const { filters, setFilter } = useURLFilters(
+        {
+            branchId: '',
+            search: '',
+            page: 1,
+            limit: 5,
+        },
+        {
+            debounceMs: 500,
+            onFiltersChange: (newFilters) => {
+                console.log('Customer filters changed:', newFilters);
+            },
+        },
+    );
+
     const [formData, setFormData] = useState<CreateCustomerRequest>({
         name: '',
         phone: '',
@@ -28,10 +53,6 @@ const CustomerManagementPage: React.FC = () => {
         address: '',
         branchId: '',
     });
-    // const { data: branches } = useBranches();
-    const [searchTerm, setSearchTerm] = useState('');
-    const debouncedSearchTerm = useDebounce(searchTerm, 500); // Debounce for 500ms
-    const navigate = useNavigate();
 
     const {
         data: customers,
@@ -39,9 +60,15 @@ const CustomerManagementPage: React.FC = () => {
         isError,
         refetch,
         pagination,
-    } = useCustomers({ limit: 5, search: debouncedSearchTerm, branchId }); // Set limit to 5 customers per page
+    } = useCustomers({
+        limit: filters.limit,
+        search: filters.search,
+        branchId: filters.branchId,
+        page: filters.page,
+    });
+
     const handleBranchChange = (id: string) => {
-        setBranchId(id);
+        setFilter('branchId', id);
     };
 
     const createCustomer = useCreateCustomer();
@@ -67,13 +94,11 @@ const CustomerManagementPage: React.FC = () => {
     }, [showActionsDropdown]);
 
     const handleSearch = (query: string) => {
-        setSearchTerm(query);
+        setFilter('search', query);
     };
 
     const handlePageChange = (page: number) => {
-        if (pagination) {
-            pagination.setPage(page);
-        }
+        setFilter('page', page);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -87,14 +112,14 @@ const CustomerManagementPage: React.FC = () => {
         try {
             await createCustomer.mutateAsync({
                 ...formData,
-                branchId: formData.branchId || branchId,
+                branchId: formData.branchId || filters.branchId,
             });
             setFormData({
                 name: '',
                 phone: '',
                 email: '',
                 address: '',
-                branchId: branchId,
+                branchId: filters.branchId,
             });
             setShowForm(false);
         } catch (error) {
@@ -191,6 +216,7 @@ const CustomerManagementPage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            <SEOMetadata {...seoData} />
             <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <div>
@@ -303,7 +329,7 @@ const CustomerManagementPage: React.FC = () => {
                         <CustomerForm
                             formData={{
                                 ...formData,
-                                branchId: formData.branchId || branchId,
+                                branchId: formData.branchId || filters.branchId,
                             }}
                             onChange={handleChange}
                             onBranchChange={(id) =>
@@ -323,7 +349,7 @@ const CustomerManagementPage: React.FC = () => {
                     <div className="flex items-center w-full gap-3">
                         <div className="w-full sm:w-56 max-w-xs">
                             <BranchSelect
-                                value={branchId}
+                                value={filters.branchId}
                                 onChange={handleBranchChange}
                             />
                         </div>
@@ -333,14 +359,14 @@ const CustomerManagementPage: React.FC = () => {
                                 placeholder="Search customers..."
                                 onSearch={handleSearch}
                                 className="w-full md:w-80 focus:ring-2 focus:ring-blue-500 border-gray-300"
-                                initialValue={searchTerm}
+                                initialValue={filters.search}
                             />
                             <button
                                 type="button"
-                                onClick={() => setSearchTerm('')}
+                                onClick={() => setFilter('search', '')}
                                 className="ml-1 px-2 py-1 text-xs text-gray-500 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 style={{
-                                    display: searchTerm
+                                    display: filters.search
                                         ? 'inline-block'
                                         : 'none',
                                 }}
@@ -350,10 +376,10 @@ const CustomerManagementPage: React.FC = () => {
                             </button>
                         </div>
                     </div>
-                    {debouncedSearchTerm && isLoading && (
+                    {filters.search && isLoading && (
                         <div className="mt-2 flex items-center text-sm text-gray-500">
                             <div className="animate-spin h-4 w-4 mr-2 border-2 border-gray-500 border-t-transparent rounded-full"></div>
-                            Searching for "{debouncedSearchTerm}"...
+                            Searching for "{filters.search}"...
                         </div>
                     )}
                 </div>
@@ -367,8 +393,8 @@ const CustomerManagementPage: React.FC = () => {
                             navigate(`/customers/${customer.id}`)
                         }
                         emptyMessage={
-                            debouncedSearchTerm
-                                ? `No customers found matching "${debouncedSearchTerm}".`
+                            filters.search
+                                ? `No customers found matching "${filters.search}".`
                                 : 'No customers found. Add your first customer to get started.'
                         }
                     />
@@ -377,12 +403,12 @@ const CustomerManagementPage: React.FC = () => {
                     {!isLoading && pagination && pagination.totalPages > 1 && (
                         <div className="mt-4 flex justify-center">
                             <Pagination
-                                currentPage={pagination.page}
+                                currentPage={filters.page}
                                 totalPages={pagination.totalPages}
                                 onPageChange={handlePageChange}
                                 showInfo={true}
                                 totalItems={pagination.totalItems}
-                                itemsPerPage={pagination.limit}
+                                itemsPerPage={filters.limit}
                                 size="md"
                             />
                         </div>

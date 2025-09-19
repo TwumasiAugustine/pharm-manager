@@ -7,8 +7,16 @@ import CronJobActivityWidget from '../components/organisms/CronJobActivityWidget
 import DashboardLayout from '../layouts/DashboardLayout';
 import PermissionGuard from '../components/atoms/PermissionGuard';
 import { PERMISSION_KEYS } from '../types/permission.types';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 
 const CronManagementPage: React.FC = () => {
+    // SEO configuration
+    const seoData = useSEO({
+        ...SEO_PRESETS.cronManagement,
+        canonicalPath: '/cron-management',
+    });
+
     const {
         data: cronStatus,
         isLoading,
@@ -70,6 +78,7 @@ const CronManagementPage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            <SEOMetadata {...seoData} />
             <PermissionGuard permission={PERMISSION_KEYS.MANAGE_CRON_JOBS}>
                 <div className="space-y-6">
                     {/* Header */}

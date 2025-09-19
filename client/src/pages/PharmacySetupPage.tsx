@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '../components/atoms/Input';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 import {
     useUpdatePharmacyInfo,
     usePharmacyInfo,
@@ -46,6 +48,12 @@ const PharmacySetupPage: React.FC = () => {
         null,
     );
     const [requireShortCode, setRequireShortCode] = useState(false);
+
+    // SEO configuration
+    const seoData = useSEO({
+        ...SEO_PRESETS.pharmacySetup,
+        canonicalPath: '/pharmacy-setup',
+    });
     const [shortCodeExpiryMinutes, setShortCodeExpiryMinutes] = useState(15);
     const [toggleLoading, setToggleLoading] = useState(false);
     const queryClient = useQueryClient();
@@ -140,6 +148,7 @@ const PharmacySetupPage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            <SEOMetadata {...seoData} />
             <div className="max-w-6xl mx-auto space-y-6">
                 {/* Header Section */}
                 <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg p-6 text-white">

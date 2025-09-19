@@ -8,6 +8,7 @@ import PermissionGuard from '../components/atoms/PermissionGuard';
 import { PERMISSION_KEYS } from '../types/permission.types';
 import SEOMetadata from '../components/atoms/SEOMetadata';
 import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
+import { useURLFilters } from '../hooks/useURLSearch';
 import {
     FiPlus,
     FiMoreVertical,
@@ -23,10 +24,28 @@ import type { CreateDrugRequest } from '../types/drug.types';
  */
 const DrugsPage: React.FC = () => {
     const [showAddForm, setShowAddForm] = useState(false);
-    const [branchId, setBranchId] = useState<string>('');
     const [showActionsDropdown, setShowActionsDropdown] = useState(false);
     const actionsDropdownRef = useRef<HTMLDivElement>(null);
     const createDrug = useCreateDrug();
+
+    // URL-based filters for drugs page
+    const { filters, setFilter } = useURLFilters(
+        {
+            branchId: '',
+            search: '',
+            category: '',
+            requiresPrescription: undefined as boolean | undefined,
+            page: 1,
+            limit: 10,
+        },
+        {
+            debounceMs: 300,
+            onFiltersChange: (newFilters) => {
+                // Optional: Log filter changes for analytics
+                console.log('Drug filters changed:', newFilters);
+            },
+        },
+    );
 
     // Generate SEO metadata for the inventory page
     const seoData = useSEO({
@@ -93,8 +112,10 @@ const DrugsPage: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-3">
                             <BranchSelect
-                                value={branchId}
-                                onChange={setBranchId}
+                                value={filters.branchId}
+                                onChange={(branchId) =>
+                                    setFilter('branchId', branchId)
+                                }
                             />
                         </div>
 
@@ -213,7 +234,16 @@ const DrugsPage: React.FC = () => {
                             />
                         </PermissionGuard>
                     ) : (
-                        <DrugList branchId={branchId} />
+                        <DrugList
+                            branchId={filters.branchId}
+                            urlFilters={filters}
+                            onFiltersChange={(key, value) =>
+                                setFilter(
+                                    key as keyof typeof filters,
+                                    value as (typeof filters)[keyof typeof filters],
+                                )
+                            }
+                        />
                     )}
                 </div>
             </PermissionGuard>

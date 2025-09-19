@@ -12,6 +12,8 @@ function isApiError(
 // Local type for sale response with optional requireShortCode
 type SaleWithShortCode = Sale & { requireShortCode?: boolean };
 import React, { useState } from 'react';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 import { useAuthStore } from '../store/auth.store';
 import CashierShortCodeInput from '../components/organisms/CashierShortCodeInput';
 import FinalizedSaleDisplay from '../components/organisms/FinalizedSaleDisplay';
@@ -39,6 +41,12 @@ const SalesNewPage: React.FC = () => {
     const [shortCodeError, setShortCodeError] = useState<string>('');
     const [isFinalizing, setIsFinalizing] = useState(false);
     const [finalizedSale, setFinalizedSale] = useState<Sale | null>(null);
+
+    // SEO configuration
+    const seoData = useSEO({
+        ...SEO_PRESETS.createSale,
+        canonicalPath: '/sales/new',
+    });
 
     // Fetch pharmacy info to determine if short code is required
     const { data: pharmacyData } = usePharmacyInfo();
@@ -204,6 +212,7 @@ const SalesNewPage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            <SEOMetadata {...seoData} />
             <div className="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
                 {/* Cashier: Always show code input if short code is required */}
                 {effectiveRequireShortCode && isCashier && (

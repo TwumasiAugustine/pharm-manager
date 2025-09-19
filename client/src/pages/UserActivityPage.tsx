@@ -8,42 +8,73 @@ import {
     useUserActivities,
     useUserActivityStats,
 } from '../hooks/useUserActivity';
-import { useDebounce } from '../hooks/useDebounce';
 import type { UserActivityFilters } from '../types/user-activity.types';
 import { FaChartLine, FaListAlt, FaFilter } from 'react-icons/fa';
+import { useURLFilters } from '../hooks/useURLSearch';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 
 const UserActivityPage: React.FC = () => {
-    const [filters, setFilters] = useState<UserActivityFilters>({
-        page: 1,
-        limit: 10,
+    // SEO configuration
+    const seoData = useSEO({
+        ...SEO_PRESETS.userActivity,
+        canonicalPath: '/user-activity',
     });
+
+    // URL-based filters for user activity
+    const { filters, setFilter } = useURLFilters(
+        {
+            page: 1,
+            limit: 10,
+            userId: '',
+            sessionId: '',
+            activityType: undefined,
+            resource: undefined,
+            startDate: '',
+            endDate: '',
+            isActive: undefined as boolean | undefined,
+            userRole: '',
+            ipAddress: '',
+        },
+        {
+            debounceMs: 500,
+            onFiltersChange: (newFilters) => {
+                console.log('User activity filters changed:', newFilters);
+            },
+        },
+    );
+
     const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
         null,
     );
     const [showFilters, setShowFilters] = useState(false);
 
-    const debouncedFilters = useDebounce(filters, 500);
-
     const {
         data: activitiesData,
         isLoading: isLoadingActivities,
         error: activitiesError,
-    } = useUserActivities(debouncedFilters);
+    } = useUserActivities(filters);
     const {
         data: statsData,
         isLoading: isLoadingStats,
         error: statsError,
     } = useUserActivityStats({
-        startDate: debouncedFilters.startDate,
-        endDate: debouncedFilters.endDate,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
     });
 
     const handleFilterChange = (newFilters: Partial<UserActivityFilters>) => {
-        setFilters((prev) => ({ ...prev, ...newFilters, page: 1 }));
+        // Update individual filter values and reset to page 1
+        Object.entries(newFilters).forEach(([key, value]) => {
+            setFilter(key as keyof UserActivityFilters, value);
+        });
+        if (!('page' in newFilters)) {
+            setFilter('page', 1);
+        }
     };
 
     const handlePageChange = (page: number) => {
-        setFilters((prev) => ({ ...prev, page }));
+        setFilter('page', page);
     };
 
     const handleViewSession = (sessionId: string) => {
@@ -52,6 +83,7 @@ const UserActivityPage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            <SEOMetadata {...seoData} />
             <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-full">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">

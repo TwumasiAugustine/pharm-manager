@@ -6,13 +6,21 @@ import { registerSchema } from '../utils/validation';
 import { Input } from '../components/atoms/Input';
 import { Button } from '../components/atoms/Button';
 import { useRegister } from '../hooks/useAuth';
-import { UserRole } from '../types/auth.types';
+import { UserRole } from '../types/user.types';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 // import { BranchSelect } from '../components/molecules/BranchSelect';
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const RegisterPage = () => {
     const { mutate: register, isPending } = useRegister();
+
+    // SEO configuration
+    const seoData = useSEO({
+        ...SEO_PRESETS.register,
+        canonicalPath: '/register',
+    });
 
     const {
         register: registerField,
@@ -25,7 +33,7 @@ const RegisterPage = () => {
             email: '',
             password: '',
             confirmPassword: '',
-            role: UserRole.CASHIER,       // Default role
+            role: UserRole.CASHIER, // Default role
         },
     });
 
@@ -38,6 +46,7 @@ const RegisterPage = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-white">
+            <SEOMetadata {...seoData} />
             <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-8 border border-gray-100">
                 <div className="flex flex-col items-center">
                     {/* Optional: Add a logo or icon here */}

@@ -25,29 +25,47 @@ import type {
 } from '../types/sale.types';
 import { Input } from '../components/atoms/Input';
 import { SalesPageActions } from '../components/organisms/SalesPageActions';
+import { useURLFilters } from '../hooks/useURLSearch';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 
 const SalesListPage: React.FC = () => {
-    // Pagination and filter state
-    const [page, setPage] = useState(1);
     const [showActionsDropdown, setShowActionsDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const [branchId, setBranchId] = useState<string>('');
-    const [filters, setFilters] = useState<SaleSearchParams>({
-        page: 1,
-        limit: 10, // Set limit to 10 for individual sales
-        groupByDate: true,
-        sortBy: 'date',
-        sortOrder: 'desc',
-        // Default to last 30 days
-        startDate: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
-        endDate: format(new Date(), 'yyyy-MM-dd'),
-    });
     const [showFilters, setShowFilters] = useState(false);
+
+    // SEO configuration
+    const seoData = useSEO({
+        ...SEO_PRESETS.sales,
+        canonicalPath: '/sales',
+    });
+
+    // URL-based filters for sales page
+    const { filters, setFilter } = useURLFilters(
+        {
+            branchId: '',
+            page: 1,
+            limit: 10,
+            groupByDate: true,
+            sortBy: 'date' as 'date' | 'total',
+            sortOrder: 'desc' as 'asc' | 'desc',
+            startDate: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
+            endDate: format(new Date(), 'yyyy-MM-dd'),
+            search: '',
+            userId: '',
+        },
+        {
+            debounceMs: 300,
+            onFiltersChange: (newFilters) => {
+                console.log('Sales filters changed:', newFilters);
+            },
+        },
+    );
 
     const navigate = useNavigate();
     const { data, isLoading, error, refetch } = useSales({
         ...filters,
-        branchId,
+        branchId: filters.branchId,
     });
 
     // Debug log to check data structure
@@ -76,14 +94,22 @@ const SalesListPage: React.FC = () => {
         if (key === 'limit' || key === 'page') {
             value = parseInt(String(value), 10);
         }
-        setFilters((prev) => ({ ...prev, [key]: value }));
-        setPage(1); // Reset to first page on filter change
+        setFilter(key, value);
     };
 
-    // Apply filters
+    // Handle branch change
+    const handleBranchChange = (branchId: string) => {
+        setFilter('branchId', branchId);
+    };
+
+    // Handle pagination
+    const handlePageChange = (page: number) => {
+        setFilter('page', page);
+    };
+
+    // Apply filters (mainly for manual refresh)
     const applyFilters = () => {
-        // Update filters state with current page
-        setFilters((prev) => ({ ...prev, page }));
+        refetch();
     };
 
     // Close dropdown when clicked outside
@@ -103,27 +129,10 @@ const SalesListPage: React.FC = () => {
         };
     }, [dropdownRef]);
 
-    // Handle page change
-    const handlePageChange = (newPage: number) => {
-        setPage(newPage);
-        setFilters((prev) => ({
-            ...prev,
-            page: newPage,
-            limit:
-                typeof prev.limit === 'string'
-                    ? parseInt(prev.limit, 10)
-                    : prev.limit,
-        }));
-    };
-
     // Handle toggle between grouped and ungrouped view
     const toggleGrouping = () => {
-        setFilters((prev) => ({
-            ...prev,
-            groupByDate: !prev.groupByDate,
-            page: 1, // Reset to first page when changing view type
-        }));
-        setPage(1); // Also reset the page state
+        setFilter('groupByDate', !filters.groupByDate);
+        setFilter('page', 1); // Reset to first page when changing view type
     };
 
     // Grouped sales columns
@@ -496,6 +505,7 @@ const SalesListPage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            <SEOMetadata {...seoData} />
             <PermissionGuard
                 permission={PERMISSION_KEYS.VIEW_SALES}
                 fallback={
@@ -510,7 +520,10 @@ const SalesListPage: React.FC = () => {
             >
                 <div className="bg-white rounded-lg shadow-md p-6">
                     <div className="flex items-center gap-3 mb-4">
-                        <BranchSelect value={branchId} onChange={setBranchId} />
+                        <BranchSelect
+                            value={filters.branchId}
+                            onChange={handleBranchChange}
+                        />
                     </div>
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-semibold">

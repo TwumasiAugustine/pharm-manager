@@ -19,10 +19,19 @@ import {
 import { useSafeNotify } from '../utils/useSafeNotify';
 import type { IUser } from '../types/user.types';
 import { UserRole } from '../types/user.types';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 
 const UserManagementPage: React.FC = () => {
     const [showForm, setShowForm] = useState(false);
     const notify = useSafeNotify();
+
+    // SEO configuration
+    const seoData = useSEO({
+        ...SEO_PRESETS.users,
+        canonicalPath: '/users',
+    });
+
     const [formData, setFormData] = useState<Partial<IUser>>({
         name: '',
         email: '',
@@ -130,6 +139,7 @@ const UserManagementPage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            <SEOMetadata {...seoData} />
             <div className="container mx-auto px-4 py-6">
                 <div className="flex items-center justify-between mb-6">
                     <div>

@@ -4,10 +4,18 @@ import DashboardLayout from '../layouts/DashboardLayout';
 import { DrugForm } from '../components/organisms/DrugForm';
 import { useDrug, useUpdateDrug } from '../hooks/useDrugs';
 import type { DrugFormValues } from '../validations/drug.validation';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 
 const EditDrugPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+
+    // SEO configuration
+    const seoData = useSEO({
+        ...SEO_PRESETS.editDrug,
+        canonicalPath: `/drugs/edit/${id}`,
+    });
 
     // If id is undefined, redirect after first render
     React.useEffect(() => {
@@ -31,6 +39,7 @@ const EditDrugPage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            <SEOMetadata {...seoData} />
             {/* Error State */}
             {(isError || !drug) && !isLoading && (
                 <div className="bg-red-50 border border-red-300 rounded-md p-4 text-center mb-6">

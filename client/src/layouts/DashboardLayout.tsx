@@ -239,24 +239,21 @@ function Sidebar({
                     }`}
                 >
                     {navItems.map((item) => {
-                        // Super admin can access everything EXCEPT finalize (cashier-only items)
-                        if (user?.role === UserRole.SUPER_ADMIN) {
-                            // Super admin cannot access cashier-only items (finalize functionality)
-                            if (item.cashierOnly) return null;
-                        } else {
-                            // Admin-only items - now include super_admin
-                            if (
-                                item.adminOnly &&
-                                user?.role !== UserRole.ADMIN &&
-                                user?.role !== UserRole.SUPER_ADMIN
-                            )
-                                return null;
-                            // Cashier-only items
-                            if (
-                                item.cashierOnly &&
-                                user?.role !== UserRole.CASHIER
-                            )
-                                return null;
+                        // Handle role-based access control
+                        const userRole = user?.role;
+
+                        // Admin-only items
+                        if (
+                            item.adminOnly &&
+                            userRole !== UserRole.ADMIN &&
+                            userRole !== UserRole.SUPER_ADMIN
+                        ) {
+                            return null;
+                        }
+
+                        // Cashier-only items
+                        if (item.cashierOnly && userRole !== UserRole.CASHIER) {
+                            return null;
                         }
 
                         const isActive = item.match(location.pathname);

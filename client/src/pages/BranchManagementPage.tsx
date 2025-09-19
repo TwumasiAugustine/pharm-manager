@@ -16,8 +16,16 @@ import { FaSitemap, FaPlus } from 'react-icons/fa';
 import { Button } from '../components/atoms/Button';
 import PermissionGuard from '../components/atoms/PermissionGuard';
 import { PERMISSION_KEYS } from '../types/permission.types';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 
 export default function BranchManagementPage() {
+    // SEO configuration
+    const seoData = useSEO({
+        ...SEO_PRESETS.branches,
+        canonicalPath: '/branches',
+    });
+
     const { data: branches, isLoading, error } = useBranches();
     const { data: pharmacyData } = usePharmacyInfo();
 
@@ -221,6 +229,7 @@ export default function BranchManagementPage() {
 
     return (
         <DashboardLayout>
+            <SEOMetadata {...seoData} />
             <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <div>

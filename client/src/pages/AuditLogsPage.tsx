@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { AuditLogTable } from '../components/molecules/AuditLogTable';
 import { AuditLogStats } from '../components/molecules/AuditLogStats';
 import { AuditLogFilter } from '../components/molecules/AuditLogFilter';
 import { Pagination } from '../components/molecules/Pagination';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 import {
     Alert,
     AlertTitle,
@@ -17,12 +19,34 @@ import {
 } from '../hooks/useAuditLogs';
 import type { AuditLogFilters } from '../types/audit-log.types';
 import { getErrorMessage } from '../utils/error';
+import { useURLFilters } from '../hooks/useURLSearch';
 
 export const AuditLogsPage: React.FC = () => {
-    const [filters, setFilters] = useState<AuditLogFilters>({
-        page: 1,
-        limit: 10,
+    // SEO configuration
+    const seoData = useSEO({
+        ...SEO_PRESETS.audit,
+        canonicalPath: '/audit-logs',
     });
+
+    // URL-based filters for audit logs
+    const { filters, setFilter } = useURLFilters(
+        {
+            page: 1,
+            limit: 10,
+            userId: '',
+            action: undefined,
+            resource: undefined,
+            startDate: '',
+            endDate: '',
+            userRole: '',
+        },
+        {
+            debounceMs: 300,
+            onFiltersChange: (newFilters) => {
+                console.log('Audit log filters changed:', newFilters);
+            },
+        },
+    );
 
     const {
         data: auditLogsData,
@@ -40,11 +64,14 @@ export const AuditLogsPage: React.FC = () => {
     const refreshAuditLogs = useRefreshAuditLogs();
 
     const handleFiltersChange = (newFilters: AuditLogFilters) => {
-        setFilters(newFilters);
+        // Update individual filter values
+        Object.entries(newFilters).forEach(([key, value]) => {
+            setFilter(key as keyof AuditLogFilters, value);
+        });
     };
 
     const handlePageChange = (page: number) => {
-        setFilters({ ...filters, page });
+        setFilter('page', page);
     };
 
     const handleRefresh = () => {
@@ -78,6 +105,7 @@ export const AuditLogsPage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            <SEOMetadata {...seoData} />
             <div className="min-h-screen bg-gray-50">
                 {/* Header */}
                 <div className="bg-white shadow-sm border-b">

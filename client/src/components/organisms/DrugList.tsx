@@ -8,6 +8,7 @@ import { SearchBar } from '../molecules/SearchBar';
 import type { Drug } from '../../types/drug.types';
 import { useAuthStore } from '../../store/auth.store';
 import { UserRole } from '../../types/user.types';
+import { useURLSearch } from '../../hooks/useURLSearch';
 
 /**
  * DrugList component to display and manage the list of drugs.
@@ -15,15 +16,39 @@ import { UserRole } from '../../types/user.types';
 
 interface DrugListProps {
     branchId?: string;
+    urlFilters?: {
+        branchId: string;
+        search: string;
+        category: string;
+        requiresPrescription?: boolean;
+        page: number;
+        limit: number;
+    };
+    onFiltersChange?: (key: string, value: unknown) => void;
 }
 
-export const DrugList: React.FC<DrugListProps> = ({ branchId }) => {
+export const DrugList: React.FC<DrugListProps> = ({
+    branchId,
+    urlFilters,
+    onFiltersChange,
+}) => {
     const [isSearching, setIsSearching] = useState(false);
-    const [searchQuery, setSearchQueryLocal] = useState('');
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const navigate = useNavigate();
 
     const { user } = useAuthStore();
+
+    // Use URL-based search if filters are provided, fallback to internal hook
+    const { searchQuery, setSearchQuery: setUrlSearchQuery } = useURLSearch({
+        paramName: 'search',
+        debounceMs: 300,
+        onSearchChange: (query) => {
+            onFiltersChange?.('search', query);
+        },
+    });
+
+    // Use search query from URL filters or internal search
+    const currentSearchQuery = urlFilters?.search || searchQuery;
 
     // Only super admin can manage (edit/delete) drugs
     const canManageDrugs = user?.role === UserRole.SUPER_ADMIN;
@@ -35,19 +60,42 @@ export const DrugList: React.FC<DrugListProps> = ({ branchId }) => {
         refetch,
         pagination,
         setSearchQuery,
-    } = useDrugs(branchId ? { branchId } : {});
+    } = useDrugs(
+        urlFilters
+            ? {
+                  branchId: urlFilters.branchId,
+                  search: urlFilters.search,
+                  category: urlFilters.category,
+                  requiresPrescription: urlFilters.requiresPrescription,
+                  page: urlFilters.page,
+                  limit: urlFilters.limit,
+              }
+            : branchId
+            ? { branchId }
+            : {},
+    );
 
     const deleteDrug = useDeleteDrug();
 
     const handleSearch = (query: string) => {
-        setSearchQueryLocal(query);
-
-        if (query.trim()) {
-            setIsSearching(true);
-            setSearchQuery(query);
+        if (urlFilters && onFiltersChange) {
+            // Use URL-based search
+            onFiltersChange('search', query);
+            if (query.trim()) {
+                setIsSearching(true);
+            } else {
+                setIsSearching(false);
+            }
         } else {
-            setIsSearching(false);
-            setSearchQuery('');
+            // Fallback to internal search
+            setUrlSearchQuery(query);
+            if (query.trim()) {
+                setIsSearching(true);
+                setSearchQuery(query);
+            } else {
+                setIsSearching(false);
+                setSearchQuery('');
+            }
         }
     };
 
@@ -57,7 +105,7 @@ export const DrugList: React.FC<DrugListProps> = ({ branchId }) => {
 
     const handleSearchBlur = () => {
         setIsSearchFocused(false);
-        if (!searchQuery.trim()) {
+        if (!currentSearchQuery.trim()) {
             setIsSearching(false);
         }
     };
@@ -70,7 +118,11 @@ export const DrugList: React.FC<DrugListProps> = ({ branchId }) => {
     }, [isLoading]);
 
     const handlePageChange = (page: number) => {
-        if (pagination) {
+        if (urlFilters && onFiltersChange) {
+            // Use URL-based pagination
+            onFiltersChange('page', page);
+        } else if (pagination) {
+            // Fallback to internal pagination
             pagination.setPage(page);
         }
     };
@@ -79,7 +131,7 @@ export const DrugList: React.FC<DrugListProps> = ({ branchId }) => {
         <div className="space-y-6">
             <SearchBar
                 onSearch={handleSearch}
-                initialValue={searchQuery}
+                initialValue={currentSearchQuery}
                 onFocus={handleSearchFocus}
                 onBlur={handleSearchBlur}
             />
@@ -117,7 +169,7 @@ export const DrugList: React.FC<DrugListProps> = ({ branchId }) => {
             )}
 
             {/* Loading skeleton for initial load */}
-            {isLoading && !searchQuery ? (
+            {isLoading && !currentSearchQuery ? (
                 <div className="space-y-4">
                     <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow-sm animate-pulse">
                         <div className="h-6 bg-gray-200 rounded w-1/4"></div>
@@ -170,7 +222,7 @@ export const DrugList: React.FC<DrugListProps> = ({ branchId }) => {
                     </div>
                 )}
 
-            {isSearching && searchQuery.trim() && isSearchFocused && (
+            {isSearching && currentSearchQuery.trim() && isSearchFocused && (
                 <div className="flex justify-center items-center py-4">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
                     <span className="ml-2 text-gray-600">
@@ -179,7 +231,7 @@ export const DrugList: React.FC<DrugListProps> = ({ branchId }) => {
                 </div>
             )}
 
-            {(!isSearching || !searchQuery.trim() || !isSearchFocused) &&
+            {(!isSearching || !currentSearchQuery.trim() || !isSearchFocused) &&
                 drugs && (
                     <>
                         <Table<Drug>
@@ -306,12 +358,16 @@ export const DrugList: React.FC<DrugListProps> = ({ branchId }) => {
                         />
 
                         <Pagination
-                            currentPage={pagination?.page || 1}
+                            currentPage={
+                                urlFilters?.page || pagination?.page || 1
+                            }
                             totalPages={pagination?.totalPages || 1}
                             onPageChange={handlePageChange}
                             showInfo={true}
                             totalItems={pagination?.totalItems || 0}
-                            itemsPerPage={pagination?.limit || 10}
+                            itemsPerPage={
+                                urlFilters?.limit || pagination?.limit || 10
+                            }
                             size="md"
                         />
                     </>

@@ -12,6 +12,8 @@ import {
     FaArrowLeft,
     FaReceipt,
 } from 'react-icons/fa';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 
 // Type for purchase that can be either string ID or Sale object
 type Purchase = string | Sale;
@@ -20,6 +22,15 @@ const CustomerDetailsPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { data: customer, isLoading, isError } = useCustomer(id || '');
+
+    // SEO configuration
+    const seoData = useSEO({
+        ...SEO_PRESETS.customerDetails,
+        title: customer
+            ? `${customer.name} - Customer Details`
+            : 'Customer Details',
+        canonicalPath: `/customers/${id}`,
+    });
 
     if (isError) {
         return (
@@ -35,6 +46,7 @@ const CustomerDetailsPage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            <SEOMetadata {...seoData} />
             <div className="space-y-6">
                 <div className="flex justify-between items-center">
                     <h1 className="text-2xl font-bold flex items-center">

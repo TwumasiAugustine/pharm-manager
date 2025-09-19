@@ -5,6 +5,7 @@ import {
     FaAngleDoubleLeft,
     FaAngleDoubleRight,
 } from 'react-icons/fa';
+import { usePaginationURL } from '../../hooks/useURLSearch';
 
 /**
  * Props for Pagination component
@@ -18,6 +19,9 @@ interface PaginationProps {
     totalItems?: number;
     itemsPerPage?: number;
     size?: 'sm' | 'md' | 'lg';
+    enableURLSync?: boolean;
+    pageParamName?: string;
+    limitParamName?: string;
 }
 
 /**
@@ -32,7 +36,33 @@ export const Pagination: React.FC<PaginationProps> = ({
     totalItems,
     itemsPerPage,
     size = 'md',
+    enableURLSync = false,
+    pageParamName = 'page',
+    limitParamName = 'limit',
 }) => {
+    // URL pagination hook for URL synchronization
+    const {
+        page: urlPage,
+        limit: urlLimit,
+        setPage: setURLPage,
+        setLimit: setURLLimit,
+    } = usePaginationURL({
+        pageParamName,
+        limitParamName,
+        defaultPage: 1,
+        defaultLimit: itemsPerPage || 10,
+    });
+
+    // Use URL page if URL sync is enabled and URL page is different
+    const activePage = enableURLSync ? urlPage : currentPage;
+
+    // Handle page change with URL sync support
+    const handlePageChange = (page: number) => {
+        if (enableURLSync) {
+            setURLPage(page);
+        }
+        onPageChange(page);
+    };
     // Size-based styling
     const sizeClasses = {
         sm: {
@@ -61,7 +91,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         // Calculate the range of pages to show
         let startPage = Math.max(
             1,
-            currentPage - Math.floor(maxPagesToShow / 2),
+            activePage - Math.floor(maxPagesToShow / 2),
         );
         let endPage = startPage + maxPagesToShow - 1;
 
@@ -81,8 +111,8 @@ export const Pagination: React.FC<PaginationProps> = ({
     const getPaginationInfo = () => {
         if (!totalItems || !itemsPerPage) return null;
 
-        const startItem = (currentPage - 1) * itemsPerPage + 1;
-        const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+        const startItem = (activePage - 1) * itemsPerPage + 1;
+        const endItem = Math.min(activePage * itemsPerPage, totalItems);
 
         return { startItem, endItem };
     };
@@ -127,12 +157,12 @@ export const Pagination: React.FC<PaginationProps> = ({
             >
                 {/* First page button */}
                 <button
-                    onClick={() => onPageChange(1)}
-                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(1)}
+                    disabled={activePage === 1}
                     className={`${
                         currentSizeClasses.button
                     } rounded-lg border transition-all duration-200 ${
-                        currentPage === 1
+                        activePage === 1
                             ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
                             : 'border-gray-300 bg-white text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1'
                     }`}
@@ -144,12 +174,12 @@ export const Pagination: React.FC<PaginationProps> = ({
 
                 {/* Previous page button */}
                 <button
-                    onClick={() => onPageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(activePage - 1)}
+                    disabled={activePage === 1}
                     className={`${
                         currentSizeClasses.button
                     } rounded-lg border transition-all duration-200 ${
-                        currentPage === 1
+                        activePage === 1
                             ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
                             : 'border-gray-300 bg-white text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1'
                     }`}
@@ -163,7 +193,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                 {getPageNumbers()[0] > 1 && (
                     <>
                         <button
-                            onClick={() => onPageChange(1)}
+                            onClick={() => handlePageChange(1)}
                             className={`${currentSizeClasses.button} rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200`}
                             aria-label="Go to page 1"
                         >
@@ -183,16 +213,16 @@ export const Pagination: React.FC<PaginationProps> = ({
                 {getPageNumbers().map((page) => (
                     <button
                         key={page}
-                        onClick={() => onPageChange(page)}
+                        onClick={() => handlePageChange(page)}
                         className={`${
                             currentSizeClasses.button
                         } rounded-lg border font-medium transition-all duration-200 ${
-                            currentPage === page
+                            activePage === page
                                 ? 'bg-blue-600 border-blue-600 text-white shadow-md transform scale-105'
                                 : 'border-gray-300 bg-white text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1'
                         }`}
                         aria-label={`Go to page ${page}`}
-                        aria-current={currentPage === page ? 'page' : undefined}
+                        aria-current={activePage === page ? 'page' : undefined}
                     >
                         {page}
                     </button>
@@ -210,7 +240,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                             </span>
                         )}
                         <button
-                            onClick={() => onPageChange(totalPages)}
+                            onClick={() => handlePageChange(totalPages)}
                             className={`${currentSizeClasses.button} rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200`}
                             aria-label={`Go to page ${totalPages}`}
                         >
@@ -221,12 +251,12 @@ export const Pagination: React.FC<PaginationProps> = ({
 
                 {/* Next page button */}
                 <button
-                    onClick={() => onPageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
+                    onClick={() => handlePageChange(activePage + 1)}
+                    disabled={activePage === totalPages}
                     className={`${
                         currentSizeClasses.button
                     } rounded-lg border transition-all duration-200 ${
-                        currentPage === totalPages
+                        activePage === totalPages
                             ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
                             : 'border-gray-300 bg-white text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1'
                     }`}
@@ -238,12 +268,12 @@ export const Pagination: React.FC<PaginationProps> = ({
 
                 {/* Last page button */}
                 <button
-                    onClick={() => onPageChange(totalPages)}
-                    disabled={currentPage === totalPages}
+                    onClick={() => handlePageChange(totalPages)}
+                    disabled={activePage === totalPages}
                     className={`${
                         currentSizeClasses.button
                     } rounded-lg border transition-all duration-200 ${
-                        currentPage === totalPages
+                        activePage === totalPages
                             ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
                             : 'border-gray-300 bg-white text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1'
                     }`}

@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDebounceFunction } from '../../hooks/useDebounceFunction';
+import { useURLSearch } from '../../hooks/useURLSearch';
 
 /**
  * Props for SearchBar component
@@ -14,6 +15,10 @@ interface SearchBarProps {
     initialValue?: string;
     onFocus?: () => void;
     onBlur?: () => void;
+    // URL-related props
+    urlParamName?: string;
+    enableURLSync?: boolean;
+    debounceMs?: number;
 }
 
 // Validation schema for search input
@@ -24,7 +29,7 @@ const searchSchema = z.object({
 type SearchFormValues = z.infer<typeof searchSchema>;
 
 /**
- * Reusable search bar component with debounced input
+ * Reusable search bar component with debounced input and URL synchronization
  */
 export const SearchBar: React.FC<SearchBarProps> = ({
     onSearch,
@@ -33,24 +38,43 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     initialValue = '',
     onFocus,
     onBlur,
+    urlParamName = 'search',
+    enableURLSync = true,
+    debounceMs = 500,
 }) => {
-    // Use debounced search function
-    const debouncedSearch = useDebounceFunction(onSearch, 500);
+    // URL search management
+    const { searchQuery, setSearchQuery, clearSearch } = useURLSearch({
+        paramName: urlParamName,
+        debounceMs,
+        onSearchChange: onSearch,
+    });
+
+    // Use debounced search function for non-URL updates
+    const debouncedSearch = useDebounceFunction(onSearch, debounceMs);
 
     const { watch, setValue } = useForm<SearchFormValues>({
         resolver: zodResolver(searchSchema),
         defaultValues: {
-            query: initialValue,
+            query: enableURLSync ? searchQuery : initialValue,
         },
     });
 
     // Get the current query value
     const queryValue = watch('query');
 
-    // Update form when initialValue changes
+    // Sync form with URL when URL changes
     useEffect(() => {
-        setValue('query', initialValue || '');
-    }, [initialValue, setValue]);
+        if (enableURLSync && searchQuery !== queryValue) {
+            setValue('query', searchQuery || '');
+        }
+    }, [searchQuery, setValue, enableURLSync, queryValue]);
+
+    // Update form when initialValue changes (for non-URL mode)
+    useEffect(() => {
+        if (!enableURLSync) {
+            setValue('query', initialValue || '');
+        }
+    }, [initialValue, setValue, enableURLSync]);
 
     // Handle input change with debounce
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

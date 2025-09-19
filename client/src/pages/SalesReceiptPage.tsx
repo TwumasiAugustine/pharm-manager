@@ -2,6 +2,8 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../components/atoms/Button';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 import DashboardLayout from '../layouts/DashboardLayout';
 import Receipt from '../components/molecules/Receipt';
 import PermissionGuard from '../components/atoms/PermissionGuard';
@@ -29,6 +31,14 @@ const SalesReceiptPage: React.FC = () => {
     const [finalizeError, setFinalizeError] = React.useState<string | null>(
         null,
     );
+
+    // SEO configuration
+    const seoData = useSEO({
+        ...SEO_PRESETS.salesReceipt,
+        title: id ? `Sale Receipt - #${id}` : 'Sale Receipt',
+        canonicalPath: `/sales/${id}`,
+    });
+
     // sale will be loaded below, so finalized state is derived from sale
     const {
         data: sale,
@@ -160,6 +170,7 @@ const SalesReceiptPage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            <SEOMetadata {...seoData} />
             <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
                 <div className="container mx-auto px-4">
                     <Receipt

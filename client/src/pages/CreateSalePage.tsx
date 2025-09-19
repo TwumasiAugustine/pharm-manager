@@ -13,8 +13,16 @@ import { useSafeNotify } from '../utils/useSafeNotify';
 import { useNavigate } from 'react-router-dom';
 import type { Drug } from '../types/drug.types';
 import { getErrorMessage } from '../utils/error';
+import SEOMetadata from '../components/atoms/SEOMetadata';
+import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 
 const CreateSalePage: React.FC = () => {
+    // SEO configuration
+    const seoData = useSEO({
+        ...SEO_PRESETS.createSale,
+        canonicalPath: '/sales/create',
+    });
+
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -86,7 +94,8 @@ const CreateSalePage: React.FC = () => {
                 paymentMethod: data.paymentMethod as 'cash' | 'card' | 'mobile',
                 transactionId: data.transactionId,
                 notes: data.notes,
-                branchId: (data as any).branchId,
+                branchId: (data as CreateSaleFormValues & { branchId?: string })
+                    .branchId,
             };
 
             createSaleMutation.mutate(saleData, {
@@ -106,6 +115,7 @@ const CreateSalePage: React.FC = () => {
 
     return (
         <DashboardLayout>
+            <SEOMetadata {...seoData} />
             <div className="bg-white rounded-lg shadow-md p-6">
                 <FormProvider {...form}>
                     <CreateSaleForm
