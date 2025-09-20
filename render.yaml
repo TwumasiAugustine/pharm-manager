@@ -13,11 +13,11 @@ services:
       - key: PORT
         value: "10000"
       - key: CORS_ORIGIN
-        value: "https://app.example.com" # adjust to your client origin
+        value: "https://medicare-0971.onrender.com" # adjust to your client origin
       - key: COOKIE_DOMAIN
-        value: ".example.com" # adjust to your domain (not a secret)
+        value: "medicare-0971.onrender.com" # adjust to your domain (not a secret)
       - key: REACT_APP_SOCKET_URL
-        value: "https://sockets.example.com"
+        value: "hhttps://pharm-manager-api.onrender.com"
 
 
 
