@@ -3,15 +3,6 @@ import { verifyAccessToken } from '../utils/jwt';
 import { UnauthorizedError, ForbiddenError } from '../utils/errors';
 import { UserRole, ITokenPayload } from '../types/auth.types';
 
-// Extend Express Request interface to include user
-declare global {
-    namespace Express {
-        interface Request {
-            user?: ITokenPayload;
-        }
-    }
-}
-
 // Authenticate user
 export const authenticate = (
     req: Request,

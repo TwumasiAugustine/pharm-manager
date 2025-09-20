@@ -1,5 +1,17 @@
 import { UserRole } from './user.types';
 
+// Re-export UserRole for convenience
+export { UserRole } from './user.types';
+
+// Extend Express Request interface to include user
+declare global {
+    namespace Express {
+        interface Request {
+            user?: ITokenPayload;
+        }
+    }
+}
+
 export interface IUser {
     _id: string;
     name: string;

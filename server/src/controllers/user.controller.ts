@@ -122,7 +122,7 @@ export class UserController {
 
             const user = await this.userService.createUser(
                 req.body,
-                req.user.pharmacyId || '', // Pass empty string for super admin without pharmacy
+                req.user?.pharmacyId || '', // Pass empty string for super admin without pharmacy
             );
             res.json(successResponse(user, 'User created successfully'));
         } catch (error) {
@@ -147,7 +147,7 @@ export class UserController {
             const user = await this.userService.updateUser(
                 req.params.id,
                 req.body,
-                req.user.pharmacyId || '', // Pass empty string for super admin without pharmacy
+                req.user?.pharmacyId || '', // Pass empty string for super admin without pharmacy
             );
             res.json(successResponse(user, 'User updated successfully'));
         } catch (error) {
@@ -171,7 +171,7 @@ export class UserController {
 
             await this.userService.deleteUser(
                 req.params.id,
-                req.user.pharmacyId || '', // Pass empty string for super admin without pharmacy
+                req.user?.pharmacyId || '', // Pass empty string for super admin without pharmacy
             );
             res.json(successResponse(null, 'User deleted successfully'));
         } catch (error) {
