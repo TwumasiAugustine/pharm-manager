@@ -15,6 +15,7 @@ export function useTransferStock(): UseMutationResult<
     StockTransferRequest
 > {
     return useMutation<StockTransferResponse, Error, StockTransferRequest>(
-        (data) => transferStock(data),
+        (data: StockTransferRequest) => transferStock(data),
+        // You can add options here as the second argument if needed, or leave it empty
     );
 }

@@ -17,23 +17,16 @@ export interface StockTransferResponse {
  * @returns Response with message
  */
 export async function transferStock(
-    data: StockTransferRequest
+    data: StockTransferRequest,
 ): Promise<StockTransferResponse> {
     try {
         const response = await api.post<StockTransferResponse>(
             '/stock/transfer',
-            data
+            data,
         );
         return response.data;
     } catch (error) {
-        if (error && typeof error === 'object' && 'response' in error) {
-            // @ts-expect-error: error.response is from axios
-            throw new Error(
-                error.response?.data?.error ||
-                error.response?.message ||
-                'Stock transfer failed'
-            );
-        }
+        console.error('Error transferring stock:', error);
         throw new Error((error as Error)?.message || 'Stock transfer failed');
     }
 }

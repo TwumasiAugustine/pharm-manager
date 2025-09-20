@@ -34,14 +34,22 @@ export const ExpiryPageContent: React.FC<ExpiryPageContentProps> = ({
                             totalWarningDrugs: 0,
                             totalNoticeDrugs: 0,
                             totalValue: 0,
+                            totalCostValue: 0,
                             expiredValue: 0,
+                            expiredCostValue: 0,
                             criticalValue: 0,
+                            criticalCostValue: 0,
+                            warningValue: 0,
+                            warningCostValue: 0,
+                            totalPotentialLoss: 0,
+                            profitLoss: 0,
                             upcomingExpiries: {
                                 next7Days: 0,
                                 next30Days: 0,
                                 next60Days: 0,
                                 next90Days: 0,
                             },
+                            categoryBreakdown: {},
                         }
                     }
                     isLoading={isStatsLoading}

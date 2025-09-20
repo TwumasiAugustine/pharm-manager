@@ -42,7 +42,7 @@ export interface UserActivity {
         resourceId?: string;
         resourceName?: string;
         action: string;
-        metadata?: Record<string, any>;
+        metadata?: Record<string, unknown>;
     };
     session: {
         loginTime: string;

@@ -29,7 +29,7 @@ export const ReportChart: React.FC<ReportChartProps> = ({
     reportType,
     isLoading,
 }) => {
-    const { formatNumber, formatCurrency } = useNumberFormatter();
+    const { formatCurrency } = useNumberFormatter();
 
     if (isLoading) {
         return (

@@ -20,8 +20,6 @@ interface PaginationProps {
     itemsPerPage?: number;
     size?: 'sm' | 'md' | 'lg';
     enableURLSync?: boolean;
-    pageParamName?: string;
-    limitParamName?: string;
 }
 
 /**
@@ -37,21 +35,12 @@ export const Pagination: React.FC<PaginationProps> = ({
     itemsPerPage,
     size = 'md',
     enableURLSync = false,
-    pageParamName = 'page',
-    limitParamName = 'limit',
 }) => {
     // URL pagination hook for URL synchronization
-    const {
-        page: urlPage,
-        limit: urlLimit,
-        setPage: setURLPage,
-        setLimit: setURLLimit,
-    } = usePaginationURL({
-        pageParamName,
-        limitParamName,
-        defaultPage: 1,
-        defaultLimit: itemsPerPage || 10,
-    });
+    const { page: urlPage, setPage: setURLPage } = usePaginationURL(
+        1,
+        itemsPerPage || 10,
+    );
 
     // Use URL page if URL sync is enabled and URL page is different
     const activePage = enableURLSync ? urlPage : currentPage;

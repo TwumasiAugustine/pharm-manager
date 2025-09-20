@@ -2,7 +2,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../api/api';
 import type { IUser } from '../types/user.types';
 
-export function useUsers(params: Record<string, any>) {
+interface UserSearchParams {
+    page?: number;
+    limit?: number;
+    search?: string;
+    role?: string;
+    branchId?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+}
+
+export function useUsers(params: UserSearchParams) {
     return useQuery<
         {
             users: IUser[];

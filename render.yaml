@@ -1,0 +1,47 @@
+services:
+  # Backend API Service
+  - type: web
+    name: pharm-manager-api
+    runtime: node
+    region: oregon
+    plan: starter
+    buildCommand: |
+      cd server && npm ci --include=dev && npm run build
+    startCommand: cd server && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: CORS_ORIGIN
+        fromService:
+          type: web
+          name: pharm-manager-client
+          property: url
+      # These need to be set in Render dashboard:
+      # - MONGO_URI (secret)
+      # - JWT_ACCESS_SECRET (secret)
+      # - JWT_REFRESH_SECRET (secret)
+      # - COOKIE_SECRET (secret)
+      # - COOKIE_DOMAIN (usually your frontend domain)
+
+  # Frontend Client Service
+  - type: web
+    name: pharm-manager-client
+    runtime: node
+    region: oregon
+    plan: starter
+    buildCommand: |
+      cd client && npm ci && npm run build
+    staticPublishPath: ./client/dist
+    buildFilter:
+      paths:
+        - client/**
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: pharm-manager-api
+          property: url
+        suffix: /api

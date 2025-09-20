@@ -10,10 +10,13 @@ const drugApi = {
         // backend expects `branch` field (ObjectId). map branchId -> branch
         const payload = {
             ...drugData,
-            branch: (drugData as any).branchId ?? (drugData as any).branch,
+            branch:
+                (drugData as CreateDrugRequest & { branchId?: string })
+                    .branchId ??
+                (drugData as CreateDrugRequest & { branch?: string }).branch,
         };
         // ensure we don't send branchId
-        delete (payload as any).branchId;
+        delete (payload as CreateDrugRequest & { branchId?: string }).branchId;
         const res = await api.post('/drugs', payload);
         // Extract the drug from the nested response structure
         return res.data.data.drug;
@@ -25,7 +28,10 @@ const drugApi = {
     },
     async updateDrug(id: string, updateData: UpdateDrugRequest) {
         // Map branchId -> branch for updates too
-        const payload: any = { ...updateData };
+        const payload: UpdateDrugRequest & {
+            branch?: string;
+            branchId?: string;
+        } = { ...updateData };
         if (payload.branchId) {
             payload.branch = payload.branchId;
             delete payload.branchId;
