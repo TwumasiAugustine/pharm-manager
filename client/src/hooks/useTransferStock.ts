@@ -14,7 +14,7 @@ export function useTransferStock(): UseMutationResult<
     Error,
     StockTransferRequest
 > {
-    return useMutation<StockTransferResponse, Error, StockTransferRequest>(
-        (data) => transferStock(data),
-    );
+    return useMutation<StockTransferResponse, Error, StockTransferRequest>({
+        mutationFn: (data) => transferStock(data),
+    });
 }

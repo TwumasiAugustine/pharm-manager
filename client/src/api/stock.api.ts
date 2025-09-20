@@ -1,5 +1,6 @@
 import api from './api';
 
+
 export interface StockTransferRequest {
     drugId: string;
     fromBranchId: string;
@@ -26,14 +27,7 @@ export async function transferStock(
         );
         return response.data;
     } catch (error) {
-        if (error && typeof error === 'object' && 'response' in error) {
-            // @ts-expect-error: error.response is from axios
-            throw new Error(
-                error.response?.data?.error ||
-                error.response?.message ||
-                'Stock transfer failed'
-            );
-        }
-        throw new Error((error as Error)?.message || 'Stock transfer failed');
+        console.error('Refresh token failed:', error);
+        return { message: 'Stock transfer failed.' };
     }
 }

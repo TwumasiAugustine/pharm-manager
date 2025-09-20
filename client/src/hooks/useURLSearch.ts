@@ -175,6 +175,7 @@ export const useURLFilters = <T extends Record<string, unknown>>(
     const currentFiltersString = JSON.stringify(currentFilters);
     useEffect(() => {
         onFiltersChange?.(currentFilters);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentFiltersString, onFiltersChange]);
 
     // Update specific filter

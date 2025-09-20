@@ -1,11 +1,9 @@
 import React from 'react';
 import type { UserActivityStats as StatsType } from '../../types/user-activity.types';
-import { LoadingSpinner } from '../../components/atoms/LoadingSpinner';
 import { ErrorMessage } from '../../components/atoms/ErrorMessage';
 import {
     FaUsers,
     FaClipboardList,
-    FaClock,
     FaUserClock,
     FaChartBar,
     FaChartPie,

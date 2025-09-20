@@ -15,7 +15,7 @@ interface CartTotalsProps {
 const CartTotals: React.FC<CartTotalsProps> = ({ items, drugs }) => {
     const getDrugPrice = (drugId: string) => {
         const drug = drugs.find((d) => d.id === drugId);
-        return drug ? drug.price || 0 : 0;
+        return drug ? drug.pricePerUnit || 0 : 0;
     };
     const total = items.reduce((sum, item) => {
         const price = getDrugPrice(item.drug);

@@ -60,20 +60,20 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
         revenue: drug.totalRevenue,
     }));
 
-    const formatTooltipValue = (value: number, name: string) => {
-        if (name === 'revenue') {
-            return [
-                new Intl.NumberFormat('en-GH', {
-                    style: 'currency',
-                    currency: 'GHS',
-                }).format(value),
-                'Revenue',
-            ];
-        }
-        return [value.toLocaleString(), 'Quantity Sold'];
-    };
+    interface TooltipProps {
+        active?: boolean;
+        payload?: Array<{
+            payload: {
+                fullName: string;
+                brand: string;
+                category: string;
+                quantity: number;
+                revenue: number;
+            };
+        }>;
+    }
 
-    const CustomTooltip = ({ active, payload, label }: any) => {
+    const CustomTooltip = ({ active, payload }: TooltipProps) => {
         if (active && payload && payload.length) {
             const data = payload[0].payload;
             return (

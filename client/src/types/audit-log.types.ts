@@ -18,8 +18,8 @@ export interface AuditLogResponse {
     resourceId?: string;
     details: {
         description: string;
-        oldValues?: Record<string, any>;
-        newValues?: Record<string, any>;
+        oldValues?: Record<string, unknown>;
+        newValues?: Record<string, unknown>;
         userRole?: string;
         ipAddress?: string;
         userAgent?: string;

@@ -1,14 +1,6 @@
-import React, { createContext, useState } from 'react';
+import React, { useState } from 'react';
 import type { ReactNode } from 'react';
-
-interface DisplayContextType {
-    isExportMode: boolean;
-    setExportMode: (isExport: boolean) => void;
-}
-
-export const DisplayContext = createContext<DisplayContextType | undefined>(
-    undefined,
-);
+import { DisplayContext } from './DisplayContextBase';
 
 export const DisplayProvider: React.FC<{ children: ReactNode }> = ({
     children,
@@ -25,3 +17,7 @@ export const DisplayProvider: React.FC<{ children: ReactNode }> = ({
         </DisplayContext.Provider>
     );
 };
+
+// Re-export the context for convenience
+export { DisplayContext } from './DisplayContextBase';
+export type { DisplayContextType } from './DisplayContextBase';
