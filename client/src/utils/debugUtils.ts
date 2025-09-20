@@ -1,29 +1,6 @@
-import { toggleApiDebug } from '../api/api';
-
 /**
  * Utility functions for debugging the application
  */
-
-/**
- * Enable API debug logging
- * Call this from the browser console to enable API debug logging:
- * import('/src/utils/debugUtils.js').then(m => m.enableApiDebug())
- */
-export const enableApiDebug = (): void => {
-    toggleApiDebug(true);
-    console.log('🔍 API debugging enabled');
-    console.log('Check the console for detailed API request/response logs');
-};
-
-/**
- * Disable API debug logging
- * Call this from the browser console to disable API debug logging:
- * import('/src/utils/debugUtils.js').then(m => m.disableApiDebug())
- */
-export const disableApiDebug = (): void => {
-    toggleApiDebug(false);
-    console.log('🔍 API debugging disabled');
-};
 
 /**
  * Check authentication state

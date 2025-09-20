@@ -2,10 +2,11 @@ services:
   - type: web
     name: pharm-manager-server
     env: node
+    rootDir: ./server
     # Ensure devDependencies (like TypeScript) are installed during build
     # even if NODE_ENV=production is set for runtime. Use npm ci with dev included.
-    buildCommand: cd server && npm ci --include=dev && npm run build
-    startCommand: cd server && npm start
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -18,5 +19,5 @@ services:
       - key: REACT_APP_SOCKET_URL
         value: "https://sockets.example.com"
 
-    
+
 
