@@ -3,11 +3,9 @@ import {
     FiCalendar,
     FiFilter,
     FiGrid,
-    FiMapPin,
     FiPackage,
     FiAlertTriangle,
 } from 'react-icons/fi';
-import { BranchSelect } from './BranchSelect';
 import type { ReportFilters } from '../../types/report.types';
 
 interface ReportFilterProps {
@@ -22,58 +20,69 @@ export const ReportFilter: React.FC<ReportFilterProps> = ({
     className = '',
 }) => {
     const handleDateRangeChange = (field: 'start' | 'end', value: string) => {
-        onFiltersChange({
+        console.log(`Date range ${field} changed to:`, value);
+        const newFilters = {
             ...filters,
             dateRange: {
                 ...filters.dateRange,
                 [field]: value,
             },
-        });
+        };
+        console.log('Calling onFiltersChange with:', newFilters);
+        onFiltersChange(newFilters);
     };
 
     const handleReportTypeChange = (
         reportType: ReportFilters['reportType'],
     ) => {
-        onFiltersChange({
+        console.log('Report type changed to:', reportType);
+        const newFilters = {
             ...filters,
             reportType,
-        });
+        };
+        console.log('Calling onFiltersChange with:', newFilters);
+        onFiltersChange(newFilters);
     };
 
     const handleFormatChange = (format: ReportFilters['format']) => {
-        onFiltersChange({
+        console.log('Format changed to:', format);
+        const newFilters = {
             ...filters,
             format,
-        });
+        };
+        console.log('Calling onFiltersChange with:', newFilters);
+        onFiltersChange(newFilters);
     };
 
     const handleCategoryChange = (category: string) => {
-        onFiltersChange({
+        console.log('Category changed to:', category);
+        const newFilters = {
             ...filters,
             category: category || undefined,
-        });
-    };
-
-    const handleBranchChange = (branchId: string) => {
-        onFiltersChange({
-            ...filters,
-            branchId: branchId || undefined,
-        });
+        };
+        console.log('Calling onFiltersChange with:', newFilters);
+        onFiltersChange(newFilters);
     };
 
     const handleSaleTypeChange = (saleType: string) => {
-        onFiltersChange({
+        console.log('Sale type changed to:', saleType);
+        const newFilters = {
             ...filters,
             saleType: (saleType as ReportFilters['saleType']) || undefined,
-        });
+        };
+        console.log('Calling onFiltersChange with:', newFilters);
+        onFiltersChange(newFilters);
     };
 
     const handleExpiryStatusChange = (expiryStatus: string) => {
-        onFiltersChange({
+        console.log('Expiry status changed to:', expiryStatus);
+        const newFilters = {
             ...filters,
             expiryStatus:
                 (expiryStatus as ReportFilters['expiryStatus']) || undefined,
-        });
+        };
+        console.log('Calling onFiltersChange with:', newFilters);
+        onFiltersChange(newFilters);
     };
 
     return (
@@ -224,18 +233,6 @@ export const ReportFilter: React.FC<ReportFilterProps> = ({
                         <option value="prescription">Prescription</option>
                         <option value="otc">Over-the-counter</option>
                     </select>
-                </div>
-
-                {/* Branch Filter */}
-                <div className="mb-6">
-                    <label className="text-sm font-medium text-gray-700 mb-2 flex items-center">
-                        <FiMapPin className="mr-2" />
-                        Branch
-                    </label>
-                    <BranchSelect
-                        value={filters.branchId || ''}
-                        onChange={handleBranchChange}
-                    />
                 </div>
 
                 {/* Sale Type Filter - Show only for sales reports */}

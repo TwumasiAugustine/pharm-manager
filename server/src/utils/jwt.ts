@@ -47,9 +47,22 @@ export const verifyRefreshToken = (token: string): ITokenPayload => {
 };
 
 // Set cookie options
-export const getCookieOptions = (isProduction: boolean) => ({
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'strict' : ('lax' as 'strict' | 'lax'),
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-});
+export const getCookieOptions = (isProduction: boolean) => {
+    const baseOptions = {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'strict' : ('lax' as 'strict' | 'lax'),
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    };
+
+    // Add domain if specified in environment variables
+    const cookieDomain = process.env.COOKIE_DOMAIN;
+    if (cookieDomain && isProduction) {
+        return {
+            ...baseOptions,
+            domain: cookieDomain,
+        };
+    }
+
+    return baseOptions;
+};

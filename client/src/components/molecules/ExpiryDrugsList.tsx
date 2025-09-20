@@ -55,6 +55,21 @@ const DrugCard: React.FC<DrugCardProps> = ({ drug }) => {
         }
     };
 
+    const getAlertColors = (alertLevel: string) => {
+        switch (alertLevel) {
+            case 'expired':
+                return 'bg-red-50 border-red-200 text-red-800';
+            case 'critical':
+                return 'bg-orange-50 border-orange-200 text-orange-800';
+            case 'warning':
+                return 'bg-yellow-50 border-yellow-200 text-yellow-800';
+            case 'notice':
+                return 'bg-blue-50 border-blue-200 text-blue-800';
+            default:
+                return 'bg-gray-50 border-gray-200 text-gray-800';
+        }
+    };
+
     const getAlertText = (drug: ExpiryDrug) => {
         if (drug.daysUntilExpiry < 0) {
             return `Expired ${Math.abs(drug.daysUntilExpiry)} days ago`;

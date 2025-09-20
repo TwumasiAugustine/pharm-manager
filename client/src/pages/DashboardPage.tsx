@@ -15,9 +15,9 @@ import { useURLFilters } from '../hooks/useURLSearch';
 
 const DashboardPage: React.FC = () => {
     // URL-based filters for dashboard
-    const { filters, setFilter, setFilters } = useURLFilters(
+    const { filters, setFilters } = useURLFilters(
         {
-            period: 'week' as const,
+            period: 'week' as 'day' | 'week' | 'month' | 'year',
             startDate: undefined as string | undefined,
             endDate: undefined as string | undefined,
             branchId: undefined as string | undefined,

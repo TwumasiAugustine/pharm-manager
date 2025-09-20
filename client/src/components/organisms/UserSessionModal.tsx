@@ -4,13 +4,7 @@ import { Modal } from '../../components/molecules/Modal';
 import { LoadingSpinner } from '../../components/atoms/LoadingSpinner';
 import { ErrorMessage } from '../../components/atoms/ErrorMessage';
 import { Badge } from '../atoms/Badge';
-import {
-    FaUser,
-    FaClock,
-    FaDesktop,
-    FaMapMarkerAlt,
-    FaListUl,
-} from 'react-icons/fa';
+import { FaUser, FaClock, FaDesktop, FaListUl } from 'react-icons/fa';
 import { formatDistanceToNow } from 'date-fns';
 
 interface UserSessionModalProps {
@@ -87,7 +81,9 @@ export const UserSessionModal: React.FC<UserSessionModalProps> = ({
                         <p>
                             <strong>Status:</strong>{' '}
                             <Badge
-                                variant={session.isActive ? 'success' : 'danger'}
+                                variant={
+                                    session.isActive ? 'success' : 'danger'
+                                }
                                 size="sm"
                             >
                                 {session.isActive ? 'Active' : 'Inactive'}

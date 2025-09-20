@@ -33,16 +33,19 @@ export const authApi = {
         return response.data.data;
     },
 
-    refreshToken: async (): Promise<boolean> => {
+    refreshToken: async (): Promise<{ success: boolean; user?: User }> => {
         try {
-            const response = await api.get<ApiResponseData<null>>(
+            const response = await api.post<ApiResponseData<{ user: User }>>(
                 '/auth/refresh',
             );
-            return response.data.success;
+            return {
+                success: response.data.success,
+                user: response.data.data?.user,
+            };
         } catch (error) {
             // If refresh fails, return false instead of throwing
             console.error('Refresh token failed:', error);
-            return false;
+            return { success: false };
         }
     },
 };

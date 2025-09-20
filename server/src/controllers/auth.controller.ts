@@ -35,12 +35,20 @@ export class AuthController {
                 path: '/api/auth', // Restrict refresh token to auth endpoints
             });
             // Set CSRF token cookie (not httpOnly)
-            res.cookie('csrfToken', generateCsrfToken(), {
+            const csrfCookieOptions = {
                 secure: isProduction,
                 sameSite: isProduction ? 'strict' : 'lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000,
                 path: '/',
-            });
+            } as const;
+
+            // Add domain if specified for production
+            const cookieDomain = process.env.COOKIE_DOMAIN;
+            if (cookieDomain && isProduction) {
+                (csrfCookieOptions as any).domain = cookieDomain;
+            }
+
+            res.cookie('csrfToken', generateCsrfToken(), csrfCookieOptions);
 
             // Send response
             res.status(201).json(
@@ -76,12 +84,20 @@ export class AuthController {
                 path: '/api/auth', // Restrict refresh token to auth endpoints
             });
             // Set CSRF token cookie (not httpOnly)
-            res.cookie('csrfToken', generateCsrfToken(), {
+            const csrfCookieOptions = {
                 secure: isProduction,
                 sameSite: isProduction ? 'strict' : 'lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000,
                 path: '/',
-            });
+            } as const;
+
+            // Add domain if specified for production
+            const cookieDomain = process.env.COOKIE_DOMAIN;
+            if (cookieDomain && isProduction) {
+                (csrfCookieOptions as any).domain = cookieDomain;
+            }
+
+            res.cookie('csrfToken', generateCsrfToken(), csrfCookieOptions);
 
             // Log audit event for successful login and initialize user session
             setImmediate(async () => {
@@ -194,12 +210,20 @@ export class AuthController {
                 path: '/api/auth',
             });
             // Set CSRF token cookie (not httpOnly)
-            res.cookie('csrfToken', generateCsrfToken(), {
+            const csrfCookieOptions = {
                 secure: isProduction,
                 sameSite: isProduction ? 'strict' : 'lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000,
                 path: '/',
-            });
+            } as const;
+
+            // Add domain if specified for production
+            const cookieDomain = process.env.COOKIE_DOMAIN;
+            if (cookieDomain && isProduction) {
+                (csrfCookieOptions as any).domain = cookieDomain;
+            }
+
+            res.cookie('csrfToken', generateCsrfToken(), csrfCookieOptions);
 
             // Send response
             res.status(200).json(

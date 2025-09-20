@@ -13,7 +13,7 @@ export const useReportsPage = () => {
     const { setExportMode } = useDisplayMode();
 
     // URL-based filters for reports page
-    const { filters, setFilter } = useURLFilters(
+    const { filters, setFilter, setFilters } = useURLFilters(
         {
             dateRange: {
                 start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
@@ -21,11 +21,15 @@ export const useReportsPage = () => {
                     .split('T')[0],
                 end: new Date().toISOString().split('T')[0],
             },
-            reportType: 'sales' as const,
-            format: 'table' as const,
+            reportType: 'sales' as
+                | 'sales'
+                | 'inventory'
+                | 'expiry'
+                | 'financial',
+            format: 'table' as 'table' | 'chart',
             page: 1,
             limit: 5, // Set limit to 5 for screen display
-            branchId: '',
+            branchId: undefined as string | undefined,
         },
         {
             debounceMs: 300,
@@ -69,12 +73,8 @@ export const useReportsPage = () => {
     } = useReports({ ...filters, branchId: filters.branchId });
 
     const handleFilterChange = (newFilters: ReportFilters) => {
-        // Update URL filters using setFilter for each changed property
-        Object.entries({ ...newFilters, page: 1 }).forEach(([key, value]) => {
-            if (key in filters) {
-                setFilter(key as keyof typeof filters, value);
-            }
-        });
+        // Update URL filters using setFilters to handle all changes at once
+        setFilters({ ...newFilters, page: 1 });
     };
 
     const handlePageChange = (page: number) => {

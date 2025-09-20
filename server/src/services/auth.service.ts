@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import User from '../models/user.model';
 import Branch from '../models/branch.model';
 import { AssignmentService } from './assignment.service';
-import { generateTokens } from '../utils/jwt';
+import { generateTokens, verifyRefreshToken } from '../utils/jwt';
 import {
     BadRequestError,
     ConflictError,
@@ -202,10 +202,23 @@ export class AuthService {
     }
 
     async refreshTokens(refreshToken: string): Promise<IAuthResponse> {
-        // Find user by refresh token
-        const user = await User.findOne({ refreshToken });
+        // First verify the refresh token is valid
+        let decoded: ITokenPayload;
+        try {
+            decoded = verifyRefreshToken(refreshToken);
+        } catch (error) {
+            throw new UnauthorizedError('Invalid or expired refresh token');
+        }
+
+        // Find user by refresh token and verify it matches
+        const user = await User.findOne({
+            _id: decoded.id,
+            refreshToken,
+        });
         if (!user) {
-            throw new UnauthorizedError('Invalid refresh token');
+            throw new UnauthorizedError(
+                'Invalid refresh token or user not found',
+            );
         }
 
         // Convert to object to get branchId transformation

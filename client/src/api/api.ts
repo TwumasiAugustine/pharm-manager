@@ -99,10 +99,22 @@ api.interceptors.response.use(
             return new Promise((resolve, reject) => {
                 (async () => {
                     try {
-                        const refreshSuccess = await import('./auth.api').then(
+                        const refreshResult = await import('./auth.api').then(
                             (module) => module.authApi.refreshToken(),
                         );
-                        if (refreshSuccess) {
+                        if (refreshResult.success) {
+                            // Update auth state if user data is available
+                            if (refreshResult.user) {
+                                // Import auth store to update state
+                                const { useAuthStore } = await import(
+                                    '../store/auth.store'
+                                );
+                                const { setUser, setIsAuthenticated } =
+                                    useAuthStore.getState();
+                                setUser(refreshResult.user);
+                                setIsAuthenticated(true);
+                            }
+
                             processQueue(null);
                             resolve(api(originalRequest));
                         } else {
