@@ -1,0 +1,18 @@
+services:
+    - type: web
+      name: pharm-manager-server
+      env: node
+      buildCommand: cd server && npm install && npm run build
+      startCommand: cd server && npm start
+      envVars:
+          - key: NODE_ENV
+            value: production
+          - key: PORT
+            value: 10000
+          - key: CORS_ORIGIN
+            value: "https://app.example.com" # adjust to your client origin
+          - key: COOKIE_DOMAIN
+            value: ".example.com" # adjust to your domain (not a secret)
+          - key: REACT_APP_SOCKET_URL
+            value: "https://sockets.example.com"
+
