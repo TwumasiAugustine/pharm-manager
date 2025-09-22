@@ -12,6 +12,8 @@ import type { DashboardFilters } from '../types/dashboard.types';
 import SEOMetadata from '../components/atoms/SEOMetadata';
 import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 import { useURLFilters } from '../hooks/useURLSearch';
+import { DataLoadingScreen } from '../components/atoms/LoadingScreen';
+import { useDataLoading } from '../hooks/useNavigationLoading';
 
 const DashboardPage: React.FC = () => {
     // URL-based filters for dashboard
@@ -36,6 +38,9 @@ const DashboardPage: React.FC = () => {
         isError,
     } = useDashboardAnalytics(filters);
 
+    // Show data loading screen for initial load only (not for filter changes)
+    const showDataLoadingScreen = useDataLoading(isLoading, !dashboardData);
+
     // Generate SEO metadata for the dashboard
     const seoData = useSEO({
         ...SEO_PRESETS.dashboard,
@@ -47,6 +52,11 @@ const DashboardPage: React.FC = () => {
         // Update URL filters using setFilters to handle all changes at once
         setFilters(newFilters);
     };
+
+    // Show data loading screen for initial page load
+    if (showDataLoadingScreen) {
+        return <DataLoadingScreen />;
+    }
 
     return (
         <DashboardLayout>

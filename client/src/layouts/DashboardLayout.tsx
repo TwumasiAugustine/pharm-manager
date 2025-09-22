@@ -195,7 +195,7 @@ function Sidebar({
                     <div className="flex items-center justify-between">
                         {(!desktopCollapsed || mobileOpen) && (
                             <h1 className="text-xl font-bold text-blue-600 truncate">
-                                Pharmacy App
+                                PharmCare
                             </h1>
                         )}
 

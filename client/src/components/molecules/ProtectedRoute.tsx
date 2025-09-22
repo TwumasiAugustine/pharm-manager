@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
 import { UserRole } from '../../types/user.types';
+import { AuthLoadingScreen } from '../atoms/LoadingScreen';
 
 interface ProtectedRouteProps {
     allowedRoles?: UserRole[];
@@ -13,16 +14,7 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
 
     // If auth is still loading, show a minimalist loading screen
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-screen bg-gray-50">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary-500 mx-auto"></div>
-                    <p className="mt-4 text-gray-600 text-sm">
-                        Verifying authentication...
-                    </p>
-                </div>
-            </div>
-        );
+        return <AuthLoadingScreen />;
     }
 
     // If not authenticated, redirect to login

@@ -11,8 +11,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProtectedRoute } from './components/molecules/ProtectedRoute';
 import { UserRole } from './types/user.types';
 import { socketService } from './services/socket.service';
+import { PageLoadingScreen } from './components/atoms/LoadingScreen';
+import NavigationLoader from './components/molecules/NavigationLoader';
 
 // Lazy load all pages
+const Homepage = lazy(() => import('./pages/Homepage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -121,15 +124,12 @@ function App() {
                 <ErrorBoundary>
                     <DisplayProvider>
                         <Router>
-                            <Suspense
-                                fallback={
-                                    <div className="flex items-center justify-center min-h-screen">
-                                        Loading...
-                                    </div>
-                                }
-                            >
+                            {/* Navigation Loading Overlay */}
+                            <NavigationLoader />
+
+                            <Suspense fallback={<PageLoadingScreen />}>
                                 <Routes>
-                                    <Route path="/" element={<LoginPage />} />
+                                    <Route path="/" element={<Homepage />} />
                                     <Route
                                         path="/login"
                                         element={<LoginPage />}

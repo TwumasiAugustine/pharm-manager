@@ -41,7 +41,7 @@ const SEOMetadata: React.FC<SEOMetadataProps> = ({
     title,
     description,
     keywords,
-    author = 'Pharmacy Management System',
+    author = 'PharmCare Management System',
     robots = 'index, follow',
     canonicalUrl,
     ogTitle,
@@ -55,9 +55,9 @@ const SEOMetadata: React.FC<SEOMetadataProps> = ({
     preloadResources = [],
 }) => {
     // Create the full page title with app name
-    const fullTitle = title.includes('Pharmacy Management')
+    const fullTitle = title.includes('PharmCare')
         ? title
-        : `${title} | Pharmacy Management System`;
+        : `${title} | PharmCare Management System`;
 
     // Use Open Graph values or fallback to regular values
     const finalOgTitle = ogTitle || title;
@@ -94,7 +94,7 @@ const SEOMetadata: React.FC<SEOMetadataProps> = ({
             {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
             <meta
                 property="og:site_name"
-                content="Pharmacy Management System"
+                content="PharmCare Management System"
             />
 
             {/* Twitter Card Meta Tags */}
@@ -110,16 +110,13 @@ const SEOMetadata: React.FC<SEOMetadataProps> = ({
             )}
 
             {/* PWA Meta Tags */}
-            <meta name="application-name" content="Pharmacy Management" />
+            <meta name="application-name" content="PharmCare" />
             <meta name="apple-mobile-web-app-capable" content="yes" />
             <meta
                 name="apple-mobile-web-app-status-bar-style"
                 content="default"
             />
-            <meta
-                name="apple-mobile-web-app-title"
-                content="Pharmacy Management"
-            />
+            <meta name="apple-mobile-web-app-title" content="PharmCare" />
             <meta name="format-detection" content="telephone=no" />
             <meta name="mobile-web-app-capable" content="yes" />
             <meta name="theme-color" content="#3b82f6" />

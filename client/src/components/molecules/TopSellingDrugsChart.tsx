@@ -199,13 +199,10 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
                                         Brand
                                     </th>
                                     <th className="text-right py-3 px-4 text-gray-600 font-medium">
-                                        Qty Sold
-                                    </th>
-                                    <th className="text-right py-3 px-4 text-gray-600 font-medium">
                                         Revenue
                                     </th>
                                     <th className="text-left py-3 px-4 text-gray-600 font-medium">
-                                        Sales Types
+                                        Sales Types & Qty
                                     </th>
                                 </tr>
                             </thead>
@@ -238,11 +235,6 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
                                             {drug.brand}
                                         </td>
                                         <td className="py-3 px-4 text-right">
-                                            <Badge variant="primary" size="sm">
-                                                {drug.totalQuantity.toLocaleString()}
-                                            </Badge>
-                                        </td>
-                                        <td className="py-3 px-4 text-right">
                                             <Badge variant="success" size="sm">
                                                 {formatGHSCurrency(
                                                     drug.totalRevenue,
@@ -257,7 +249,7 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
                                                         (sale, saleIndex) => (
                                                             <Badge
                                                                 key={saleIndex}
-                                                                variant="outline"
+                                                                variant="primary"
                                                                 size="sm"
                                                                 className="text-xs"
                                                             >
@@ -273,7 +265,7 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
                                                     size="sm"
                                                     className="text-xs"
                                                 >
-                                                    No data
+                                                    No sales data
                                                 </Badge>
                                             )}
                                         </td>

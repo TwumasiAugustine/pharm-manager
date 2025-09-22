@@ -28,6 +28,8 @@ import { SalesPageActions } from '../components/organisms/SalesPageActions';
 import { useURLFilters } from '../hooks/useURLSearch';
 import SEOMetadata from '../components/atoms/SEOMetadata';
 import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
+import { DataLoadingScreen } from '../components/atoms/LoadingScreen';
+import { useDataLoading } from '../hooks/useNavigationLoading';
 
 const SalesListPage: React.FC = () => {
     const [showActionsDropdown, setShowActionsDropdown] = useState(false);
@@ -67,6 +69,9 @@ const SalesListPage: React.FC = () => {
         ...filters,
         branchId: filters.branchId,
     });
+
+    // Show data loading screen for initial load only (not for filter changes)
+    const showDataLoadingScreen = useDataLoading(isLoading, !data);
 
     // Debug log to check data structure
     React.useEffect(() => {
@@ -498,7 +503,12 @@ const SalesListPage: React.FC = () => {
         );
     }
 
-    // Show skeleton on initial load
+    // Show data loading screen for initial page load
+    if (showDataLoadingScreen) {
+        return <DataLoadingScreen />;
+    }
+
+    // Show skeleton for filter changes (when data exists but loading)
     if (isLoading && !data) {
         return <SalesListSkeleton />;
     }

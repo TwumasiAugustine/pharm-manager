@@ -89,7 +89,7 @@ export const useSEO = (config: SEOConfig): GeneratedSEOData => {
                 structuredData = {
                     '@context': 'https://schema.org',
                     '@type': 'WebApplication',
-                    name: 'Pharmacy Management System',
+                    name: 'PharmCare Management System',
                     description: finalDescription,
                     url: baseUrl,
                     applicationCategory: 'HealthcareApplication',
@@ -116,7 +116,7 @@ export const useSEO = (config: SEOConfig): GeneratedSEOData => {
                 structuredData = {
                     '@context': 'https://schema.org',
                     '@type': structuredDataType,
-                    name: 'Pharmacy Management System',
+                    name: 'PharmCare Management System',
                     description: finalDescription,
                     url: baseUrl,
                     ...(structuredDataType === 'MedicalBusiness' && {
@@ -156,6 +156,28 @@ export const useSEO = (config: SEOConfig): GeneratedSEOData => {
  * Predefined SEO configurations for common pages
  */
 export const SEO_PRESETS = {
+    homepage: {
+        title: 'PharmCare - Modern Pharmacy Management System',
+        description:
+            'Streamline your pharmacy operations with PharmCare. Complete inventory management, prescription tracking, sales processing, and customer management solution for modern pharmacies.',
+        keywords: [
+            'pharmacy management system',
+            'pharmacy software',
+            'inventory management',
+            'prescription management',
+            'pharmacy POS',
+            'healthcare management',
+            'drug inventory',
+            'pharmacy analytics',
+            'medical software',
+            'pharmacy solution',
+        ],
+        canonicalPath: '/',
+        structuredDataType: 'WebApplication' as const,
+        ogImage: '/images/pharmcare-og-image.jpg', // Add this image to public/images/
+        preloadFonts: true,
+    },
+
     dashboard: {
         title: 'Dashboard',
         description:

@@ -10,6 +10,8 @@ import PermissionGuard from '../components/atoms/PermissionGuard';
 import { PERMISSION_KEYS } from '../types/permission.types';
 import SEOMetadata from '../components/atoms/SEOMetadata';
 import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
+import { DataLoadingScreen } from '../components/atoms/LoadingScreen';
+import { useDataLoading } from '../hooks/useNavigationLoading';
 
 export const ReportsPage: React.FC = () => {
     // Generate SEO metadata for the reports page
@@ -46,7 +48,18 @@ export const ReportsPage: React.FC = () => {
         refreshData,
     } = useReportsPage();
 
-    // Show skeleton on initial load
+    // Show data loading screen for initial load only (not for filter changes)
+    const showDataLoadingScreen = useDataLoading(
+        isLoading,
+        !reportData?.length,
+    );
+
+    // Show data loading screen for initial page load
+    if (showDataLoadingScreen) {
+        return <DataLoadingScreen />;
+    }
+
+    // Show skeleton for filter changes (when data exists but loading)
     if (isLoading && !reportData?.length) {
         return <ReportsPageSkeleton />;
     }
