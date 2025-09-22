@@ -9,6 +9,8 @@ import {
     ResponsiveContainer,
 } from 'recharts';
 import type { TopSellingDrug } from '../../types/dashboard.types';
+import Badge from '../atoms/Badge';
+import { formatGHSCurrency } from '../../utils/currency';
 
 interface TopSellingDrugsChartProps {
     data: TopSellingDrug[];
@@ -47,8 +49,8 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
         );
     }
 
-    // Prepare data for chart (take top 10)
-    const chartData = data.slice(0, 10).map((drug) => ({
+    // Prepare data for chart (limit to 3)
+    const chartData = data.slice(0, 3).map((drug) => ({
         name:
             drug.name.length > 15
                 ? `${drug.name.substring(0, 15)}...`
@@ -58,6 +60,7 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
         category: drug.category,
         quantity: drug.totalQuantity,
         revenue: drug.totalRevenue,
+        salesByType: drug.salesByType || [],
     }));
 
     interface TooltipProps {
@@ -69,6 +72,10 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
                 category: string;
                 quantity: number;
                 revenue: number;
+                salesByType: Array<{
+                    saleType: string;
+                    quantity: number;
+                }>;
             };
         }>;
     }
@@ -77,7 +84,7 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
         if (active && payload && payload.length) {
             const data = payload[0].payload;
             return (
-                <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4">
+                <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-xs">
                     <p className="font-semibold text-gray-900 mb-2">
                         {data.fullName}
                     </p>
@@ -87,7 +94,7 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
                     <p className="text-sm text-gray-600 mb-2">
                         Category: {data.category}
                     </p>
-                    <div className="border-t pt-2">
+                    <div className="border-t pt-2 mb-2">
                         <p className="text-sm">
                             <span className="text-blue-600 font-medium">
                                 Quantity Sold: {data.quantity.toLocaleString()}
@@ -95,14 +102,29 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
                         </p>
                         <p className="text-sm">
                             <span className="text-green-600 font-medium">
-                                Revenue:{' '}
-                                {new Intl.NumberFormat('en-GH', {
-                                    style: 'currency',
-                                    currency: 'GHS',
-                                }).format(data.revenue)}
+                                Revenue: {formatGHSCurrency(data.revenue)}
                             </span>
                         </p>
                     </div>
+                    {data.salesByType && data.salesByType.length > 0 && (
+                        <div className="border-t pt-2">
+                            <p className="text-xs font-medium text-gray-700 mb-2">
+                                Sales by Type:
+                            </p>
+                            <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto">
+                                {data.salesByType.map((sale, index) => (
+                                    <Badge
+                                        key={index}
+                                        variant="info"
+                                        size="sm"
+                                        className="text-xs"
+                                    >
+                                        {sale.saleType}: {sale.quantity}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
@@ -160,57 +182,106 @@ export const TopSellingDrugsChart: React.FC<TopSellingDrugsChartProps> = ({
             {/* Table view for additional details */}
             <div className="mt-6 border-t pt-4">
                 <h4 className="text-sm font-medium text-gray-900 mb-3">
-                    Detailed Rankings
+                    Detailed Rankings (Top 3)
                 </h4>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                        <thead>
-                            <tr className="border-b border-gray-200">
-                                <th className="text-left py-2 text-gray-600 font-medium">
-                                    Rank
-                                </th>
-                                <th className="text-left py-2 text-gray-600 font-medium">
-                                    Drug Name
-                                </th>
-                                <th className="text-left py-2 text-gray-600 font-medium">
-                                    Brand
-                                </th>
-                                <th className="text-right py-2 text-gray-600 font-medium">
-                                    Qty Sold
-                                </th>
-                                <th className="text-right py-2 text-gray-600 font-medium">
-                                    Revenue
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {data.slice(0, 5).map((drug, index) => (
-                                <tr
-                                    key={drug.id}
-                                    className="border-b border-gray-100"
-                                >
-                                    <td className="py-2 text-gray-900 font-medium">
-                                        #{index + 1}
-                                    </td>
-                                    <td className="py-2 text-gray-900">
-                                        {drug.name}
-                                    </td>
-                                    <td className="py-2 text-gray-600">
-                                        {drug.brand}
-                                    </td>
-                                    <td className="py-2 text-right text-gray-900 font-medium">
-                                        {drug.totalQuantity.toLocaleString()}
-                                    </td>
-                                    <td className="py-2 text-right text-green-600 font-medium">
-                                        {new Intl.NumberFormat('en-GH', {
-                                            style: 'currency',
-                                            currency: 'GHS',
-                                        }).format(drug.totalRevenue)}
-                                    </td>
+                <div className="overflow-hidden border border-gray-200 rounded-lg">
+                    <div className="max-h-64 overflow-auto">
+                        <table className="min-w-full text-sm">
+                            <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th className="text-left py-3 px-4 text-gray-600 font-medium">
+                                        Rank
+                                    </th>
+                                    <th className="text-left py-3 px-4 text-gray-600 font-medium">
+                                        Drug Name
+                                    </th>
+                                    <th className="text-left py-3 px-4 text-gray-600 font-medium">
+                                        Brand
+                                    </th>
+                                    <th className="text-right py-3 px-4 text-gray-600 font-medium">
+                                        Qty Sold
+                                    </th>
+                                    <th className="text-right py-3 px-4 text-gray-600 font-medium">
+                                        Revenue
+                                    </th>
+                                    <th className="text-left py-3 px-4 text-gray-600 font-medium">
+                                        Sales Types
+                                    </th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-100">
+                                {data.slice(0, 3).map((drug, index) => (
+                                    <tr
+                                        key={drug.id}
+                                        className="hover:bg-gray-50 transition-colors"
+                                    >
+                                        <td className="py-3 px-4">
+                                            <Badge
+                                                variant={
+                                                    index === 0
+                                                        ? 'warning'
+                                                        : index === 1
+                                                        ? 'secondary'
+                                                        : 'info'
+                                                }
+                                                size="sm"
+                                            >
+                                                #{index + 1}
+                                            </Badge>
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <div className="font-medium text-gray-900">
+                                                {drug.name}
+                                            </div>
+                                        </td>
+                                        <td className="py-3 px-4 text-gray-600">
+                                            {drug.brand}
+                                        </td>
+                                        <td className="py-3 px-4 text-right">
+                                            <Badge variant="primary" size="sm">
+                                                {drug.totalQuantity.toLocaleString()}
+                                            </Badge>
+                                        </td>
+                                        <td className="py-3 px-4 text-right">
+                                            <Badge variant="success" size="sm">
+                                                {formatGHSCurrency(
+                                                    drug.totalRevenue,
+                                                )}
+                                            </Badge>
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            {drug.salesByType &&
+                                            drug.salesByType.length > 0 ? (
+                                                <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto">
+                                                    {drug.salesByType.map(
+                                                        (sale, saleIndex) => (
+                                                            <Badge
+                                                                key={saleIndex}
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="text-xs"
+                                                            >
+                                                                {sale.saleType}:{' '}
+                                                                {sale.quantity}
+                                                            </Badge>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <Badge
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    className="text-xs"
+                                                >
+                                                    No data
+                                                </Badge>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

@@ -40,7 +40,7 @@ export class DrugController {
                     'DRUG',
                     `Created new drug: ${drug.name} (${drug.brand})`,
                     {
-                        resourceId: drug._id.toString(),
+                        resourceId: drug._id?.toString() || 'unknown',
                         userRole: req.user!.role,
                         ipAddress: req.ip || req.connection.remoteAddress,
                         userAgent: req.get('User-Agent'),
@@ -121,7 +121,7 @@ export class DrugController {
                     'DRUG',
                     `Updated drug: ${drug.name} (${drug.brand})`,
                     {
-                        resourceId: drug._id.toString(),
+                        resourceId: drug._id?.toString() || id,
                         userRole: req.user!.role,
                         ipAddress: req.ip || req.connection.remoteAddress,
                         userAgent: req.get('User-Agent'),
@@ -173,7 +173,7 @@ export class DrugController {
                     'DRUG',
                     `Deleted drug: ${drugToDelete.name} (${drugToDelete.brand})`,
                     {
-                        resourceId: drugToDelete._id.toString(),
+                        resourceId: drugToDelete._id?.toString() || id,
                         userRole: req.user!.role,
                         ipAddress: req.ip || req.connection.remoteAddress,
                         userAgent: req.get('User-Agent'),

@@ -13,6 +13,10 @@ export interface TopSellingDrug {
     category: string;
     totalQuantity: number;
     totalRevenue: number;
+    salesByType: Array<{
+        saleType: string;
+        quantity: number;
+    }>;
 }
 
 export interface LowStockDrug {

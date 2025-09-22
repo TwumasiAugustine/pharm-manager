@@ -500,6 +500,7 @@ export class ReportService {
         userRole?: string,
         userBranchId?: string,
     ): Promise<Buffer> {
+        let browser = null;
         try {
             const reportData = await this.generateReport(
                 filters,
@@ -507,11 +508,28 @@ export class ReportService {
                 userBranchId,
             );
 
-            const browser = await puppeteer.launch();
+            // Launch browser with proper configuration for Windows
+            browser = await puppeteer.launch({
+                headless: true,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-accelerated-2d-canvas',
+                    '--no-first-run',
+                    '--no-zygote',
+                    '--disable-gpu',
+                ],
+                timeout: 60000, // Increase timeout to 60 seconds
+            });
+
             const page = await browser.newPage();
 
             const html = this.generateReportHTML(reportData, filters);
-            await page.setContent(html);
+            await page.setContent(html, {
+                waitUntil: 'networkidle0',
+                timeout: 30000,
+            });
 
             const pdfBuffer = await page.pdf({
                 format: 'A4',
@@ -524,10 +542,18 @@ export class ReportService {
                 },
             });
 
-            await browser.close();
             return Buffer.from(pdfBuffer);
         } catch (error) {
             throw new Error(`Failed to export PDF: ${error}`);
+        } finally {
+            // Ensure browser is always closed
+            if (browser) {
+                try {
+                    await browser.close();
+                } catch (closeError) {
+                    console.error('Error closing browser:', closeError);
+                }
+            }
         }
     }
 

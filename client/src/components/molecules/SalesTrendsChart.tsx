@@ -10,7 +10,7 @@ import {
     ResponsiveContainer,
 } from 'recharts';
 import type { SalesPeriodData } from '../../types/dashboard.types';
-import { GHS_SYMBOL } from '../../utils/currency';
+import { formatGHSCurrency, GHS_SYMBOL } from '../../utils/currency';
 
 interface SalesTrendsChartProps {
     data: SalesPeriodData[];
@@ -51,13 +51,7 @@ export const SalesTrendsChart: React.FC<SalesTrendsChartProps> = ({
 
     const formatTooltipValue = (value: number, name: string) => {
         if (name === 'revenue') {
-            return [
-                new Intl.NumberFormat('en-GH', {
-                    style: 'currency',
-                    currency: 'GHS',
-                }).format(value),
-                'Revenue',
-            ];
+            return [formatGHSCurrency(value), 'Revenue'];
         }
         return [value.toLocaleString(), 'Sales Count'];
     };

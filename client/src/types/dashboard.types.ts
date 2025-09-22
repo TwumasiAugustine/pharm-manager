@@ -21,6 +21,10 @@ export interface TopSellingDrug {
     unitPrice: number;
     packPrice?: number;
     cartonPrice?: number;
+    salesByType: Array<{
+        saleType: string;
+        quantity: number;
+    }>;
 }
 
 export interface LowStockDrug {

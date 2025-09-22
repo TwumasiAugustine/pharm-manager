@@ -2,6 +2,7 @@ import React from 'react';
 import { FiAlertTriangle, FiPackage } from 'react-icons/fi';
 import type { LowStockDrug } from '../../types/dashboard.types';
 import { Badge } from '../atoms/Badge';
+import { formatGHSCurrency } from '../../utils/currency';
 
 interface LowStockDrugsProps {
     data: LowStockDrug[];
@@ -114,10 +115,7 @@ export const LowStockDrugs: React.FC<LowStockDrugsProps> = ({
                         <div className="flex items-center gap-3">
                             <div className="text-right">
                                 <p className="text-sm font-medium text-gray-900">
-                                    {new Intl.NumberFormat('en-GH', {
-                                        style: 'currency',
-                                        currency: 'GHS',
-                                    }).format(drug.price)}
+                                    {formatGHSCurrency(drug.price)}
                                 </p>
                                 <p className="text-xs text-gray-500">
                                     per unit

@@ -9,6 +9,7 @@ import {
     FiTrendingDown,
 } from 'react-icons/fi';
 import type { ExpiryStats } from '../../types/expiry.types';
+import { formatGHSWholeAmount } from '../../utils/currency';
 
 interface ExpiryStatsCardsProps {
     stats: ExpiryStats;
@@ -76,12 +77,7 @@ export const ExpiryStatsCards: React.FC<ExpiryStatsCardsProps> = ({
     isLoading = false,
 }) => {
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-GH', {
-            style: 'currency',
-            currency: 'GHS',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(amount);
+        return formatGHSWholeAmount(amount);
     };
 
     const statsData = [

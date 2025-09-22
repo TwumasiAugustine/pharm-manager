@@ -33,6 +33,9 @@ export class CustomerService {
 
         const customerData = {
             ...data,
+            // Convert empty email string to undefined to work with sparse index
+            email:
+                data.email && data.email.trim() !== '' ? data.email : undefined,
             pharmacyId: new Types.ObjectId(pharmacyId),
             branch: userBranchId ? new Types.ObjectId(userBranchId) : undefined,
         };
@@ -164,9 +167,20 @@ export class CustomerService {
             address?: string;
         },
     ) {
+        // Handle empty email strings to work with sparse index
+        const updateData = {
+            ...data,
+            email:
+                data.email !== undefined
+                    ? data.email.trim() !== ''
+                        ? data.email
+                        : undefined
+                    : data.email,
+        };
+
         const customer = await Customer.findByIdAndUpdate(
             id,
-            { $set: data },
+            { $set: updateData },
             { new: true, runValidators: true },
         );
 

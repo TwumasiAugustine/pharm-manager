@@ -200,7 +200,7 @@ export class DashboardService {
     /**
      * Get top-selling drugs with enhanced metrics
      */
-    private async getTopSellingDrugs(dateQuery: any, limit = 10) {
+    private async getTopSellingDrugs(dateQuery: any, limit = 3) {
         const result = await Sale.aggregate([
             { $match: dateQuery },
             { $unwind: '$items' },
@@ -225,6 +225,83 @@ export class DashboardService {
                     },
                 },
             },
+            {
+                $addFields: {
+                    groupedSalesType: {
+                        $reduce: {
+                            input: '$salesByType',
+                            initialValue: {},
+                            in: {
+                                $mergeObjects: [
+                                    '$$value',
+                                    {
+                                        $cond: [
+                                            {
+                                                $ne: [
+                                                    {
+                                                        $type: {
+                                                            $getField: {
+                                                                field: '$$this.saleType',
+                                                                input: '$$value',
+                                                            },
+                                                        },
+                                                    },
+                                                    'missing',
+                                                ],
+                                            },
+                                            {
+                                                $arrayToObject: [
+                                                    [
+                                                        {
+                                                            k: '$$this.saleType',
+                                                            v: {
+                                                                $add: [
+                                                                    {
+                                                                        $getField:
+                                                                            {
+                                                                                field: '$$this.saleType',
+                                                                                input: '$$value',
+                                                                            },
+                                                                    },
+                                                                    '$$this.quantity',
+                                                                ],
+                                                            },
+                                                        },
+                                                    ],
+                                                ],
+                                            },
+                                            {
+                                                $arrayToObject: [
+                                                    [
+                                                        {
+                                                            k: '$$this.saleType',
+                                                            v: '$$this.quantity',
+                                                        },
+                                                    ],
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                },
+            },
+            {
+                $addFields: {
+                    salesByType: {
+                        $map: {
+                            input: { $objectToArray: '$groupedSalesType' },
+                            as: 'item',
+                            in: {
+                                saleType: '$$item.k',
+                                quantity: '$$item.v',
+                            },
+                        },
+                    },
+                },
+            },
             { $sort: { totalQuantity: -1 } },
             { $limit: limit },
             {
@@ -244,24 +321,6 @@ export class DashboardService {
                     category: '$drug.category',
                     totalQuantity: 1,
                     totalRevenue: 1,
-                    totalProfit: 1,
-                    profitMargin: {
-                        $cond: [
-                            { $gt: ['$totalRevenue', 0] },
-                            {
-                                $multiply: [
-                                    {
-                                        $divide: [
-                                            '$totalProfit',
-                                            '$totalRevenue',
-                                        ],
-                                    },
-                                    100,
-                                ],
-                            },
-                            0,
-                        ],
-                    },
                     salesByType: 1,
                 },
             },
@@ -290,6 +349,7 @@ export class DashboardService {
             brand: drug.brand,
             category: drug.category,
             quantity: drug.quantity,
+            price: drug.pricePerUnit, // Map pricePerUnit to price for consistency
             pricePerUnit: drug.pricePerUnit,
             pricePerPack: drug.pricePerPack,
             pricePerCarton: drug.pricePerCarton,
