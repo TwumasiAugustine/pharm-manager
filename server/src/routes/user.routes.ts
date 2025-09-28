@@ -52,4 +52,9 @@ router.delete('/:id', authenticate, authorizeAdminLevel(), (req, res, next) =>
     controller.deleteUser(req, res, next),
 );
 
+// Get user statistics (admin level access)
+router.get('/stats', authenticate, authorizeAdminLevel(), (req, res, next) =>
+    controller.getUserStats(req, res, next),
+);
+
 export default router;

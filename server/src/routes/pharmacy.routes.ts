@@ -5,12 +5,19 @@ import {
     modifyPharmacyInfo,
     checkPharmacyConfigStatus,
     updateShortCodeSettings,
+    createPharmacy,
+    getAllPharmacies,
+    deletePharmacy,
+    assignAdminToPharmacy,
+    getAllAdmins,
+    createAdminUser,
 } from '../controllers/pharmacy.controller';
 import { checkAdminFirstSetup } from '../controllers/user.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import {
     authorizeAdminLevel,
     authorizeAuthenticated,
+    authorizeSuperAdmin,
 } from '../middlewares/authorize.middleware';
 import { csrfProtection } from '../middlewares/csrf.middleware';
 
@@ -59,6 +66,44 @@ router.patch(
     csrfProtection,
     authorizeAdminLevel(),
     updateShortCodeSettings,
+);
+
+// Super Admin routes for pharmacy management
+router.post(
+    '/create',
+    authenticate,
+    csrfProtection,
+    authorizeSuperAdmin(),
+    createPharmacy,
+);
+
+router.get('/all', authenticate, authorizeSuperAdmin(), getAllPharmacies);
+
+router.delete(
+    '/:pharmacyId',
+    authenticate,
+    csrfProtection,
+    authorizeSuperAdmin(),
+    deletePharmacy,
+);
+
+router.post(
+    '/:pharmacyId/assign-admin',
+    authenticate,
+    csrfProtection,
+    authorizeSuperAdmin(),
+    assignAdminToPharmacy,
+);
+
+// Super Admin routes for admin management
+router.get('/admins/all', authenticate, authorizeSuperAdmin(), getAllAdmins);
+
+router.post(
+    '/admins/create',
+    authenticate,
+    csrfProtection,
+    authorizeSuperAdmin(),
+    createAdminUser,
 );
 
 export default router;

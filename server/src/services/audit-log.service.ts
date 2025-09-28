@@ -51,6 +51,15 @@ export class AuditLogService {
         if (resource) query.resource = resource;
         if (userRole) query['details.userRole'] = userRole;
 
+        // If the requester is not a super admin, exclude any logs created by super admins
+        if (filters.requesterRole && filters.requesterRole !== 'SUPER_ADMIN') {
+            // add criteria to exclude logs where details.userRole === 'SUPER_ADMIN'
+            query['$or'] = [
+                { 'details.userRole': { $exists: false } },
+                { 'details.userRole': { $ne: 'SUPER_ADMIN' } },
+            ];
+        }
+
         // Date range filter
         if (startDate || endDate) {
             query.timestamp = {};

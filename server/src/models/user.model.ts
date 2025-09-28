@@ -1,7 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { UserRole } from '../types/user.types';
-
+import { UserRole, IPharmacyAssignment } from '../types/user.types';
 import { IBranch } from '../types/branch.types';
 
 // Interface for the user document that matches mongoose expectations
@@ -11,11 +10,16 @@ interface IUserDoc extends Document {
     email: string;
     password: string;
     role: UserRole;
-    pharmacyId?: mongoose.Types.ObjectId; // Optional for first user signup
+    pharmacyId?: mongoose.Types.ObjectId; // Primary pharmacy for Admin/Pharmacist/Cashier
+    assignedPharmacies?: IPharmacyAssignment[]; // For Super Admin: pharmacies they can manage
     branch?: mongoose.Types.ObjectId | IBranch;
+    createdBy?: mongoose.Types.ObjectId; // Who created this user
     isFirstSetup: boolean;
     refreshToken?: string;
     permissions?: string[];
+    canManagePharmacies?: boolean; // Super Admin only
+    canManageUsers?: boolean; // Super Admin and Admin
+    isActive: boolean;
     comparePassword(enteredPassword: string): Promise<boolean>;
 }
 
@@ -55,16 +59,56 @@ const userSchema = new Schema<IUserDoc>(
         pharmacyId: {
             type: Schema.Types.ObjectId,
             ref: 'PharmacyInfo',
-            required: false, // Allow first user signup without pharmacy
+            required: false, // Allow Super Admin and first user signup without pharmacy
         },
+        assignedPharmacies: [
+            {
+                pharmacyId: {
+                    type: Schema.Types.ObjectId,
+                    ref: 'PharmacyInfo',
+                    required: true,
+                },
+                pharmacyName: String,
+                assignedAt: {
+                    type: Date,
+                    default: Date.now,
+                },
+                assignedBy: {
+                    type: Schema.Types.ObjectId,
+                    ref: 'User',
+                },
+                isActive: {
+                    type: Boolean,
+                    default: true,
+                },
+                permissions: [String],
+            },
+        ],
         branch: {
             type: Schema.Types.ObjectId,
             ref: 'Branch',
             required: false, // Admins may not be branch-specific
         },
+        createdBy: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+            required: false,
+        },
         permissions: {
             type: [String],
             default: [],
+        },
+        canManagePharmacies: {
+            type: Boolean,
+            default: false,
+        },
+        canManageUsers: {
+            type: Boolean,
+            default: false,
+        },
+        isActive: {
+            type: Boolean,
+            default: true,
         },
     },
     {

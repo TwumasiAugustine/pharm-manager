@@ -33,12 +33,25 @@ export const shouldForceDataLoading = (pathname: string): boolean => {
  * Check if app has been loaded before (for preventing repeated loading screens)
  */
 export const hasAppLoadedBefore = (): boolean => {
-    return sessionStorage.getItem('pharm-care-app-loaded') === 'true';
+    try {
+        return sessionStorage.getItem('pharm-care-app-loaded') === 'true';
+    } catch (e) {
+        // If sessionStorage is disabled or throws, assume not loaded to
+        // avoid relying on storage and prevent crashes. Caller should
+        // handle UX accordingly.
+        console.warn('sessionStorage unavailable in hasAppLoadedBefore:', e);
+        return false;
+    }
 };
 
 /**
  * Mark app as loaded (to prevent showing loading screen again)
  */
 export const markAppAsLoaded = (): void => {
-    sessionStorage.setItem('pharm-care-app-loaded', 'true');
+    try {
+        sessionStorage.setItem('pharm-care-app-loaded', 'true');
+    } catch (e) {
+        // Ignore storage errors but log for debugging
+        console.warn('sessionStorage unavailable in markAppAsLoaded:', e);
+    }
 };

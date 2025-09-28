@@ -35,6 +35,216 @@ import {
 } from '../services/pharmacy.service';
 import User from '../models/user.model';
 
+import { PharmacyManagementService } from '../services/pharmacy-management.service';
+import { UserManagementService } from '../services/user-management.service';
+
+const pharmacyManagementService = new PharmacyManagementService();
+const userManagementService = new UserManagementService();
+
+/**
+ * Super Admin: Create a new pharmacy
+ */
+export const createPharmacy = async (req: Request, res: Response) => {
+    try {
+        if (!req.user || req.user.role !== UserRole.SUPER_ADMIN) {
+            return res.status(403).json({
+                success: false,
+                message: 'Only Super Admin can create pharmacies',
+            });
+        }
+
+        const pharmacy = await pharmacyManagementService.createPharmacy(
+            req.body,
+            req.user.id,
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'Pharmacy created successfully',
+            data: pharmacy,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message:
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to create pharmacy',
+        });
+    }
+};
+
+/**
+ * Super Admin: Get all pharmacies
+ */
+export const getAllPharmacies = async (req: Request, res: Response) => {
+    try {
+        if (!req.user || req.user.role !== UserRole.SUPER_ADMIN) {
+            return res.status(403).json({
+                success: false,
+                message: 'Only Super Admin can view all pharmacies',
+            });
+        }
+
+        const { page = 1, limit = 10, search, isActive } = req.query;
+        const result = await pharmacyManagementService.getPharmacies(
+            Number(page),
+            Number(limit),
+            {
+                search: search as string,
+                isActive:
+                    isActive !== undefined ? Boolean(isActive) : undefined,
+            },
+        );
+
+        res.json({
+            success: true,
+            message: 'Pharmacies retrieved successfully',
+            data: result,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message:
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to fetch pharmacies',
+        });
+    }
+};
+
+/**
+ * Super Admin: Delete pharmacy
+ */
+export const deletePharmacy = async (req: Request, res: Response) => {
+    try {
+        if (!req.user || req.user.role !== UserRole.SUPER_ADMIN) {
+            return res.status(403).json({
+                success: false,
+                message: 'Only Super Admin can delete pharmacies',
+            });
+        }
+
+        const { pharmacyId } = req.params;
+        await pharmacyManagementService.deletePharmacy(pharmacyId, req.user.id);
+
+        res.json({
+            success: true,
+            message: 'Pharmacy deleted successfully',
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message:
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to delete pharmacy',
+        });
+    }
+};
+
+/**
+ * Super Admin: Assign admin to pharmacy
+ */
+export const assignAdminToPharmacy = async (req: Request, res: Response) => {
+    try {
+        if (!req.user || req.user.role !== UserRole.SUPER_ADMIN) {
+            return res.status(403).json({
+                success: false,
+                message: 'Only Super Admin can assign admins to pharmacies',
+            });
+        }
+
+        const { pharmacyId } = req.params;
+        const { adminId, permissions } = req.body;
+
+        const result = await pharmacyManagementService.assignAdminToPharmacy({
+            pharmacyId,
+            adminId,
+            permissions,
+        });
+
+        res.json({
+            success: true,
+            message: 'Admin assigned to pharmacy successfully',
+            data: result,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message:
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to assign admin',
+        });
+    }
+};
+
+/**
+ * Super Admin: Get all admins
+ */
+export const getAllAdmins = async (req: Request, res: Response) => {
+    try {
+        if (!req.user || req.user.role !== UserRole.SUPER_ADMIN) {
+            return res.status(403).json({
+                success: false,
+                message: 'Only Super Admin can view all admins',
+            });
+        }
+
+        const admins = await userManagementService.getAllAdmins(req.user.id);
+
+        res.json({
+            success: true,
+            message: 'Admins retrieved successfully',
+            data: admins,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message:
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to fetch admins',
+        });
+    }
+};
+
+/**
+ * Super Admin: Create admin user
+ */
+export const createAdminUser = async (req: Request, res: Response) => {
+    try {
+        if (!req.user || req.user.role !== UserRole.SUPER_ADMIN) {
+            return res.status(403).json({
+                success: false,
+                message: 'Only Super Admin can create admin users',
+            });
+        }
+
+        const { assignToPharmacy, ...adminData } = req.body;
+        const admin = await userManagementService.createAdminUser(
+            { ...adminData, role: UserRole.ADMIN },
+            req.user.id,
+            assignToPharmacy,
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'Admin user created successfully',
+            data: admin,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message:
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to create admin user',
+        });
+    }
+};
+
 export const fetchPharmacyInfo = async (req: Request, res: Response) => {
     try {
         const pharmacyInfo = await getPharmacyInfo();

@@ -40,6 +40,7 @@ export class UserActivityService {
     async getUserActivities(
         filters: UserActivityFilters,
     ): Promise<UserActivitySummary> {
+        const { requesterRole } = filters as any;
         const {
             page = 1,
             limit = 10,
@@ -74,6 +75,14 @@ export class UserActivityService {
 
         // Calculate skip value
         const skip = (page - 1) * limit;
+
+        // If requester is not super admin, exclude activities where user role is SUPER_ADMIN
+        if (requesterRole && requesterRole !== 'SUPER_ADMIN') {
+            query['$or'] = [
+                { 'userId.role': { $exists: false } },
+                { 'userId.role': { $ne: 'SUPER_ADMIN' } },
+            ];
+        }
 
         // Execute query with pagination
         const [activities, totalCount] = await Promise.all([

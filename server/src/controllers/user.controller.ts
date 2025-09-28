@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/user.model';
 import { UserService } from '../services/user.service';
+import { UserManagementService } from '../services/user-management.service';
 import { successResponse } from '../utils/response';
-import { UserRole } from '../types/auth.types';
+import { UserRole } from '../types/user.types';
 
 const userService = new UserService();
 
@@ -82,23 +83,34 @@ export const checkAdminFirstSetup = async (req: Request, res: Response) => {
 
 export class UserController {
     private userService: UserService;
+    private userManagementService: UserManagementService;
 
     constructor() {
         this.userService = new UserService();
+        this.userManagementService = new UserManagementService();
     }
 
     async getUsers(req: Request, res: Response, next: NextFunction) {
         try {
-            const { page = 1, limit = 10, search = '' } = req.query;
-            const result = await this.userService.getUsers(
+            const {
+                page = 1,
+                limit = 10,
+                search,
+                role,
+                branchId,
+                isActive,
+            } = req.query;
+            const result = await this.userManagementService.getUsers(
+                req.user?.id || '',
+                Number(page),
+                Number(limit),
                 {
-                    page: Number(page),
-                    limit: Number(limit),
-                    search: String(search),
+                    search: search as string,
+                    role: role as UserRole,
+                    branchId: branchId as string,
+                    isActive:
+                        isActive !== undefined ? Boolean(isActive) : undefined,
                 },
-                req.user?.role,
-                req.user?.branchId,
-                req.user?.pharmacyId, // Pass pharmacy ID for filtering
             );
             res.json(successResponse(result, 'Users retrieved successfully'));
         } catch (error) {
@@ -108,22 +120,33 @@ export class UserController {
 
     async createUser(req: Request, res: Response, next: NextFunction) {
         try {
-            // Allow super admin to create users even without pharmacyId (for initial setup)
+            let user;
+
+            // Super Admin can create Admins
             if (
-                !req.user?.pharmacyId &&
-                req.user?.role !== UserRole.SUPER_ADMIN
+                req.user?.role === UserRole.SUPER_ADMIN &&
+                req.body.role === UserRole.ADMIN
             ) {
-                res.status(400).json({
+                user = await this.userManagementService.createAdminUser(
+                    req.body,
+                    req.user.id,
+                    req.body.pharmacyId,
+                );
+            }
+            // Admin can create Pharmacist/Cashier
+            else if (req.user?.role === UserRole.ADMIN) {
+                user = await this.userManagementService.createPharmacyUser(
+                    req.body,
+                    req.user.id,
+                );
+            } else {
+                return res.status(403).json({
                     success: false,
-                    message: 'Pharmacy ID is required',
+                    message:
+                        'Insufficient permissions to create this type of user',
                 });
-                return;
             }
 
-            const user = await this.userService.createUser(
-                req.body,
-                req.user?.pharmacyId || '', // Pass empty string for super admin without pharmacy
-            );
             res.json(successResponse(user, 'User created successfully'));
         } catch (error) {
             next(error);
@@ -132,22 +155,10 @@ export class UserController {
 
     async updateUser(req: Request, res: Response, next: NextFunction) {
         try {
-            // Allow super admin to update users even without pharmacyId (for initial setup)
-            if (
-                !req.user?.pharmacyId &&
-                req.user?.role !== UserRole.SUPER_ADMIN
-            ) {
-                res.status(400).json({
-                    success: false,
-                    message: 'Pharmacy ID is required',
-                });
-                return;
-            }
-
-            const user = await this.userService.updateUser(
+            const user = await this.userManagementService.updateUser(
                 req.params.id,
                 req.body,
-                req.user?.pharmacyId || '', // Pass empty string for super admin without pharmacy
+                req.user?.id || '',
             );
             res.json(successResponse(user, 'User updated successfully'));
         } catch (error) {
@@ -157,23 +168,27 @@ export class UserController {
 
     async deleteUser(req: Request, res: Response, next: NextFunction) {
         try {
-            // Allow super admin to delete users even without pharmacyId (for initial setup)
-            if (
-                !req.user?.pharmacyId &&
-                req.user?.role !== UserRole.SUPER_ADMIN
-            ) {
-                res.status(400).json({
-                    success: false,
-                    message: 'Pharmacy ID is required',
-                });
-                return;
-            }
-
-            await this.userService.deleteUser(
+            const user = await this.userManagementService.deactivateUser(
                 req.params.id,
-                req.user?.pharmacyId || '', // Pass empty string for super admin without pharmacy
+                req.user?.id || '',
             );
-            res.json(successResponse(null, 'User deleted successfully'));
+            res.json(successResponse(user, 'User deactivated successfully'));
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getUserStats(req: Request, res: Response, next: NextFunction) {
+        try {
+            const stats = await this.userManagementService.getUserStats(
+                req.user?.id || '',
+            );
+            res.json(
+                successResponse(
+                    stats,
+                    'User statistics retrieved successfully',
+                ),
+            );
         } catch (error) {
             next(error);
         }

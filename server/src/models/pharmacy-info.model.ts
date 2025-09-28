@@ -14,12 +14,15 @@ export interface IPharmacyInfo extends Document {
     contact: {
         phone: string;
         email: string;
-        website: string;
+        website?: string;
     };
     registrationNumber: string;
     taxId: string;
     operatingHours: string;
     slogan: string;
+    isActive?: boolean;
+    createdBy?: mongoose.Types.ObjectId; // Super Admin who created this pharmacy
+    admins?: mongoose.Types.ObjectId[]; // Admin IDs assigned to this pharmacy
     createdAt: Date;
     updatedAt: Date;
 }
@@ -45,6 +48,18 @@ const PharmacyInfoSchema: Schema = new Schema(
         slogan: { type: String, required: true },
         requireSaleShortCode: { type: Boolean, default: false },
         shortCodeExpiryMinutes: { type: Number, default: 15 }, // Default 15 minutes expiry
+        isActive: { type: Boolean, default: true },
+        createdBy: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+            required: false,
+        },
+        admins: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'User',
+            },
+        ],
     },
     {
         timestamps: true,

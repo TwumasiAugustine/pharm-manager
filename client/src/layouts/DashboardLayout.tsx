@@ -4,6 +4,17 @@ import { useAuthStore } from '../store/auth.store';
 import { Link, useLocation } from 'react-router-dom';
 import type { User } from '../types/auth.types';
 import { UserRole } from '../types/user.types';
+
+interface NavItem {
+    to: string;
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    match: (pathname: string) => boolean;
+    adminOnly?: boolean;
+    cashierOnly?: boolean;
+    pharmacistOnly?: boolean;
+    superAdminOnly?: boolean;
+}
 import {
     FaSignOutAlt,
     FaUser,
@@ -21,17 +32,25 @@ import {
     FaUserSecret,
     FaChevronLeft,
     FaChevronRight,
+    FaCrown,
 } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 
 // Sidebar navigation items
-const navItems = [
+const navItems: NavItem[] = [
+    {
+        to: '/super-admin',
+        icon: FaCrown,
+        label: 'Super Admin',
+        match: (pathname: string) => pathname === '/super-admin',
+        superAdminOnly: true,
+    },
     {
         to: '/dashboard',
         icon: FaTachometerAlt,
         label: 'Dashboard',
         match: (pathname: string) => pathname === '/dashboard',
-        adminOnly: false,
+        adminOnly: true,
     },
     {
         to: '/drugs',
@@ -79,7 +98,7 @@ const navItems = [
         icon: FaExclamationTriangle,
         label: 'Expiry Tracker',
         match: (pathname: string) => pathname === '/expiry',
-        adminOnly: false,
+        pharmacistOnly: true,
     },
     {
         to: '/branches',
@@ -93,7 +112,7 @@ const navItems = [
         icon: FaChartBar,
         label: 'Reports',
         match: (pathname: string) => pathname === '/reports',
-        adminOnly: false,
+        pharmacistOnly: true,
     },
     {
         to: '/audit-logs',
@@ -242,17 +261,42 @@ function Sidebar({
                         // Handle role-based access control
                         const userRole = user?.role;
 
-                        // Admin-only items
+                        // Enforce special visibility rules:
+                        // - Super Admin should only see the Super Admin link
+                        // - Admin should see all management links except Super Admin
+                        if (userRole === UserRole.SUPER_ADMIN) {
+                            // If the logged in user is Super Admin, only allow
+                            // items explicitly marked as superAdminOnly
+                            if (!item.superAdminOnly) return null;
+                        }
+
+                        if (userRole === UserRole.ADMIN) {
+                            // Admin should never see Super Admin link
+                            if (item.superAdminOnly) return null;
+                        }
+
+                        // Super Admin and Admin exceptions are handled above.
+                        // Now apply the existing per-item restrictions for other roles.
+
+                        // Admin-only items (visible to Admins only)
                         if (
                             item.adminOnly &&
-                            userRole !== UserRole.ADMIN &&
-                            userRole !== UserRole.SUPER_ADMIN
+                            userRole !== UserRole.ADMIN
                         ) {
                             return null;
                         }
 
                         // Cashier-only items
                         if (item.cashierOnly && userRole !== UserRole.CASHIER) {
+                            return null;
+                        }
+
+                        // Pharmacist-only items (also visible to Admin)
+                        if (
+                            item.pharmacistOnly &&
+                            userRole !== UserRole.PHARMACIST &&
+                            userRole !== UserRole.ADMIN
+                        ) {
                             return null;
                         }
 

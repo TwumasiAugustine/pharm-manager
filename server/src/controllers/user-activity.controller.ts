@@ -64,6 +64,9 @@ export class UserActivityController {
                 }
             }
 
+            // Attach requester role so service can hide super-admin activities from non-super-admins
+            (filters as any).requesterRole = (req.user as any)?.role;
+
             const result =
                 await this.userActivityService.getUserActivities(filters);
 

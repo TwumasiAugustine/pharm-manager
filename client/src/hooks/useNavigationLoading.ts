@@ -13,6 +13,9 @@ export const useInitialAppLoading = () => {
     const [isInitialLoading, setIsInitialLoading] = useState(false);
     const hasCheckedLoading = useRef(false);
 
+    // Safety max timeout to ensure loader doesn't hang indefinitely
+    const safetyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
     useEffect(() => {
         // Only check once when component mounts
         if (!hasCheckedLoading.current) {
@@ -20,16 +23,36 @@ export const useInitialAppLoading = () => {
 
             if (LOADING_CONFIG.SHOW_INITIAL_LOAD_ONLY) {
                 // Check if app has been loaded before
-                if (!hasAppLoadedBefore()) {
-                    setIsInitialLoading(true);
+                try {
+                    if (!hasAppLoadedBefore()) {
+                        setIsInitialLoading(true);
 
-                    // Mark app as loaded after a short delay
-                    const timer = setTimeout(() => {
-                        markAppAsLoaded();
-                        setIsInitialLoading(false);
-                    }, 2000); // Show for 2 seconds on initial load
+                        // Mark app as loaded after a short delay
+                        const timer = setTimeout(() => {
+                            try {
+                                markAppAsLoaded();
+                            } catch (e) {
+                                // Ignore storage errors
+                                console.error(e);
+                            }
+                            setIsInitialLoading(false);
+                        }, 2000); // Show for 2 seconds on initial load
 
-                    return () => clearTimeout(timer);
+                        // Safety fallback: ensure we clear loading after 8s
+                        safetyTimeoutRef.current = setTimeout(() => {
+                            setIsInitialLoading(false);
+                        }, 8000);
+
+                        return () => {
+                            clearTimeout(timer);
+                            if (safetyTimeoutRef.current)
+                                clearTimeout(safetyTimeoutRef.current);
+                        };
+                    }
+                } catch (e) {
+                    // If storage check throws, avoid blocking the app
+                    console.warn('Error checking initial load state:', e);
+                    setIsInitialLoading(false);
                 }
             }
         }

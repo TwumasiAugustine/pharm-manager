@@ -7,6 +7,7 @@ export interface AuditLogFilters {
     page?: number;
     limit?: number;
     userRole?: string;
+    requesterRole?: string; // role of the user requesting the logs
 }
 
 export interface CreateAuditLogRequest {

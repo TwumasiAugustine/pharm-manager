@@ -155,8 +155,14 @@ export const useSEO = (config: SEOConfig): GeneratedSEOData => {
 /**
  * Predefined SEO configurations for common pages
  */
+/**
+ * Predefined SEO configurations for common pages.
+ *
+ * Use these presets to quickly set SEO metadata for standard pages in the pharmacy management app.
+ * Each preset provides a title, description, keywords, and other relevant SEO options.
+ */
 export const SEO_PRESETS = {
-    homepage: {
+    pharmcare: {
         title: 'PharmCare - Modern Pharmacy Management System',
         description:
             'Streamline your pharmacy operations with PharmCare. Complete inventory management, prescription tracking, sales processing, and customer management solution for modern pharmacies.',
@@ -187,6 +193,12 @@ export const SEO_PRESETS = {
             'healthcare analytics',
             'inventory overview',
         ],
+    },
+
+    superAdminDashboard: {
+        title: 'Super Admin Dashboard',
+        description: '',
+        keywords: ['super admin', 'dashboard', 'pharmacy management'],
     },
 
     inventory: {

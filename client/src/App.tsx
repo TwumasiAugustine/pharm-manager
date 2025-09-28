@@ -38,6 +38,7 @@ const AuditLogsPage = lazy(() => import('./pages/AuditLogsPage'));
 const UserActivityPage = lazy(() => import('./pages/UserActivityPage'));
 const CronManagementPage = lazy(() => import('./pages/CronManagementPage'));
 const UserManagementPage = lazy(() => import('./pages/UserManagementPage'));
+const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard'));
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -217,6 +218,20 @@ function App() {
                                         <Route
                                             path="/users"
                                             element={<UserManagementPage />}
+                                        />
+                                    </Route>
+                                    <Route
+                                        element={
+                                            <ProtectedRoute
+                                                allowedRoles={[
+                                                    UserRole.SUPER_ADMIN,
+                                                ]}
+                                            />
+                                        }
+                                    >
+                                        <Route
+                                            path="/super-admin"
+                                            element={<SuperAdminDashboard />}
                                         />
                                     </Route>
                                     <Route
