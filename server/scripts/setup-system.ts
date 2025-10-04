@@ -17,7 +17,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 import PharmacyInfo from '../models/pharmacy-info.model';
 import Branch from '../models/branch.model';
 import User from '../models/user.model';
-import { UserRole } from '../src/types/auth.types';
+import { UserRole } from '../types/auth.types';
 import { AssignmentService } from '../services/assignment.service';
 import {
     USER_PERMISSIONS,

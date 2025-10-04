@@ -2,23 +2,40 @@ services:
   - type: web
     name: pharm-manager-server
     env: node
-    rootDir: server
-    # Build from the server directory
+    # Work from project root
     buildCommand: |
+      echo "=== BUILD DEBUG INFO ==="
       echo "Current directory: $(pwd)"
-      echo "Directory contents:"
-      ls -la || dir
-      echo "Installing dependencies..."
+      echo "Project root contents:"
+      ls -la
+      echo "=== NAVIGATING TO SERVER ==="
+      cd server
+      echo "Server directory: $(pwd)"
+      echo "Server contents:"
+      ls -la
+      echo "=== INSTALLING DEPENDENCIES ==="
       npm ci --include=dev
-      echo "Dependencies installed"
-      echo "Building TypeScript..."
+      echo "=== BUILDING TYPESCRIPT ==="
       npm run build
-      echo "Build completed"
-      echo "Checking dist directory:"
-      ls -la dist/ || dir dist
-      echo "Verifying server.js exists:"
-      test -f dist/server.js && echo "✓ server.js found!" || echo "✗ server.js NOT found!"
-    startCommand: npm start
+      echo "=== BUILD VERIFICATION ==="
+      echo "Dist contents:"
+      ls -la dist/
+      echo "Server.js file check:"
+      ls -la dist/server.js
+      echo "File exists test:"
+      test -f dist/server.js && echo "✓ FOUND" || echo "✗ NOT FOUND"
+      echo "=== BUILD COMPLETE ==="
+    startCommand: |
+      echo "=== STARTUP DEBUG INFO ==="
+      echo "Startup directory: $(pwd)"
+      cd server
+      echo "Changed to: $(pwd)"
+      echo "Contents:"
+      ls -la
+      echo "Dist contents:"
+      ls -la dist/
+      echo "Starting server..."
+      node dist/server.js
     envVars:
       - key: NODE_ENV
         value: production

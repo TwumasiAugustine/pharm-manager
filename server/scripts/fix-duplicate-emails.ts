@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Customer = require('../src/models/customer.model').default;
+const Customer = require('../models/customer.model').default;
 const dotenv = require('dotenv');
 
 // Load environment variables

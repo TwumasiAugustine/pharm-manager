@@ -14,7 +14,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 import User from '../models/user.model';
 import { UserService } from '../services/user.service';
-import { UserRole } from '../src/types/user.types';
+import { UserRole } from '../types/user.types';
 
 async function testUserCreation(): Promise<void> {
     try {

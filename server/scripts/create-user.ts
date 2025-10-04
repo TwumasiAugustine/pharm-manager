@@ -28,7 +28,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 import User from '../models/user.model';
 import PharmacyInfo from '../models/pharmacy-info.model';
 import Branch from '../models/branch.model';
-import { UserRole } from '../src/types/user.types';
+import { UserRole } from '../types/user.types';
 
 interface UserCreateOptions {
     type: 'super-admin' | 'admin' | 'pharmacist' | 'cashier';

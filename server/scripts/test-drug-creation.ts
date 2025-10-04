@@ -13,8 +13,8 @@ import path from 'path';
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
 import { DrugService } from '../services/drug.service';
-import { UserRole } from '../src/types/auth.types';
-import { ICreateDrugRequest } from '../src/types/drug.types';
+import { UserRole } from '../types/auth.types';
+import { ICreateDrugRequest } from '../types/drug.types';
 
 async function testDrugCreation() {
     try {

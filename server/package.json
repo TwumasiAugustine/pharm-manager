@@ -4,7 +4,7 @@
     "main": "server.ts",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "echo \"Starting server from $(pwd)/dist/server.js\" && node dist/server.js",
+        "start": "node dist/server.js",
         "dev": "ts-node-dev --respawn --transpile-only server.ts",
         "build": "echo \"Building TypeScript...\" && tsc --project . && echo \"Build completed successfully\"",
         "build:check": "tsc --noEmit",
@@ -62,4 +62,3 @@
         "typescript": "^5.8.3"
     }
 }
-
