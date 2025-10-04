@@ -57,14 +57,19 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
 
     const stats = [
         {
-            label: reportType === 'inventory' ? 'Total Value' : 'Total Revenue',
+            label:
+                reportType === 'inventory'
+                    ? 'Total Value'
+                    : reportType === 'expiry'
+                    ? 'Value at Risk'
+                    : 'Total Revenue',
             value: formatCurrency(summary.totalRevenue),
             icon: FiTrendingUp,
-            color: 'text-green-600',
-            bgColor: 'bg-green-100',
+            color: reportType === 'expiry' ? 'text-red-600' : 'text-green-600',
+            bgColor: reportType === 'expiry' ? 'bg-red-100' : 'bg-green-100',
         },
         {
-            label: 'Total Cost',
+            label: reportType === 'expiry' ? 'Cost at Risk' : 'Total Cost',
             value: formatCurrency(summary.totalCost || 0),
             icon: FiBarChart,
             color: 'text-red-600',
@@ -74,11 +79,19 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
             label:
                 reportType === 'inventory'
                     ? 'Potential Profit'
+                    : reportType === 'expiry'
+                    ? 'Potential Loss'
                     : 'Total Profit',
-            value: formatCurrency(summary.totalProfit || 0),
+            value:
+                reportType === 'expiry'
+                    ? formatCurrency(
+                          (summary.totalRevenue || 0) -
+                              (summary.totalCost || 0),
+                      )
+                    : formatCurrency(summary.totalProfit || 0),
             icon: FiDollarSign,
-            color: 'text-orange-600',
-            bgColor: 'bg-orange-100',
+            color: reportType === 'expiry' ? 'text-red-600' : 'text-orange-600',
+            bgColor: reportType === 'expiry' ? 'bg-red-100' : 'bg-orange-100',
         },
         // Only show sales metrics for sales reports
         ...(reportType === 'sales' && summary.totalSales > 0
@@ -98,22 +111,29 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
                     ? 'Items Sold'
                     : reportType === 'inventory'
                     ? 'Total Items'
+                    : reportType === 'expiry'
+                    ? 'Items Expiring'
                     : 'Items',
             value: formatNumber(summary.totalItems),
             icon: FiPackage,
-            color: 'text-purple-600',
-            bgColor: 'bg-purple-100',
+            color: reportType === 'expiry' ? 'text-red-600' : 'text-purple-600',
+            bgColor: reportType === 'expiry' ? 'bg-red-100' : 'bg-purple-100',
         },
-        {
-            label: 'Profit Margin',
-            value:
-                summary.profitMargin !== null
-                    ? `${summary.profitMargin.toFixed(1)}%`
-                    : 'N/A',
-            icon: FiPercent,
-            color: 'text-orange-600',
-            bgColor: 'bg-orange-100',
-        },
+        // Only show profit margin for sales and inventory reports
+        ...(reportType !== 'expiry'
+            ? [
+                  {
+                      label: 'Profit Margin',
+                      value:
+                          summary.profitMargin !== null
+                              ? `${summary.profitMargin.toFixed(1)}%`
+                              : 'N/A',
+                      icon: FiPercent,
+                      color: 'text-orange-600',
+                      bgColor: 'bg-orange-100',
+                  },
+              ]
+            : []),
     ];
 
     return (
