@@ -12,6 +12,8 @@ import {
 import type { PharmacyInfo } from '../api/pharmacy.api';
 import { useAuthStore } from '../store/auth.store';
 import { UserRole } from '../types/user.types';
+import { usePermissions } from '../hooks/usePermissions';
+import { PERMISSION_KEYS } from '../types/permission.types';
 import DashboardLayout from '../layouts/DashboardLayout';
 import {
     Card,
@@ -40,6 +42,7 @@ import {
 const PharmacySetupPage: React.FC = () => {
     const navigate = useNavigate();
     const { user } = useAuthStore();
+    const { hasPermission } = usePermissions();
     const { mutate: updatePharmacy, isPending } = useUpdatePharmacyInfo();
     const { mutate: updateShortCodeSettings, isPending: isUpdatingSettings } =
         useUpdateShortCodeSettings();
@@ -409,12 +412,25 @@ const PharmacySetupPage: React.FC = () => {
                                         id="name"
                                         label="Pharmacy Name"
                                         placeholder="Enter your pharmacy name"
+                                        disabled={
+                                            !hasPermission(
+                                                PERMISSION_KEYS.UPDATE_PHARMACY_NAME,
+                                            )
+                                        }
                                         {...register('name', {
                                             required:
                                                 'Pharmacy name is required',
                                         })}
                                         error={errors.name?.message}
                                     />
+                                    {!hasPermission(
+                                        PERMISSION_KEYS.UPDATE_PHARMACY_NAME,
+                                    ) && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Only Super Admin can change the
+                                            pharmacy name
+                                        </p>
+                                    )}
                                     <Input
                                         id="slogan"
                                         label="Slogan (Optional)"

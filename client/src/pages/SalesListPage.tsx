@@ -533,10 +533,6 @@ const SalesListPage: React.FC = () => {
                         <BranchSelect
                             value={filters.branchId}
                             onChange={handleBranchChange}
-                            mode="filter"
-                            allowEmpty={true}
-                            placeholder="All Branches"
-                            required={false}
                         />
                     </div>
                     <div className="flex justify-between items-center mb-6">

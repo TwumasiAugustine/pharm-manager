@@ -23,6 +23,7 @@ export const PHARMACY_PERMISSIONS = {
     MANAGE_PHARMACY: 'MANAGE_PHARMACY',
     VIEW_PHARMACY_INFO: 'VIEW_PHARMACY_INFO',
     UPDATE_PHARMACY_SETTINGS: 'UPDATE_PHARMACY_SETTINGS',
+    UPDATE_PHARMACY_NAME: 'UPDATE_PHARMACY_NAME', // Super Admin only
 } as const;
 
 // Branch Management Permissions
@@ -203,6 +204,7 @@ export const SYSTEM_LEVEL_PERMISSIONS = [
     // Pharmacy Management (system-wide)
     PHARMACY_PERMISSIONS.MANAGE_PHARMACY,
     PHARMACY_PERMISSIONS.UPDATE_PHARMACY_SETTINGS,
+    PHARMACY_PERMISSIONS.UPDATE_PHARMACY_NAME, // Only Super Admin can change pharmacy name
 
     // System Administration
     ...Object.values(SYSTEM_PERMISSIONS),
@@ -285,6 +287,7 @@ export const ROLE_PERMISSIONS = {
 
         // View-only access to operational data for oversight
         PHARMACY_PERMISSIONS.VIEW_PHARMACY_INFO,
+        PHARMACY_PERMISSIONS.UPDATE_PHARMACY_NAME, // Super Admin can change pharmacy name
         BRANCH_PERMISSIONS.VIEW_BRANCHES,
         USER_PERMISSIONS.VIEW_USERS,
         USER_PERMISSIONS.VIEW_USER_ACTIVITY,
@@ -303,8 +306,9 @@ export const ROLE_PERMISSIONS = {
         USER_PERMISSIONS.MANAGE_PERMISSIONS,
         USER_PERMISSIONS.VIEW_USER_ACTIVITY,
 
-        // Pharmacy (view and limited management)
+        // Pharmacy (view and limited management - no name changes)
         PHARMACY_PERMISSIONS.VIEW_PHARMACY_INFO,
+        PHARMACY_PERMISSIONS.UPDATE_PHARMACY_SETTINGS,
 
         // Branch Management (full access)
         ...Object.values(BRANCH_PERMISSIONS),

@@ -37,9 +37,9 @@ export const DrugForm = ({
     initialData,
     isSubmitting = false,
 }: DrugFormProps): React.ReactElement => {
-    // Get current user for super admin check
+    // Get current user for admin check
     const { user } = useAuthStore();
-    const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN;
+    const isAdmin = user?.role === UserRole.ADMIN;
 
     // Get drug categories for dropdown
     const { data: categories, isLoading: loadingCategories } =
@@ -55,10 +55,6 @@ export const DrugForm = ({
         initialData?.category || '',
     );
 
-    // State for branch selection
-    const [selectedBranchId, setSelectedBranchId] = useState(
-        (initialData as any)?.branchId || '',
-    );
     const debouncedCategorySearch = useDebounce(categorySearchTerm, 300);
 
     // Ensure requiresPrescription is always a boolean
@@ -165,42 +161,6 @@ export const DrugForm = ({
         }
     }, [ensuredInitialData]);
 
-    // Initialize branch selection with existing value if editing
-    useEffect(() => {
-        console.log('Branch ID initialization useEffect triggered');
-        console.log(
-            'ensuredInitialData:',
-            JSON.stringify(ensuredInitialData, null, 2),
-        );
-        console.log(
-            'branchId in initialData:',
-            (ensuredInitialData as any)?.branchId,
-        );
-        console.log(
-            'branch in initialData:',
-            (ensuredInitialData as any)?.branch,
-        );
-
-        if (ensuredInitialData) {
-            const branchIdFromData =
-                (ensuredInitialData as any).branchId ||
-                (ensuredInitialData as any).branch;
-            if (branchIdFromData) {
-                console.log('Setting selectedBranchId to:', branchIdFromData);
-                setSelectedBranchId(branchIdFromData);
-            } else {
-                console.log(
-                    'No branchId or branch found in ensuredInitialData',
-                );
-                // For super admin, we can leave it empty since it's optional
-                if (isSuperAdmin) {
-                    console.log('User is super admin, branchId can be empty');
-                    setSelectedBranchId(''); // Explicitly set to empty for super admin
-                }
-            }
-        }
-    }, [ensuredInitialData, isSuperAdmin]);
-
     // Filter categories based on search term
     const filteredCategories = React.useMemo(() => {
         if (!categories || !debouncedCategorySearch) return [];
@@ -252,24 +212,17 @@ export const DrugForm = ({
 
     // Handle form submission
     const onFormSubmit: SubmitHandler<DrugFormValues> = (data) => {
-        console.log('🎉 Form submission successful!');
-        console.log('Form data on submit:', data);
-        console.log('Selected branch ID:', selectedBranchId);
-        console.log('Is super admin:', isSuperAdmin);
-
         // Make sure category has a valid value
         if (!data.category && selectedCategory) {
             // If selected category exists but didn't get into form data
             data.category = selectedCategory;
         }
 
-        // Include branchId in the submission data
+        // Branch ID is already included in data from react-hook-form
         const submissionData = {
             ...data,
-            branchId: selectedBranchId || undefined, // Use undefined instead of empty string
+            branchId: data.branchId || undefined, // Use undefined instead of empty string
         };
-
-        console.log('Final submission data:', submissionData);
 
         onSubmit(submissionData);
 
@@ -277,52 +230,16 @@ export const DrugForm = ({
             reset(); // Reset form after submission only for new drugs
             setSelectedCategory('');
             setCategorySearchTerm('');
-            setSelectedBranchId('');
         }
     };
 
     // Debug the button disabled condition
-    const isButtonDisabled =
-        isSubmitting || (!selectedBranchId && !isSuperAdmin);
-
-    // Log button state for debugging
-    React.useEffect(() => {
-        console.log('Button state check:', {
-            isSubmitting,
-            selectedBranchId,
-            isSuperAdmin,
-            isButtonDisabled,
-            initialData: !!initialData,
-        });
-        console.log('Form errors:', errors);
-        console.log('Form is valid:', Object.keys(errors).length === 0);
-    }, [
-        isSubmitting,
-        selectedBranchId,
-        isSuperAdmin,
-        isButtonDisabled,
-        initialData,
-        errors,
-    ]);
+    const currentBranchId = watch('branchId');
+    // Admin users can submit without selecting a branch (will add to all branches)
+    const isButtonDisabled = isSubmitting || (!isAdmin && !currentBranchId);
 
     return (
-        <form
-            onSubmit={(e) => {
-                console.log('Form onSubmit triggered');
-                console.log('Event:', e);
-                console.log('Form errors before submit:', errors);
-                console.log(
-                    'Form validation state:',
-                    Object.keys(errors).length === 0 ? 'Valid' : 'Invalid',
-                );
-
-                // Call handleSubmit with both success and error handlers
-                handleSubmit(onFormSubmit, (errors) => {
-                    console.log('Form validation failed:', errors);
-                })(e);
-            }}
-            className="space-y-8"
-        >
+        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
                     <FormSection title="Basic Information">
@@ -359,25 +276,39 @@ export const DrugForm = ({
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Branch{' '}
-                                    {!isSuperAdmin && (
+                                    {!isAdmin && (
                                         <span className="text-red-500">*</span>
                                     )}
-                                    {isSuperAdmin && (
+                                    {isAdmin && (
                                         <span className="text-xs text-gray-500 ml-1">
-                                            (Optional - will use default branch
-                                            if not selected)
+                                            (Optional - leave as "All Branches"
+                                            to add to all)
                                         </span>
                                     )}
                                 </label>
                                 <BranchSelect
-                                    value={selectedBranchId}
-                                    onChange={setSelectedBranchId}
-                                    required={!isSuperAdmin}
+                                    value={watch('branchId')}
+                                    onChange={(id) =>
+                                        setValue('branchId', id, {
+                                            shouldValidate: true,
+                                            shouldDirty: true,
+                                        })
+                                    }
+                                    required={!isAdmin}
                                     mode="form"
+                                    placeholder="Select a branch for this drug"
                                 />
-                                {!selectedBranchId && !isSuperAdmin && (
+                                {errors.branchId && (
                                     <p className="mt-1 text-sm text-red-600">
-                                        Branch selection is required
+                                        {errors.branchId.message ||
+                                            'Branch is required'}
+                                    </p>
+                                )}
+                                {isAdmin && (
+                                    <p className="mt-1 text-sm text-blue-600">
+                                        💡 Select a specific branch or leave as
+                                        "All Branches" to make this drug
+                                        available across all branches
                                     </p>
                                 )}
                             </div>
@@ -479,38 +410,6 @@ export const DrugForm = ({
             </div>
 
             <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
-                <FormSection title="Branch">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Branch{' '}
-                            {!isSuperAdmin && (
-                                <span className="text-red-500">*</span>
-                            )}
-                            {isSuperAdmin && (
-                                <span className="text-xs text-gray-500 ml-1">
-                                    (Optional - will use default branch if not
-                                    selected)
-                                </span>
-                            )}
-                        </label>
-                        <BranchSelect
-                            value={watch('branchId')}
-                            onChange={(id) =>
-                                setValue('branchId', id, {
-                                    shouldValidate: true,
-                                    shouldDirty: true,
-                                })
-                            }
-                            required={!isSuperAdmin}
-                        />
-                        {errors.branchId && !isSuperAdmin && (
-                            <p className="mt-1 text-sm text-red-600">
-                                {errors.branchId.message ||
-                                    'Branch is required'}
-                            </p>
-                        )}
-                    </div>
-                </FormSection>
                 <FormSection title="Meta">
                     <DrugMetaFields register={register} errors={errors} />
                 </FormSection>
@@ -520,11 +419,6 @@ export const DrugForm = ({
                 <button
                     type="submit"
                     disabled={isButtonDisabled}
-                    onClick={(e) => {
-                        console.log('Button clicked');
-                        console.log('Button disabled:', isButtonDisabled);
-                        console.log('Event:', e);
-                    }}
                     className={`inline-flex items-center px-8 py-3 border border-transparent text-base font-semibold rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-md transition-colors duration-200 ease-in-out ${
                         isButtonDisabled ? 'opacity-75 cursor-not-allowed' : ''
                     }`}

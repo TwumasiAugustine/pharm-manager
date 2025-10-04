@@ -53,11 +53,13 @@ export class DrugService {
             throw new ForbiddenError('Only admin can create drugs');
         }
 
-        // For  admin, use default branch if no branchId is provided
-        let effectiveBranchId = drugData.branchId;
-        if (!effectiveBranchId) {
-            effectiveBranchId = await this.getDefaultBranchId();
+        // For admin, if no branchId is provided, create drug in all branches
+        if (!drugData.branchId) {
+            return this.createDrugInAllBranches(drugData, userRole);
         }
+
+        // Use provided branchId for specific branch
+        const effectiveBranchId = drugData.branchId;
 
         // Check if drug with same batch number already exists in the same branch
         const existingDrug = await Drug.findOne({
@@ -396,5 +398,69 @@ export class DrugService {
             createdAt: drug.createdAt,
             updatedAt: drug.updatedAt,
         };
+    }
+
+    /**
+     * Create a drug in all available branches
+     * @param drugData The drug data to create
+     * @param userRole The role of the user creating the drug
+     * @returns Array of created drugs
+     */
+    private async createDrugInAllBranches(
+        drugData: ICreateDrugRequest,
+        userRole: UserRole,
+    ): Promise<any[]> {
+        // Get all available branches
+        const branches = await AssignmentService.getAllBranches();
+
+        if (!branches || branches.length === 0) {
+            throw new BadRequestError(
+                'No branches available to create drugs in',
+            );
+        }
+
+        const createdDrugs: any[] = [];
+        const pharmacyId = await this.getPharmacyId();
+
+        // Create the drug in each branch
+        for (const branch of branches) {
+            // Check if drug with same batch number already exists in this branch
+            const existingDrug = await Drug.findOne({
+                batchNumber: drugData.batchNumber,
+                branch: branch._id || branch.id,
+            });
+
+            if (existingDrug) {
+                // Skip this branch if drug already exists, but continue with others
+                continue;
+            }
+
+            // Create drug data for this branch
+            const drugCreateData = {
+                ...drugData,
+                branch: branch._id || branch.id,
+                pharmacyId: pharmacyId,
+            };
+
+            try {
+                const drug = await Drug.create(drugCreateData);
+                createdDrugs.push(this.mapDrugToResponse(drug));
+            } catch (error) {
+                // Log error but continue with other branches
+                console.error(
+                    `Failed to create drug in branch ${branch.name}:`,
+                    error,
+                );
+            }
+        }
+
+        if (createdDrugs.length === 0) {
+            throw new BadRequestError(
+                'Drug could not be created in any branch. It may already exist in all branches.',
+            );
+        }
+
+        // Return the first created drug (for compatibility with existing frontend)
+        return createdDrugs[0];
     }
 }

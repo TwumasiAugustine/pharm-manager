@@ -210,14 +210,7 @@ const UserManagementPage: React.FC = () => {
 
                 {/* Branch Filter */}
                 <div className="flex items-center gap-3 mb-4">
-                    <BranchSelect
-                        value={branchId}
-                        onChange={setBranchId}
-                        mode="filter"
-                        allowEmpty={true}
-                        placeholder="All Branches"
-                        required={false}
-                    />
+                    <BranchSelect value={branchId} onChange={setBranchId} />
                 </div>
 
                 {showForm && (

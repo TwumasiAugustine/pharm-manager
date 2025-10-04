@@ -1,7 +1,8 @@
+import { useEffect } from 'react';
 import { useBranches } from '../../hooks/useBranches';
 import { useCurrentUser } from '../../hooks/useAuth';
 import { usePermissions } from '../../hooks/usePermissions';
-import { useEffect } from 'react';
+import { UserRole } from '../../types/user.types';
 
 interface BranchSelectProps {
     value?: string;
@@ -28,7 +29,7 @@ export function BranchSelect({
     const userScope = getUserScope();
     const canChangeBranch = userScope === 'system' || userScope === 'pharmacy';
 
-    // Get user's assigned branch
+    // Get user's assigned branch - handle both direct branchId and branch object
     const userBranch = user?.branch;
     const userBranchId = userBranch?.id || user?.branchId;
 
@@ -38,11 +39,25 @@ export function BranchSelect({
     const isDisabled = shouldEnforceBranchRestriction && !!userBranchId;
 
     // Auto-select user's branch for non-admin users in form mode
+    // For filter mode, non-admin users should still default to their branch if no selection
     useEffect(() => {
-        if (shouldEnforceBranchRestriction && userBranchId && !value) {
-            onChange(userBranchId);
+        if (userBranchId && !value) {
+            if (shouldEnforceBranchRestriction) {
+                // Form mode: auto-select and lock to user's branch
+                onChange(userBranchId);
+            } else if (mode === 'filter' && !canChangeBranch) {
+                // Filter mode for non-admin: default to user's branch but allow changes
+                onChange(userBranchId);
+            }
         }
-    }, [shouldEnforceBranchRestriction, userBranchId, value, onChange]);
+    }, [
+        shouldEnforceBranchRestriction,
+        userBranchId,
+        value,
+        onChange,
+        mode,
+        canChangeBranch,
+    ]);
 
     // For non-admin users in form mode, use their branch; otherwise use provided value
     const effectiveValue = shouldEnforceBranchRestriction
@@ -56,7 +71,7 @@ export function BranchSelect({
                     aria-label="Select Branch"
                     className="block w-full rounded-md border border-gray-300 bg-gray-100 text-sm font-semibold py-2 px-3 pr-8 text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all appearance-none"
                 >
-                    <option>Loading...</option>
+                    <option>Loading branches...</option>
                 </select>
                 <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-300">
                     <svg
@@ -76,8 +91,49 @@ export function BranchSelect({
             </div>
         );
 
+    // For admin users, if no branches are loaded, show a different message
+    if (
+        user?.role === UserRole.ADMIN &&
+        (!branches || branches.length === 0) &&
+        !isLoading
+    ) {
+        return (
+            <div className="relative">
+                <select
+                    disabled
+                    aria-label="No Branches Available"
+                    className="block w-full rounded-md border border-red-300 bg-red-50 text-sm font-semibold py-2 px-3 pr-8 text-red-700 focus:border-red-500 focus:ring-2 focus:ring-red-500 focus:outline-none transition-all appearance-none"
+                >
+                    <option>
+                        No branches available - Create a branch first
+                    </option>
+                </select>
+                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-red-500">
+                    <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                    </svg>
+                </span>
+            </div>
+        );
+    }
+
     // Show branch assignment message for non-admin users without branch in form mode
-    if (shouldEnforceBranchRestriction && !userBranchId) {
+    // Admins should always be able to select branches regardless of their assignment
+    if (
+        shouldEnforceBranchRestriction &&
+        !userBranchId &&
+        user?.role !== UserRole.ADMIN
+    ) {
         return (
             <div className="relative">
                 <select
@@ -133,10 +189,16 @@ export function BranchSelect({
                 }`}
             >
                 {/* Show placeholder/empty option for admins or filter mode */}
-                {(canChangeBranch || mode === 'filter') && (
+                {(canChangeBranch ||
+                    mode === 'filter' ||
+                    user?.role === UserRole.ADMIN) && (
                     <option value="">
                         {mode === 'filter' && allowEmpty
                             ? 'All Branches'
+                            : user?.role === UserRole.ADMIN
+                            ? 'All Branches'
+                            : canChangeBranch && mode === 'form'
+                            ? 'Select a branch...'
                             : placeholder}
                     </option>
                 )}

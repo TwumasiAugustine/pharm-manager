@@ -12,11 +12,13 @@ import type { ReportSummaryData } from '../../types/report.types';
 interface ReportSummaryProps {
     summary: ReportSummaryData | null;
     isLoading: boolean;
+    reportType?: 'sales' | 'inventory' | 'expiry' | 'financial';
 }
 
 export const ReportSummary: React.FC<ReportSummaryProps> = ({
     summary,
     isLoading,
+    reportType = 'sales',
 }) => {
     const { formatNumber, formatCurrency } = useNumberFormatter();
 
@@ -26,14 +28,16 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
                 {[...Array(4)].map((_, index) => (
                     <div
                         key={index}
-                        className="bg-white rounded-lg border p-6 animate-pulse"
+                        className="bg-white rounded-lg shadow border p-6"
                     >
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                                <div className="h-8 bg-gray-200 rounded w-16"></div>
+                        <div className="animate-pulse">
+                            <div className="flex items-center">
+                                <div className="h-12 w-12 bg-gray-200 rounded-lg"></div>
+                                <div className="ml-4 flex-1">
+                                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                                    <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+                                </div>
                             </div>
-                            <div className="h-12 w-12 bg-gray-200 rounded-lg"></div>
                         </div>
                     </div>
                 ))}
@@ -43,15 +47,17 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
 
     if (!summary) {
         return (
-            <div className="bg-white rounded-lg border p-6 text-center">
-                <p className="text-gray-500">No summary data available</p>
+            <div className="bg-white rounded-lg shadow border p-6">
+                <p className="text-gray-500 text-center">
+                    No summary data available
+                </p>
             </div>
         );
     }
 
     const stats = [
         {
-            label: 'Total Revenue',
+            label: reportType === 'inventory' ? 'Total Value' : 'Total Revenue',
             value: formatCurrency(summary.totalRevenue),
             icon: FiTrendingUp,
             color: 'text-green-600',
@@ -65,21 +71,34 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
             bgColor: 'bg-red-100',
         },
         {
-            label: 'Total Profit',
+            label:
+                reportType === 'inventory'
+                    ? 'Potential Profit'
+                    : 'Total Profit',
             value: formatCurrency(summary.totalProfit || 0),
             icon: FiDollarSign,
             color: 'text-orange-600',
             bgColor: 'bg-orange-100',
         },
+        // Only show sales metrics for sales reports
+        ...(reportType === 'sales' && summary.totalSales > 0
+            ? [
+                  {
+                      label: 'Total Sales',
+                      value: formatNumber(summary.totalSales),
+                      icon: FiTrendingUp,
+                      color: 'text-blue-600',
+                      bgColor: 'bg-blue-100',
+                  },
+              ]
+            : []),
         {
-            label: 'Total Sales',
-            value: formatNumber(summary.totalSales),
-            icon: FiTrendingUp,
-            color: 'text-blue-600',
-            bgColor: 'bg-blue-100',
-        },
-        {
-            label: 'Items Sold',
+            label:
+                reportType === 'sales'
+                    ? 'Items Sold'
+                    : reportType === 'inventory'
+                    ? 'Total Items'
+                    : 'Items',
             value: formatNumber(summary.totalItems),
             icon: FiPackage,
             color: 'text-purple-600',

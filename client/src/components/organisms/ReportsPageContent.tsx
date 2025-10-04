@@ -46,7 +46,11 @@ export const ReportsPageContent: React.FC<ReportsPageContentProps> = ({
     return (
         <div className="lg:col-span-3 space-y-6">
             {/* Report Summary */}
-            <ReportSummary summary={reportSummary} isLoading={isLoading} />
+            <ReportSummary
+                summary={reportSummary}
+                isLoading={isLoading}
+                reportType={filters.reportType}
+            />
 
             {/* Report Table */}
             <div className="bg-white rounded-lg shadow-sm border">

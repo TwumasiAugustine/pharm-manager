@@ -170,6 +170,9 @@ export class ReportService {
             });
         });
 
+        console.log(
+            `📋 Generated ${reportData.length} report items from sales`,
+        );
         return reportData;
     }
 
@@ -475,14 +478,14 @@ export class ReportService {
             totalRevenue,
             totalCost,
             totalProfit,
-            totalSales: reportType === 'sales' ? totalSales : data.length,
+            totalSales: reportType === 'sales' ? totalSales : 0, // Only sales reports should show sales count
             totalItems,
             profitMargin,
             topSellingDrug:
                 reportType === 'sales'
                     ? topItem
                     : `Top ${reportType === 'inventory' ? 'Valued' : reportType === 'expiry' ? 'Expiring' : ''} Drug: ${topItem}`,
-            averageOrderValue,
+            averageOrderValue: reportType === 'sales' ? averageOrderValue : 0, // Only relevant for sales
             period: {
                 start: data[0]?.date || '',
                 end: data[data.length - 1]?.date || '',

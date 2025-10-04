@@ -31,12 +31,12 @@ const DrugsPage: React.FC = () => {
     // URL-based filters for drugs page
     const { filters, setFilter } = useURLFilters(
         {
-            branchId: '',
             search: '',
             category: '',
             requiresPrescription: undefined as boolean | undefined,
             page: 1,
             limit: 10,
+            branchId: '',
         },
         {
             debounceMs: 300,
@@ -116,10 +116,6 @@ const DrugsPage: React.FC = () => {
                                 onChange={(branchId) =>
                                     setFilter('branchId', branchId)
                                 }
-                                mode="filter"
-                                allowEmpty={true}
-                                placeholder="All Branches"
-                                required={false}
                             />
                         </div>
 
@@ -239,7 +235,6 @@ const DrugsPage: React.FC = () => {
                         </PermissionGuard>
                     ) : (
                         <DrugList
-                            branchId={filters.branchId}
                             urlFilters={filters}
                             onFiltersChange={(key, value) =>
                                 setFilter(

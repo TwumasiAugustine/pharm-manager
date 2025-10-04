@@ -67,10 +67,6 @@ const CustomerManagementPage: React.FC = () => {
         page: filters.page,
     });
 
-    const handleBranchChange = (id: string) => {
-        setFilter('branchId', id);
-    };
-
     const createCustomer = useCreateCustomer();
 
     // Close actions dropdown when clicking outside
@@ -350,11 +346,9 @@ const CustomerManagementPage: React.FC = () => {
                         <div className="w-full sm:w-56 max-w-xs">
                             <BranchSelect
                                 value={filters.branchId}
-                                onChange={handleBranchChange}
-                                mode="filter"
-                                allowEmpty={true}
-                                placeholder="All Branches"
-                                required={false}
+                                onChange={(branchId) =>
+                                    setFilter('branchId', branchId)
+                                }
                             />
                         </div>
                         <div className="hidden sm:block h-8 border-l border-gray-200 mx-2"></div>

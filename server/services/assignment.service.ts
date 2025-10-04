@@ -110,9 +110,7 @@ export class AssignmentService {
                 );
             } catch (error) {
                 // Don't fail if branch assignment fails for admin
-                if (
-                    updatedData.role !== UserRole.ADMIN
-                ) {
+                if (updatedData.role !== UserRole.ADMIN) {
                     throw error;
                 }
             }
@@ -177,5 +175,14 @@ export class AssignmentService {
         }
 
         return true;
+    }
+
+    /**
+     * Get all available branches
+     * @returns Array of all branches in the system
+     */
+    static async getAllBranches(): Promise<any[]> {
+        const branches = await Branch.find().sort({ name: 1 });
+        return branches;
     }
 }

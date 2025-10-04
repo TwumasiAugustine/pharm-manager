@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import PharmacyInfo from '../models/pharmacy-info.model';
 import { UnauthorizedError } from '../utils/errors';
 import { UserRole } from '../types/user.types';
+import PermissionService from '../services/permission.service';
+import { PHARMACY_PERMISSIONS } from '../constants/permissions';
 
 // Admin level: Toggle requireSaleShortCode feature
 export const toggleSaleShortCodeFeature = async (
@@ -293,6 +295,33 @@ export const fetchPharmacyInfo = async (req: Request, res: Response) => {
 
 export const modifyPharmacyInfo = async (req: Request, res: Response) => {
     try {
+        // Check if pharmacy name is being changed and user has permission
+        if (req.body.name) {
+            const currentPharmacyInfo = await getPharmacyInfo();
+            if (
+                currentPharmacyInfo &&
+                currentPharmacyInfo.name !== req.body.name
+            ) {
+                // Name is being changed, check if user has UPDATE_PHARMACY_NAME permission
+                if (
+                    !PermissionService.hasPermissionFromToken(
+                        req.user!,
+                        PHARMACY_PERMISSIONS.UPDATE_PHARMACY_NAME,
+                    )
+                ) {
+                    return res.status(403).json({
+                        success: false,
+                        message:
+                            'Only Super Admin can change the pharmacy name',
+                        data: {
+                            pharmacyInfo: null,
+                            isConfigured: false,
+                        },
+                    });
+                }
+            }
+        }
+
         const updatedInfo = await updatePharmacyInfo(req.body);
 
         // Mark admin's first setup as complete
