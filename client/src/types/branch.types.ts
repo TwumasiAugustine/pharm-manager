@@ -13,7 +13,6 @@ export interface Branch {
         phone: string;
         email: string;
     };
-    manager?: string;
     createdAt: string;
     updatedAt: string;
 }

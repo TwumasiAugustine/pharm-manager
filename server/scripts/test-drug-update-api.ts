@@ -13,8 +13,8 @@ import jwt from 'jsonwebtoken';
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-import { Drug } from '../src/models/drug.model';
-import User from '../src/models/user.model';
+import { Drug } from '../models/drug.model';
+import User from '../models/user.model';
 import { UserRole } from '../src/types/user.types';
 
 async function testDrugUpdateAPI(): Promise<void> {

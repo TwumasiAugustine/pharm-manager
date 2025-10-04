@@ -3,11 +3,11 @@
  */
 
 import dotenv from 'dotenv';
-import { Sale } from '../src/models/sale.model';
-import { Drug } from '../src/models/drug.model';
-import PharmacyInfo from '../src/models/pharmacy-info.model';
-import Branch from '../src/models/branch.model';
-import connectDB from '../src/config/db';
+import { Sale } from '../models/sale.model';
+import { Drug } from '../models/drug.model';
+import PharmacyInfo from '../models/pharmacy-info.model';
+import Branch from '../models/branch.model';
+import connectDB from '../config/db';
 
 // Load environment variables
 dotenv.config();

@@ -24,6 +24,7 @@ export interface IUser {
             country: string;
         };
     }; // Populated branch data
+    isManager?: boolean; // Indicates if user is a manager of their assigned branch
     isFirstSetup?: boolean;
     refreshToken?: string;
     createdAt?: string;

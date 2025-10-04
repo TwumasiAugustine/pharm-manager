@@ -5,11 +5,11 @@
 
 import * as dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import { Sale } from '../src/models/sale.model';
-import { Drug } from '../src/models/drug.model';
-import PharmacyInfo from '../src/models/pharmacy-info.model';
-import { ExpiredSaleCleanupService } from '../src/services/expired-sale-cleanup.service';
-import { AssignmentService } from '../src/services/assignment.service';
+import { Sale } from '../models/sale.model';
+import { Drug } from '../models/drug.model';
+import PharmacyInfo from '../models/pharmacy-info.model';
+import { ExpiredSaleCleanupService } from '../services/expired-sale-cleanup.service';
+import { AssignmentService } from '../services/assignment.service';
 
 // Load environment variables
 dotenv.config();

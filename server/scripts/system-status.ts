@@ -12,11 +12,11 @@ import path from 'path';
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-import { AssignmentService } from '../src/services/assignment.service';
-import PharmacyInfo from '../src/models/pharmacy-info.model';
-import Branch from '../src/models/branch.model';
-import User from '../src/models/user.model';
-import { Drug } from '../src/models/drug.model';
+import { AssignmentService } from '../services/assignment.service';
+import PharmacyInfo from '../models/pharmacy-info.model';
+import Branch from '../models/branch.model';
+import User from '../models/user.model';
+import { Drug } from '../models/drug.model';
 
 async function checkSystemStatus(): Promise<void> {
     try {

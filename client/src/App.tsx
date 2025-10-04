@@ -14,10 +14,12 @@ import { socketService } from './services/socket.service';
 import { PageLoadingScreen } from './components/atoms/LoadingScreen';
 import NavigationLoader from './components/molecules/NavigationLoader';
 
-// Lazy load all pages
-const Homepage = lazy(() => import('./pages/Homepage'));
-const LoginPage = lazy(() => import('./pages/LoginPage'));
-const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+// Eagerly import critical entry pages to avoid blocking Suspense
+import Homepage from './pages/Homepage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+
+// Lazy load the rest of the pages
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const DrugsPage = lazy(() => import('./pages/DrugsPage'));
 const EditDrugPage = lazy(() => import('./pages/EditDrugPage'));
@@ -188,10 +190,7 @@ function App() {
                                     <Route
                                         element={
                                             <ProtectedRoute
-                                                allowedRoles={[
-                                                    UserRole.ADMIN,
-                                                    UserRole.SUPER_ADMIN,
-                                                ]}
+                                                allowedRoles={[UserRole.ADMIN]}
                                             />
                                         }
                                     >

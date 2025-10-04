@@ -21,7 +21,7 @@ import path from 'path';
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Import models after environment is loaded
-import User from '../src/models/user.model';
+import User from '../models/user.model';
 import { UserRole } from '../src/types/user.types';
 import {
     USER_PERMISSIONS,
@@ -31,7 +31,7 @@ import {
     DRUG_PERMISSIONS,
     CUSTOMER_PERMISSIONS,
     SALES_PERMISSIONS,
-} from '../src/constants/permissions';
+} from '../constants/permissions';
 
 interface CreateSuperAdminOptions {
     name: string;

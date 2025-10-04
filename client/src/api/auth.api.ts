@@ -1,10 +1,20 @@
 import api from './api';
 import type { LoginRequest, RegisterRequest, User } from '../types/auth.types';
 
+type WrappedData<T> = T | { user: T };
+
 interface ApiResponseData<T> {
     success: boolean;
     message: string;
-    data: T;
+    data: WrappedData<T>;
+}
+
+function unwrap<T>(d: WrappedData<T>): T {
+    // If server wraps the payload as { user: T }, return the inner user
+    if (d && typeof d === 'object' && 'user' in (d as object)) {
+        return (d as { user: T }).user;
+    }
+    return d as T;
 }
 
 export const authApi = {
@@ -13,7 +23,8 @@ export const authApi = {
             '/auth/login',
             credentials,
         );
-        return response.data.data;
+        // Normalize server response which may be either `User` or `{ user: User }`.
+        return unwrap(response.data.data);
     },
 
     register: async (userData: RegisterRequest): Promise<User> => {
@@ -21,7 +32,7 @@ export const authApi = {
             '/auth/register',
             userData,
         );
-        return response.data.data;
+        return unwrap(response.data.data);
     },
 
     logout: async (): Promise<void> => {
@@ -30,7 +41,7 @@ export const authApi = {
 
     getCurrentUser: async (): Promise<User> => {
         const response = await api.get<ApiResponseData<User>>('/auth/me');
-        return response.data.data;
+        return unwrap(response.data.data);
     },
 
     refreshToken: async (): Promise<{ success: boolean; user?: User }> => {
@@ -38,9 +49,11 @@ export const authApi = {
             const response = await api.post<ApiResponseData<{ user: User }>>(
                 '/auth/refresh',
             );
+            // Normalize the wrapped response and extract the inner user
+            const payload = unwrap(response.data.data) as { user: User } | null;
             return {
                 success: response.data.success,
-                user: response.data.data?.user,
+                user: payload ? payload.user : undefined,
             };
         } catch (error) {
             // If refresh fails, return false instead of throwing

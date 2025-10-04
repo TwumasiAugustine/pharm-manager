@@ -12,7 +12,7 @@ import path from 'path';
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-import User from '../src/models/user.model';
+import User from '../models/user.model';
 
 async function resetMultiplePasswords(): Promise<void> {
     try {
@@ -25,10 +25,26 @@ async function resetMultiplePasswords(): Promise<void> {
         await mongoose.connect(process.env.MONGO_URI);
         console.log('✅ Connected to MongoDB');
 
-        const usersToReset = [
-            { email: 'example@test.com', newPassword: 'example' },
-            { email: 'manaspharm@gmail.com', newPassword: 'example' },
-        ];
+        // Read list from CLI JSON file or environment variable
+        const args = process.argv.slice(2);
+        let usersToReset: Array<{ email: string; newPassword: string }> = [];
+
+        if (args[0]) {
+            // Expect a path to a JSON file containing [{ email, newPassword }, ...]
+            const filePath = args[0];
+            const raw = require('fs').readFileSync(filePath, 'utf8');
+            usersToReset = JSON.parse(raw) as Array<{
+                email: string;
+                newPassword: string;
+            }>;
+        } else if (process.env.RESET_USERS_JSON) {
+            usersToReset = JSON.parse(process.env.RESET_USERS_JSON!);
+        } else {
+            console.log(
+                'No users specified. Provide a JSON file path as the first argument or set RESET_USERS_JSON env var.',
+            );
+            return;
+        }
 
         for (const userInfo of usersToReset) {
             console.log(`\n👤 Resetting password for: ${userInfo.email}`);

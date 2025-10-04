@@ -59,7 +59,6 @@ export default function BranchManagementPage() {
             country: '',
         },
         contact: { phone: '', email: '' },
-        manager: '',
     });
     const [editingId, setEditingId] = useState<string | null>(null);
     const [showForm, setShowForm] = useState(false);
@@ -110,7 +109,6 @@ export default function BranchManagementPage() {
                 country: '',
             },
             contact: { phone: '', email: '' },
-            manager: '',
         });
         setEditingId(null);
         setShowForm(false);
@@ -182,7 +180,6 @@ export default function BranchManagementPage() {
                 country: '',
             },
             contact: { phone: '', email: '' },
-            manager: '',
         });
         setShowForm(false);
     }
@@ -197,7 +194,6 @@ export default function BranchManagementPage() {
             ...rest,
             address: { ...branch.address },
             contact: { ...branch.contact },
-            manager: branch.manager || '',
         });
         setEditingId(id);
         setShowForm(true);
@@ -263,7 +259,6 @@ export default function BranchManagementPage() {
                                                 country: '',
                                             },
                                             contact: { phone: '', email: '' },
-                                            manager: '',
                                         });
                                     }
                                 }}

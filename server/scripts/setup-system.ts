@@ -14,11 +14,11 @@ import readline from 'readline';
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-import PharmacyInfo from '../src/models/pharmacy-info.model';
-import Branch from '../src/models/branch.model';
-import User from '../src/models/user.model';
+import PharmacyInfo from '../models/pharmacy-info.model';
+import Branch from '../models/branch.model';
+import User from '../models/user.model';
 import { UserRole } from '../src/types/auth.types';
-import { AssignmentService } from '../src/services/assignment.service';
+import { AssignmentService } from '../services/assignment.service';
 import {
     USER_PERMISSIONS,
     PHARMACY_PERMISSIONS,
@@ -27,7 +27,7 @@ import {
     DRUG_PERMISSIONS,
     CUSTOMER_PERMISSIONS,
     SALES_PERMISSIONS,
-} from '../src/constants/permissions';
+} from '../constants/permissions';
 
 interface SetupOptions {
     pharmacyName?: string;

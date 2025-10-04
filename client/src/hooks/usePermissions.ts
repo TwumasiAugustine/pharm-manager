@@ -206,6 +206,60 @@ export const usePermissions = () => {
         [userPermissions, isLoading, hasPermission],
     );
 
+    const isManager = useCallback((): boolean => {
+        if (isLoading || !userPermissions) return false;
+        // Type assertion for extended user object with manager properties
+        const user = userPermissions.user as typeof userPermissions.user & {
+            isManager?: boolean;
+            branchId?: string;
+            branch?: unknown;
+        };
+        return user?.isManager === true;
+    }, [userPermissions, isLoading]);
+
+    const canActAsManager = useCallback((): boolean => {
+        if (isLoading || !userPermissions) return false;
+        const user = userPermissions.user as typeof userPermissions.user & {
+            isManager?: boolean;
+            branchId?: string;
+            branch?: string;
+        };
+        return user?.isManager === true && (user?.branchId || user?.branch);
+    }, [userPermissions, isLoading]);
+
+    // Manager-specific permission helpers
+    const canManageBranchStaff = useCallback((): boolean => {
+        return canActAsManager() && hasPermission('MANAGE_BRANCH_STAFF');
+    }, [canActAsManager, hasPermission]);
+
+    const canViewBranchAnalytics = useCallback((): boolean => {
+        return canActAsManager() && hasPermission('VIEW_BRANCH_ANALYTICS');
+    }, [canActAsManager, hasPermission]);
+
+    const canApproveDiscounts = useCallback((): boolean => {
+        return canActAsManager() && hasPermission('APPROVE_DISCOUNTS');
+    }, [canActAsManager, hasPermission]);
+
+    const canOverridePrices = useCallback((): boolean => {
+        return canActAsManager() && hasPermission('OVERRIDE_PRICES');
+    }, [canActAsManager, hasPermission]);
+
+    const canApproveRefunds = useCallback((): boolean => {
+        return canActAsManager() && hasPermission('APPROVE_REFUNDS');
+    }, [canActAsManager, hasPermission]);
+
+    const canManageBranchInventory = useCallback((): boolean => {
+        return canActAsManager() && hasPermission('MANAGE_BRANCH_INVENTORY');
+    }, [canActAsManager, hasPermission]);
+
+    const canManageShiftSchedules = useCallback((): boolean => {
+        return canActAsManager() && hasPermission('MANAGE_SHIFT_SCHEDULES');
+    }, [canActAsManager, hasPermission]);
+
+    const canViewStaffPerformance = useCallback((): boolean => {
+        return canActAsManager() && hasPermission('VIEW_STAFF_PERFORMANCE');
+    }, [canActAsManager, hasPermission]);
+
     return {
         userPermissions,
         isLoading,
@@ -213,6 +267,16 @@ export const usePermissions = () => {
         hasAnyPermission,
         hasAllPermissions,
         canManageUser,
+        isManager,
+        canActAsManager,
+        canManageBranchStaff,
+        canViewBranchAnalytics,
+        canApproveDiscounts,
+        canOverridePrices,
+        canApproveRefunds,
+        canManageBranchInventory,
+        canManageShiftSchedules,
+        canViewStaffPerformance,
         role: userPermissions?.user.role,
         userId: userPermissions?.user.id,
     };

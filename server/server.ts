@@ -3,17 +3,14 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-import connectDB from './src/config/db';
-import apiRoutes from './src/routes';
-import {
-    errorHandler,
-    notFoundHandler,
-} from './src/middlewares/error.middleware';
-import { requestLogger } from './src/middlewares/logger.middleware';
-import { logger } from './src/utils/logger';
+import connectDB from './config/db';
+import apiRoutes from './routes';
+import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
+import { requestLogger } from './middlewares/logger.middleware';
+import { logger } from './utils/logger';
 import { Server } from 'socket.io';
 import http from 'http';
-import './src/services/cronJob.service'; // Initialize cron jobs on server start
+import './services/cronJob.service'; // Initialize cron jobs on server start
 
 // Load environment variables
 dotenv.config();

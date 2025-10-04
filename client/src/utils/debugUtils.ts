@@ -8,16 +8,10 @@
  * import('/src/utils/debugUtils.js').then(m => m.checkAuthState())
  */
 export const checkAuthState = (): void => {
-    console.log('🔐 Authentication State:');
-    console.log(
-        `Cookie session exists: ${document.cookie.includes('session')}`,
-    );
-    console.log(`Session storage: ${sessionStorage.getItem('hasSession')}`);
-    console.log(
-        `Local storage logged in before: ${localStorage.getItem(
-            'hasLoggedInBefore',
-        )}`,
-    );
+    if (process.env.NODE_ENV === 'production') return;
+    // In development only: use browser console to inspect items manually
+    // Avoid logging sensitive data in shared environments
+    // Example usage in dev: import('/src/utils/debugUtils.js').then(m => m.checkAuthState())
 };
 
 /**
@@ -26,8 +20,7 @@ export const checkAuthState = (): void => {
  * import('/src/utils/debugUtils.js').then(m => m.clearAuthState())
  */
 export const clearAuthState = (): void => {
+    if (process.env.NODE_ENV === 'production') return;
     sessionStorage.removeItem('hasSession');
     localStorage.removeItem('hasLoggedInBefore');
-    console.log('🧹 All authentication state cleared');
-    console.log('You will need to log in again');
 };

@@ -12,7 +12,7 @@ import path from 'path';
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-import User from '../src/models/user.model';
+import User from '../models/user.model';
 
 async function resetPassword(
     email: string,
@@ -67,10 +67,16 @@ async function resetPassword(
     }
 }
 
-// Main execution
+// Main execution - use: node reset-password.ts <email> <newPassword>
 if (require.main === module) {
-    const email = 'superadmin@medicare.com';
-    const newPassword = 'example';
+    const args = process.argv.slice(2);
+    const email = args[0];
+    const newPassword = args[1];
+
+    if (!email || !newPassword) {
+        console.error('Usage: node reset-password.ts <email> <newPassword>');
+        process.exit(1);
+    }
 
     resetPassword(email, newPassword)
         .then(() => {
@@ -78,7 +84,10 @@ if (require.main === module) {
             process.exit(0);
         })
         .catch((error) => {
-            console.error('\n💥 Password reset failed:', error.message);
+            console.error(
+                '\n💥 Password reset failed:',
+                error.message || error,
+            );
             process.exit(1);
         });
 }

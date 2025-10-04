@@ -12,8 +12,8 @@ import path from 'path';
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-import User from '../src/models/user.model';
-import { UserService } from '../src/services/user.service';
+import User from '../models/user.model';
+import { UserService } from '../services/user.service';
 import { UserRole } from '../src/types/user.types';
 
 async function testUserCreation(): Promise<void> {

@@ -125,8 +125,12 @@ const SEOMetadata: React.FC<SEOMetadataProps> = ({
             {structuredData && (
                 <script
                     type="application/ld+json"
+                    // Safely serialize structured data and escape closing script tags
                     dangerouslySetInnerHTML={{
-                        __html: JSON.stringify(structuredData),
+                        __html: JSON.stringify(structuredData).replace(
+                            /<\/script/gi,
+                            '<\\/script',
+                        ),
                     }}
                 />
             )}

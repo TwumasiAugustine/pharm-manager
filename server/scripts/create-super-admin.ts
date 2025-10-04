@@ -30,7 +30,7 @@ import path from 'path';
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Import models after environment is loaded
-import User from '../src/models/user.model';
+import User from '../models/user.model';
 import { UserRole } from '../src/types/auth.types';
 
 interface SuperAdminData {

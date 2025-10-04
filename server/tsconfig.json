@@ -110,6 +110,12 @@
         // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
         "skipLibCheck": true /* Skip type checking all .d.ts files. */
     },
-    "include": ["src/**/*", "scripts/**/*"],
+    "include": ["models",
+        "/*",
+        "scripts/**/*",
+        "constants",
+        "config",
+        "controllers"
+, "routes", "validations", "middlewares", "services"    ],
     "exclude": ["node_modules", "dist"]
 }

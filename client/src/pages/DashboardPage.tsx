@@ -60,17 +60,11 @@ const DashboardPage: React.FC = () => {
 
     return (
         <DashboardLayout>
-            {/* SEO Metadata - React 19 will hoist to <head> */}
             <SEOMetadata {...seoData} />
 
             <div className="space-y-4 sm:space-y-6">
                 {/* Header Section - Responsive */}
                 <div className="flex flex-col space-y-4 lg:flex-row lg:justify-between lg:items-start lg:space-y-0 lg:space-x-4">
-                    {/* <div className="flex-shrink-0">
-                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                            Dashboard
-                        </h1>
-                    </div> */}
                     <div className="w-full lg:w-auto lg:flex-shrink-0">
                         <DashboardFilter
                             filters={filters}

@@ -38,6 +38,7 @@ const UserManagementPage: React.FC = () => {
         password: '',
         role: UserRole.PHARMACIST,
         branchId: '',
+        isManager: false,
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [branchId, setBranchId] = useState<string>('');
@@ -116,6 +117,7 @@ const UserManagementPage: React.FC = () => {
                 password: '',
                 role: UserRole.PHARMACIST,
                 branchId: '',
+                isManager: false,
             });
             setShowForm(false);
         } catch {

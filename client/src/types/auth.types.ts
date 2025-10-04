@@ -10,6 +10,7 @@ export interface User {
     email: string;
     role: UserRole;
     permissions?: string[];
+    branchId?: string; // Branch assignment ID
     branch?: {
         id: string;
         name: string;

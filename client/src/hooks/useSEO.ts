@@ -38,10 +38,13 @@ interface GeneratedSEOData {
  * - Performance optimizations
  * - Consistent metadata patterns across the app
  */
-export const useSEO = (config: SEOConfig): GeneratedSEOData => {
+export const useSEO = (config?: SEOConfig): GeneratedSEOData => {
     const baseUrl = window.location.origin;
 
     const seoData = useMemo(() => {
+        // Use provided config or fallback to the app-wide default preset
+        const cfg: SEOConfig = config ?? SEO_PRESETS.pharmcare;
+
         const {
             title,
             description,
@@ -50,7 +53,7 @@ export const useSEO = (config: SEOConfig): GeneratedSEOData => {
             ogImage,
             structuredDataType = 'WebApplication',
             preloadFonts = true,
-        } = config;
+        } = cfg;
 
         // Generate comprehensive description
         const defaultDescription =

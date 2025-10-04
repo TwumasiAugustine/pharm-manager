@@ -19,7 +19,17 @@ export const useAuthStore = create<
             isLoading: false,
             isPharmacyConfigured: false,
 
-            setUser: (user) => set({ user }),
+            setUser: (user) => {
+                // Persist only minimal non-sensitive fields
+                const safeUser = user
+                    ? ({
+                          id: user.id,
+                          name: user.name,
+                          role: user.role,
+                      } as unknown as User)
+                    : (null as unknown as User);
+                set({ user: safeUser });
+            },
             setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
             setIsLoading: (isLoading) => set({ isLoading }),
             setPharmacyConfigured: (isConfigured) =>

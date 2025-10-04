@@ -61,16 +61,22 @@ export const useLogin = () => {
             setIsAuthenticated(true);
             queryClient.setQueryData(['currentUser'], data.user);
 
-            // If admin level and pharmacy not configured, redirect to setup
+            // If admin and pharmacy not configured, redirect to setup.
+            // Super admins manage multiple pharmacies and should not be
+            // forced into local pharmacy setup — send them to the
+            // super-admin dashboard instead.
             if (
-                (data.user.role === UserRole.ADMIN ||
-                    data.user.role === UserRole.SUPER_ADMIN) &&
+                data.user.role === UserRole.ADMIN &&
                 !data.isPharmacyConfigured
             ) {
                 navigate('/pharmacy-setup');
                 notify.success(
                     'Please set up your pharmacy information to get started',
                 );
+            } else if (data.user.role === UserRole.SUPER_ADMIN) {
+                // Super admins should be taken to the super-admin dashboard
+                navigate('/super-admin');
+                notify.success('Logged in successfully');
             } else {
                 navigate('/dashboard');
                 notify.success('Logged in successfully');

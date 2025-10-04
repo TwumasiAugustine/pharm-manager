@@ -105,6 +105,28 @@ const UserForm: React.FC<UserFormProps> = ({
                     }
                 />
             </div>
+            {formData.branchId && (
+                <div className="flex items-center space-x-2">
+                    <input
+                        id="isManager"
+                        type="checkbox"
+                        checked={formData.isManager || false}
+                        onChange={(e) =>
+                            setFormData((f) => ({
+                                ...f,
+                                isManager: e.target.checked,
+                            }))
+                        }
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label
+                        htmlFor="isManager"
+                        className="text-sm font-medium text-gray-700"
+                    >
+                        Assign as manager of selected branch
+                    </label>
+                </div>
+            )}
             <div className="flex gap-2 justify-end">
                 <Button type="button" color="secondary" onClick={onCancel}>
                     Cancel

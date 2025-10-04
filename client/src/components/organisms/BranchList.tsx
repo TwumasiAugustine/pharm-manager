@@ -31,11 +31,6 @@ export const BranchList: React.FC<BranchListProps> = ({
 }) => {
     const columns: TableColumn<Branch>[] = [
         { header: 'Name', accessor: 'name' },
-        {
-            header: 'Manager',
-            accessor: 'manager',
-            cell: (v) => (typeof v === 'string' && v ? v : '-'),
-        },
         { header: 'City', accessor: (b) => b.address.city },
         { header: 'Country', accessor: (b) => b.address.country },
     ];

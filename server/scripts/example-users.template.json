@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Super Administrator",
+        "email": "super.admin@pharmacy.com",
+        "password": "<GENERATE_SECURE_PASSWORD_AND_REPLACE>",
+        "role": "super-admin",
+        "permissions": [
+            "CREATE_USER",
+            "UPDATE_USER",
+            "DELETE_USER",
+            "VIEW_USERS"
+        ]
+    }
+]
