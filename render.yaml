@@ -2,13 +2,13 @@ services:
   - type: web
     name: pharm-manager-server
     env: node
-    # Work from project root
+    # Explicit working directory management
     buildCommand: |
       echo "=== BUILD DEBUG INFO ==="
-      echo "Current directory: $(pwd)"
-      echo "Project root contents:"
+      echo "Root directory: $(pwd)"
+      echo "Root contents:"
       ls -la
-      echo "=== NAVIGATING TO SERVER ==="
+      echo "=== CHANGING TO SERVER DIRECTORY ==="
       cd server
       echo "Server directory: $(pwd)"
       echo "Server contents:"
@@ -25,17 +25,7 @@ services:
       echo "File exists test:"
       test -f dist/server.js && echo "✓ FOUND" || echo "✗ NOT FOUND"
       echo "=== BUILD COMPLETE ==="
-    startCommand: |
-      echo "=== STARTUP DEBUG INFO ==="
-      echo "Startup directory: $(pwd)"
-      cd server
-      echo "Changed to: $(pwd)"
-      echo "Contents:"
-      ls -la
-      echo "Dist contents:"
-      ls -la dist/
-      echo "Starting server..."
-      node dist/server.js
+    startCommand: cd server && node dist/server.js
     envVars:
       - key: NODE_ENV
         value: production
