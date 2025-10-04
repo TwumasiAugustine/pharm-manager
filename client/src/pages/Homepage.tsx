@@ -16,7 +16,7 @@ export const Homepage: React.FC = () => {
     const [isScrolled, setIsScrolled] = useState(false);
 
     // SEO configuration for homepage
-    const seoData = useSEO(SEO_PRESETS.homepage);
+    const seoData = useSEO(SEO_PRESETS.pharmcare);
 
     // Handle scroll effect for navbar
     useEffect(() => {
