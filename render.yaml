@@ -2,10 +2,22 @@ services:
   - type: web
     name: pharm-manager-server
     env: node
-    rootDir: ./server
-    # Ensure devDependencies (like TypeScript) are installed during build
-    # even if NODE_ENV=production is set for runtime. Use npm ci with dev included.
-    buildCommand: npm ci --include=dev && npm run build
+    rootDir: server
+    # Build from the server directory
+    buildCommand: |
+      echo "Current directory: $(pwd)"
+      echo "Directory contents:"
+      ls -la || dir
+      echo "Installing dependencies..."
+      npm ci --include=dev
+      echo "Dependencies installed"
+      echo "Building TypeScript..."
+      npm run build
+      echo "Build completed"
+      echo "Checking dist directory:"
+      ls -la dist/ || dir dist
+      echo "Verifying server.js exists:"
+      test -f dist/server.js && echo "✓ server.js found!" || echo "✗ server.js NOT found!"
     startCommand: npm start
     envVars:
       - key: NODE_ENV

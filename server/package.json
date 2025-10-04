@@ -4,9 +4,12 @@
     "main": "server.ts",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "node dist/server.js",
+        "start": "echo \"Starting server from $(pwd)/dist/server.js\" && node dist/server.js",
         "dev": "ts-node-dev --respawn --transpile-only server.ts",
-        "build": "tsc",
+        "build": "echo \"Building TypeScript...\" && tsc --project . && echo \"Build completed successfully\"",
+        "build:check": "tsc --noEmit",
+        "clean": "rimraf dist",
+        "prebuild": "npm run clean || true",
         "create-super-admin": "ts-node scripts/create-super-admin.ts",
         "create-super-admin-auto": "ts-node scripts/create-super-admin-auto.ts",
         "create-user": "ts-node scripts/create-user.ts"
@@ -52,9 +55,11 @@
         "@types/socket.io": "^3.0.1",
         "eslint": "^9.32.0",
         "prettier": "^3.6.2",
+        "rimraf": "^3.0.2",
         "socket.io": "^4.8.1",
         "ts-node": "^10.9.2",
         "ts-node-dev": "^2.0.0",
         "typescript": "^5.8.3"
+    }
     }
 }
