@@ -6,6 +6,11 @@ import {
     ALL_PERMISSIONS,
     ROLE_PERMISSIONS,
     MANAGER_PERMISSIONS,
+    ROLE_HIERARCHY,
+    isPermissionExcludedForRole,
+    canCreateRole,
+    canManageRole,
+    getRoleScope,
     Permission,
 } from '../constants/permissions';
 
@@ -23,9 +28,18 @@ export class PermissionService {
             return false;
         }
 
-        // Super admin has all permissions
+        // Check if permission is excluded for this role
+        if (isPermissionExcludedForRole(user.role, permission)) {
+            return false;
+        }
+
+        // Super admin has system-level permissions only
         if (user.role === UserRole.SUPER_ADMIN) {
-            return true;
+            const rolePermissions =
+                ROLE_PERMISSIONS[user.role as keyof typeof ROLE_PERMISSIONS];
+            return rolePermissions
+                ? (rolePermissions as readonly string[]).includes(permission)
+                : false;
         }
 
         // Check if user has the permission in their custom permissions array
@@ -85,31 +99,65 @@ export class PermissionService {
             return [];
         }
 
-        // Super admin has all permissions
-        if (user.role === UserRole.SUPER_ADMIN) {
-            return Object.values(ALL_PERMISSIONS);
-        }
-
-        // Get role-based permissions
+        // Get role-based permissions (now respects role hierarchy)
         const rolePermissions =
             ROLE_PERMISSIONS[user.role as keyof typeof ROLE_PERMISSIONS] || [];
 
-        // Add manager permissions if user is a manager
+        // Add manager permissions if user is a manager (but only if not excluded for their role)
         const managerPermissions = user.isManager
-            ? Object.values(MANAGER_PERMISSIONS)
+            ? Object.values(MANAGER_PERMISSIONS).filter(
+                  (permission) =>
+                      !isPermissionExcludedForRole(user.role, permission),
+              )
             : [];
 
-        // Combine with custom permissions (avoid duplicates)
-        const customPermissions = user.permissions || [];
+        // Add custom permissions (but only if not excluded for their role)
+        const customPermissions = user.permissions
+            ? user.permissions.filter(
+                  (permission) =>
+                      !isPermissionExcludedForRole(user.role, permission),
+              )
+            : [];
+
+        // Combine all permissions and remove duplicates
         const allPermissions = [
-            ...new Set([
-                ...rolePermissions,
-                ...managerPermissions,
-                ...customPermissions,
-            ]),
+            ...rolePermissions,
+            ...managerPermissions,
+            ...customPermissions,
         ];
 
-        return allPermissions as Permission[];
+        return [...new Set(allPermissions)] as Permission[];
+    }
+
+    /**
+     * Check if a user can create another user of specified role
+     */
+    static canCreateUser(creatorUser: IUserDoc, targetRole: UserRole): boolean {
+        return canCreateRole(creatorUser.role, targetRole);
+    }
+
+    /**
+     * Check if a user can manage another user
+     */
+    static canManageUser(managerUser: IUserDoc, targetUser: IUserDoc): boolean {
+        return canManageRole(managerUser.role, targetUser.role);
+    }
+
+    /**
+     * Get the scope level for a user
+     */
+    static getUserScope(user: IUserDoc): 'system' | 'pharmacy' | 'branch' {
+        return getRoleScope(user.role);
+    }
+
+    /**
+     * Check if a permission is allowed for a role
+     */
+    static isPermissionAllowedForRole(
+        role: UserRole,
+        permission: string,
+    ): boolean {
+        return !isPermissionExcludedForRole(role, permission);
     }
 
     /**
@@ -223,7 +271,7 @@ export class PermissionService {
     static resetToRoleDefaults(user: IUserDoc): Permission[] {
         const rolePermissions =
             ROLE_PERMISSIONS[user.role as keyof typeof ROLE_PERMISSIONS] || [];
-        return rolePermissions as Permission[];
+        return [...rolePermissions] as Permission[];
     }
 
     /**
@@ -308,25 +356,33 @@ export class PermissionService {
             return false;
         }
 
-        // Super admin has all permissions
-        if (tokenUser.role === UserRole.SUPER_ADMIN) {
+        // Check if permission is excluded for this role
+        if (isPermissionExcludedForRole(tokenUser.role, permission)) {
+            return false;
+        }
+
+        // Get role-based permissions (respects hierarchy)
+        const rolePermissions =
+            ROLE_PERMISSIONS[tokenUser.role as keyof typeof ROLE_PERMISSIONS];
+
+        // Check role permissions first
+        if (
+            rolePermissions &&
+            (rolePermissions as readonly string[]).includes(permission)
+        ) {
             return true;
         }
 
         // Check if user has the permission in their custom permissions array
         if (
             tokenUser.permissions &&
-            tokenUser.permissions.includes(permission)
+            tokenUser.permissions.includes(permission) &&
+            !isPermissionExcludedForRole(tokenUser.role, permission)
         ) {
             return true;
         }
 
-        // Check if user's role has the permission by default
-        const rolePermissions =
-            ROLE_PERMISSIONS[tokenUser.role as keyof typeof ROLE_PERMISSIONS];
-        return rolePermissions
-            ? (rolePermissions as readonly string[]).includes(permission)
-            : false;
+        return false;
     }
 
     /**
@@ -361,23 +417,23 @@ export class PermissionService {
             return [];
         }
 
-        // Super admin has all permissions
-        if (tokenUser.role === UserRole.SUPER_ADMIN) {
-            return Object.values(ALL_PERMISSIONS);
-        }
-
-        // Get role-based permissions
+        // Get role-based permissions (now respects role hierarchy)
         const rolePermissions =
             ROLE_PERMISSIONS[tokenUser.role as keyof typeof ROLE_PERMISSIONS] ||
             [];
 
-        // Combine with custom permissions (avoid duplicates)
-        const customPermissions = tokenUser.permissions || [];
-        const allPermissions = [
-            ...new Set([...rolePermissions, ...customPermissions]),
-        ];
+        // Add custom permissions (but only if not excluded for their role)
+        const customPermissions = tokenUser.permissions
+            ? tokenUser.permissions.filter(
+                  (permission) =>
+                      !isPermissionExcludedForRole(tokenUser.role, permission),
+              )
+            : [];
 
-        return allPermissions as Permission[];
+        // Combine all permissions and remove duplicates
+        const allPermissions = [...rolePermissions, ...customPermissions];
+
+        return [...new Set(allPermissions)] as Permission[];
     }
 
     /**

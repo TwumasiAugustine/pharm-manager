@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/auth.middleware';
-import { authorizeAdminLevel } from '../middlewares/authorize.middleware';
+import { requirePermission } from '../services/permission.service';
+import { USER_PERMISSIONS } from '../constants/permissions';
 import { csrfProtection } from '../middlewares/csrf.middleware';
 import { validate } from '../middlewares/validation.middleware';
 import {
@@ -53,7 +54,7 @@ router.get('/me', authenticate, authController.getProfile.bind(authController));
 router.get(
     '/users',
     authenticate,
-    authorizeAdminLevel(),
+    requirePermission(USER_PERMISSIONS.VIEW_USERS),
     authController.getUsers.bind(authController),
 );
 
@@ -61,7 +62,7 @@ router.post(
     '/users',
     authenticate,
     csrfProtection,
-    authorizeAdminLevel(),
+    requirePermission(USER_PERMISSIONS.CREATE_USER),
     validate(createUserSchema),
     authController.createUser.bind(authController),
 );
@@ -70,7 +71,7 @@ router.put(
     '/users/:id',
     authenticate,
     csrfProtection,
-    authorizeAdminLevel(),
+    requirePermission(USER_PERMISSIONS.UPDATE_USER),
     validate(updateUserSchema),
     authController.updateUser.bind(authController),
 );
@@ -78,7 +79,7 @@ router.put(
 router.delete(
     '/users/:id',
     authenticate,
-    authorizeAdminLevel(),
+    requirePermission(USER_PERMISSIONS.DELETE_USER),
     authController.deleteUser.bind(authController),
 );
 
@@ -86,7 +87,7 @@ router.post(
     '/users/assign-permissions',
     authenticate,
     csrfProtection,
-    authorizeAdminLevel(),
+    requirePermission(USER_PERMISSIONS.MANAGE_PERMISSIONS),
     authController.assignPermissions.bind(authController),
 );
 

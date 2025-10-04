@@ -116,6 +116,10 @@ const DrugsPage: React.FC = () => {
                                 onChange={(branchId) =>
                                     setFilter('branchId', branchId)
                                 }
+                                mode="filter"
+                                allowEmpty={true}
+                                placeholder="All Branches"
+                                required={false}
                             />
                         </div>
 

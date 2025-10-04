@@ -1,10 +1,20 @@
 import React, { useState } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
-import { FaUserTie, FaPlus, FaStore, FaSearch, FaTimes } from 'react-icons/fa';
+import {
+    FaUserTie,
+    FaPlus,
+    FaStore,
+    FaSearch,
+    FaTimes,
+    FaSitemap,
+    FaInfoCircle,
+} from 'react-icons/fa';
 import { Button } from '../components/atoms/Button';
 import { Input } from '../components/atoms/Input';
 import { Card, CardContent, CardHeader } from '../components/molecules/Card';
 import { Modal } from '../components/molecules/Modal';
+import RoleHierarchyIndicator from '../components/molecules/RoleHierarchyIndicator';
+import RoleSystemDemo from '../components/organisms/RoleSystemDemo';
 import { useAuthStore } from '../store/auth.store';
 import { UserRole } from '../types/user.types';
 import {
@@ -50,6 +60,7 @@ const SuperAdminDashboard: React.FC = () => {
     // State for modals and forms
     const [showPharmacyModal, setShowPharmacyModal] = useState(false);
     const [showAdminModal, setShowAdminModal] = useState(false);
+    const [showRoleSystemDemo, setShowRoleSystemDemo] = useState(false);
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [selectedPharmacy, setSelectedPharmacy] = useState<IPharmacy | null>(
         null,
@@ -239,12 +250,44 @@ const SuperAdminDashboard: React.FC = () => {
             <SEOMetadata {...seoData} />
             <div className="container mx-auto px-4 py-6">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                        Super Admin Dashboard
-                    </h1>
-                    <p className="text-gray-600">
-                        Manage pharmacies, admins, and system-wide operations
-                    </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                                Super Admin Dashboard
+                            </h1>
+                            <p className="text-gray-600">
+                                Manage pharmacies, admins, and system-wide
+                                operations
+                            </p>
+                        </div>
+                        <Button
+                            onClick={() => setShowRoleSystemDemo(true)}
+                            color="secondary"
+                            className="mt-4 sm:mt-0"
+                        >
+                            <FaSitemap className="mr-2" />
+                            View Role System
+                        </Button>
+                    </div>
+
+                    {/* Role Hierarchy System Information */}
+                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-4 mb-6">
+                        <div className="flex items-center gap-2 mb-3">
+                            <FaInfoCircle className="text-purple-600" />
+                            <h3 className="text-lg font-semibold text-purple-900">
+                                System Role Hierarchy
+                            </h3>
+                        </div>
+                        <p className="text-purple-700 mb-4">
+                            As a Super Admin, you manage the top level of our
+                            4-tier role system. You handle pharmacy creation and
+                            admin management, while Admins manage daily
+                            operations.
+                        </p>
+                        <RoleHierarchyIndicator
+                            currentUserRole={user?.role || UserRole.SUPER_ADMIN}
+                        />
+                    </div>
                 </div>
 
                 {/* Overview Cards */}
@@ -711,6 +754,30 @@ const SuperAdminDashboard: React.FC = () => {
                             </div>
                         </div>
                     </Modal>
+                )}
+
+                {/* Role System Demo Modal */}
+                {showRoleSystemDemo && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl max-h-[95vh] overflow-auto">
+                            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                                <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                                    <FaSitemap className="text-purple-600" />
+                                    Complete Role System & Permission Guide
+                                </h2>
+                                <Button
+                                    onClick={() => setShowRoleSystemDemo(false)}
+                                    color="secondary"
+                                >
+                                    <FaTimes className="mr-2" />
+                                    Close
+                                </Button>
+                            </div>
+                            <div className="p-6">
+                                <RoleSystemDemo />
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </DashboardLayout>

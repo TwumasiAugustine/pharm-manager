@@ -5,12 +5,15 @@
  * Permissions are organized by feature/module for better maintainability.
  */
 
+import { UserRole } from '../types/user.types';
+
 // User Management Permissions
 export const USER_PERMISSIONS = {
     CREATE_USER: 'CREATE_USER',
     UPDATE_USER: 'UPDATE_USER',
     DELETE_USER: 'DELETE_USER',
     VIEW_USERS: 'VIEW_USERS',
+    MANAGE_USERS: 'MANAGE_USERS',
     MANAGE_PERMISSIONS: 'MANAGE_PERMISSIONS',
     VIEW_USER_ACTIVITY: 'VIEW_USER_ACTIVITY',
 } as const;
@@ -49,6 +52,7 @@ export const SALES_PERMISSIONS = {
     UPDATE_SALE: 'UPDATE_SALE',
     DELETE_SALE: 'DELETE_SALE',
     VIEW_SALES: 'VIEW_SALES',
+    MANAGE_SALES: 'MANAGE_SALES',
     FINALIZE_SALE: 'FINALIZE_SALE',
     VOID_SALE: 'VOID_SALE',
     REFUND_SALE: 'REFUND_SALE',
@@ -79,10 +83,18 @@ export const REPORT_PERMISSIONS = {
 // System Administration Permissions
 export const SYSTEM_PERMISSIONS = {
     MANAGE_SYSTEM_SETTINGS: 'MANAGE_SYSTEM_SETTINGS',
+    MANAGE_SYSTEM: 'MANAGE_SYSTEM',
     VIEW_AUDIT_LOGS: 'VIEW_AUDIT_LOGS',
     MANAGE_CRON_JOBS: 'MANAGE_CRON_JOBS',
     BACKUP_RESTORE: 'BACKUP_RESTORE',
     SYSTEM_MONITORING: 'SYSTEM_MONITORING',
+} as const;
+
+// Audit Management Permissions
+export const AUDIT_PERMISSIONS = {
+    VIEW_AUDIT_LOGS: 'VIEW_AUDIT_LOGS',
+    MANAGE_AUDIT_LOGS: 'MANAGE_AUDIT_LOGS',
+    EXPORT_AUDIT_LOGS: 'EXPORT_AUDIT_LOGS',
 } as const;
 
 // Expiry Management Permissions
@@ -114,6 +126,7 @@ export const ALL_PERMISSIONS = {
     ...CUSTOMER_PERMISSIONS,
     ...REPORT_PERMISSIONS,
     ...SYSTEM_PERMISSIONS,
+    ...AUDIT_PERMISSIONS,
     ...EXPIRY_PERMISSIONS,
     ...MANAGER_PERMISSIONS,
 } as const;
@@ -185,9 +198,138 @@ export const PERMISSION_CATEGORIES = {
     },
 } as const;
 
+// System-level permissions (SUPER_ADMIN only)
+export const SYSTEM_LEVEL_PERMISSIONS = [
+    // Pharmacy Management (system-wide)
+    PHARMACY_PERMISSIONS.MANAGE_PHARMACY,
+    PHARMACY_PERMISSIONS.UPDATE_PHARMACY_SETTINGS,
+
+    // System Administration
+    ...Object.values(SYSTEM_PERMISSIONS),
+
+    // User Management (creating admins)
+    USER_PERMISSIONS.CREATE_USER, // Only for creating admins
+] as const;
+
+// Operational permissions (excluded from SUPER_ADMIN by default)
+export const OPERATIONAL_PERMISSIONS = [
+    // Branch Operations
+    ...Object.values(BRANCH_PERMISSIONS).filter(
+        (p) => p !== BRANCH_PERMISSIONS.VIEW_BRANCHES,
+    ),
+
+    // Daily Operations
+    ...Object.values(DRUG_PERMISSIONS),
+    ...Object.values(SALES_PERMISSIONS),
+    ...Object.values(CUSTOMER_PERMISSIONS),
+    ...Object.values(EXPIRY_PERMISSIONS),
+
+    // Operational Reports
+    REPORT_PERMISSIONS.VIEW_REPORTS,
+    REPORT_PERMISSIONS.GENERATE_REPORTS,
+    REPORT_PERMISSIONS.VIEW_ANALYTICS,
+    REPORT_PERMISSIONS.EXPORT_DATA,
+    REPORT_PERMISSIONS.VIEW_FINANCIAL_REPORTS,
+    REPORT_PERMISSIONS.VIEW_INVENTORY_REPORTS,
+    REPORT_PERMISSIONS.VIEW_SALES_REPORTS,
+] as const;
+
+// Role hierarchy definition
+export const ROLE_HIERARCHY = {
+    [UserRole.SUPER_ADMIN]: {
+        level: 4,
+        canCreate: [UserRole.ADMIN],
+        canManage: [UserRole.ADMIN],
+        scope: 'system',
+        excludedPermissions: OPERATIONAL_PERMISSIONS,
+    },
+    [UserRole.ADMIN]: {
+        level: 3,
+        canCreate: [UserRole.PHARMACIST, UserRole.CASHIER],
+        canManage: [UserRole.PHARMACIST, UserRole.CASHIER],
+        scope: 'pharmacy',
+        excludedPermissions: SYSTEM_LEVEL_PERMISSIONS,
+    },
+    [UserRole.PHARMACIST]: {
+        level: 2,
+        canCreate: [],
+        canManage: [],
+        scope: 'branch',
+        excludedPermissions: [
+            ...SYSTEM_LEVEL_PERMISSIONS,
+            USER_PERMISSIONS.CREATE_USER,
+            USER_PERMISSIONS.DELETE_USER,
+            USER_PERMISSIONS.MANAGE_PERMISSIONS,
+        ],
+    },
+    [UserRole.CASHIER]: {
+        level: 1,
+        canCreate: [],
+        canManage: [],
+        scope: 'branch',
+        excludedPermissions: [
+            ...SYSTEM_LEVEL_PERMISSIONS,
+            ...Object.values(USER_PERMISSIONS),
+            ...Object.values(BRANCH_PERMISSIONS).filter(
+                (p) => p !== BRANCH_PERMISSIONS.VIEW_BRANCHES,
+            ),
+        ],
+    },
+} as const;
+
 // Role-based default permissions
 export const ROLE_PERMISSIONS = {
-    admin: Object.values(ALL_PERMISSIONS),
+    super_admin: [
+        // System-level permissions only
+        ...SYSTEM_LEVEL_PERMISSIONS,
+
+        // View-only access to operational data for oversight
+        PHARMACY_PERMISSIONS.VIEW_PHARMACY_INFO,
+        BRANCH_PERMISSIONS.VIEW_BRANCHES,
+        USER_PERMISSIONS.VIEW_USERS,
+        USER_PERMISSIONS.VIEW_USER_ACTIVITY,
+
+        // User management for admins only
+        USER_PERMISSIONS.UPDATE_USER, // For admin management
+        USER_PERMISSIONS.DELETE_USER, // For admin management
+        USER_PERMISSIONS.MANAGE_PERMISSIONS, // For admin permission assignment
+    ],
+    admin: [
+        // User Management (for pharmacists and cashiers)
+        USER_PERMISSIONS.CREATE_USER,
+        USER_PERMISSIONS.UPDATE_USER,
+        USER_PERMISSIONS.DELETE_USER,
+        USER_PERMISSIONS.VIEW_USERS,
+        USER_PERMISSIONS.MANAGE_PERMISSIONS,
+        USER_PERMISSIONS.VIEW_USER_ACTIVITY,
+
+        // Pharmacy (view and limited management)
+        PHARMACY_PERMISSIONS.VIEW_PHARMACY_INFO,
+
+        // Branch Management (full access)
+        ...Object.values(BRANCH_PERMISSIONS),
+
+        // Inventory Management (full access)
+        ...Object.values(DRUG_PERMISSIONS),
+
+        // Sales Management (full access)
+        ...Object.values(SALES_PERMISSIONS),
+
+        // Customer Management (full access)
+        ...Object.values(CUSTOMER_PERMISSIONS),
+
+        // Reports (full access)
+        REPORT_PERMISSIONS.VIEW_REPORTS,
+        REPORT_PERMISSIONS.GENERATE_REPORTS,
+        REPORT_PERMISSIONS.VIEW_ANALYTICS,
+        REPORT_PERMISSIONS.EXPORT_DATA,
+        REPORT_PERMISSIONS.VIEW_FINANCIAL_REPORTS,
+        REPORT_PERMISSIONS.VIEW_INVENTORY_REPORTS,
+        REPORT_PERMISSIONS.VIEW_SALES_REPORTS,
+
+        // Expiry Management (full access)
+        ...Object.values(EXPIRY_PERMISSIONS),
+    ],
     pharmacist: [
         // User Management (view only)
         USER_PERMISSIONS.VIEW_USERS,
@@ -266,6 +408,75 @@ export const getPermissionCategory = (permission: string): string => {
         }
     }
     return 'UNKNOWN';
+};
+
+/**
+ * Check if a user role can create another user role
+ */
+export const canCreateRole = (
+    creatorRole: UserRole,
+    targetRole: UserRole,
+): boolean => {
+    const hierarchy = ROLE_HIERARCHY[creatorRole];
+    return hierarchy
+        ? (hierarchy.canCreate as readonly UserRole[]).includes(targetRole)
+        : false;
+};
+
+/**
+ * Check if a user role can manage another user role
+ */
+export const canManageRole = (
+    managerRole: UserRole,
+    targetRole: UserRole,
+): boolean => {
+    const hierarchy = ROLE_HIERARCHY[managerRole];
+    return hierarchy
+        ? (hierarchy.canManage as readonly UserRole[]).includes(targetRole)
+        : false;
+};
+
+/**
+ * Get the scope level for a role
+ */
+export const getRoleScope = (
+    role: UserRole,
+): 'system' | 'pharmacy' | 'branch' => {
+    const hierarchy = ROLE_HIERARCHY[role];
+    return hierarchy ? hierarchy.scope : 'branch';
+};
+
+/**
+ * Check if a permission is excluded for a role
+ */
+export const isPermissionExcludedForRole = (
+    role: UserRole,
+    permission: string,
+): boolean => {
+    const hierarchy = ROLE_HIERARCHY[role];
+    return hierarchy
+        ? (hierarchy.excludedPermissions as readonly string[]).includes(
+              permission,
+          )
+        : false;
+};
+
+/**
+ * Get filtered permissions for a role (excluding restricted permissions)
+ */
+export const getFilteredPermissionsForRole = (
+    role: UserRole,
+    permissions: string[],
+): string[] => {
+    const hierarchy = ROLE_HIERARCHY[role];
+    if (!hierarchy) return permissions;
+
+    return permissions.filter(
+        (permission) =>
+            !(hierarchy.excludedPermissions as readonly string[]).includes(
+                permission,
+            ),
+    );
 };
 
 export const getPermissionDescription = (permission: string): string => {

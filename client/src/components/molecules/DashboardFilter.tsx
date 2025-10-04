@@ -125,6 +125,10 @@ export const DashboardFilter: React.FC<DashboardFilterProps> = ({
                             <BranchSelect
                                 value={filters.branchId || ''}
                                 onChange={handleBranchChange}
+                                mode="filter"
+                                allowEmpty={true}
+                                placeholder="All Branches"
+                                required={false}
                             />
                         </div>
                     </div>

@@ -351,6 +351,10 @@ const CustomerManagementPage: React.FC = () => {
                             <BranchSelect
                                 value={filters.branchId}
                                 onChange={handleBranchChange}
+                                mode="filter"
+                                allowEmpty={true}
+                                placeholder="All Branches"
+                                required={false}
                             />
                         </div>
                         <div className="hidden sm:block h-8 border-l border-gray-200 mx-2"></div>

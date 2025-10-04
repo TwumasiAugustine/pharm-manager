@@ -45,10 +45,10 @@ export class ExpiryService {
 
         // Branch filtering logic - use provided branchId or user's branch
         const filterBranchId = branchId || userBranchId;
-        if (userRole && userRole !== UserRole.SUPER_ADMIN && filterBranchId) {
+        if (userRole && filterBranchId) {
             query.branch = filterBranchId;
         } else if (branchId) {
-            // Super admin can filter by specific branch if provided
+            // Filter by specific branch if provided
             query.branch = branchId;
         }
 

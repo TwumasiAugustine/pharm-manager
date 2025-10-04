@@ -41,9 +41,7 @@ export class ReportService {
             // Branch filtering logic - use provided branchId or user's branch
             const filterBranchId = branchId || userBranchId;
             const effectiveBranchId =
-                userRole && userRole !== UserRole.SUPER_ADMIN && filterBranchId
-                    ? filterBranchId
-                    : branchId;
+                userRole && filterBranchId ? filterBranchId : branchId;
 
             switch (reportType) {
                 case 'sales':

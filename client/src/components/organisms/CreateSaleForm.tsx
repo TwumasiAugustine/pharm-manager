@@ -112,6 +112,7 @@ const CreateSaleForm: React.FC<CreateSaleFormProps> = ({
                                 <BranchSelect
                                     value={field.value}
                                     onChange={field.onChange}
+                                    mode="form"
                                 />
                             )}
                         />

@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
 import DashboardLayout from '../layouts/DashboardLayout';
-import { FaUsers, FaUserPlus } from 'react-icons/fa';
+import { FaUsers, FaUserPlus, FaSitemap, FaInfoCircle } from 'react-icons/fa';
 import { Button } from '../components/atoms/Button';
 import { BranchSelect } from '../components/molecules/BranchSelect';
 import UserForm from '../components/organisms/UserForm';
 import UserFilters from '../components/organisms/UserFilters';
 import UserList from '../components/organisms/UserList';
 import PermissionManager from '../components/organisms/PermissionManager';
+import RoleHierarchyIndicator from '../components/molecules/RoleHierarchyIndicator';
+import RoleSystemDemo from '../components/organisms/RoleSystemDemo';
 import PermissionGuard from '../components/atoms/PermissionGuard';
 import { PERMISSION_KEYS } from '../types/permission.types';
 import {
@@ -17,6 +19,7 @@ import {
     useDeleteUser,
 } from '../hooks/useUsers';
 import { useSafeNotify } from '../utils/useSafeNotify';
+import { useAuthStore } from '../store/auth.store';
 import type { IUser } from '../types/user.types';
 import { UserRole } from '../types/user.types';
 import SEOMetadata from '../components/atoms/SEOMetadata';
@@ -25,6 +28,7 @@ import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 const UserManagementPage: React.FC = () => {
     const [showForm, setShowForm] = useState(false);
     const notify = useSafeNotify();
+    const { user } = useAuthStore();
 
     // SEO configuration
     const seoData = useSEO({
@@ -130,6 +134,9 @@ const UserManagementPage: React.FC = () => {
         null,
     );
 
+    // Role system demo state
+    const [showRoleDemo, setShowRoleDemo] = useState(false);
+
     // Handler to open permission modal for a user
     const openPermissionModal = (user: IUser) => {
         setPermissionUserId(user._id);
@@ -168,12 +175,49 @@ const UserManagementPage: React.FC = () => {
                                 <FaUserPlus className="mr-2" /> New User
                             </Button>
                         </PermissionGuard>
+
+                        <Button
+                            onClick={() => setShowRoleDemo(true)}
+                            color="secondary"
+                        >
+                            <FaSitemap className="mr-2" /> Role System
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Role Hierarchy Overview */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-3">
+                                <FaInfoCircle className="text-blue-600" />
+                                <h3 className="text-lg font-semibold text-blue-900">
+                                    Role Hierarchy & Permissions
+                                </h3>
+                            </div>
+                            <p className="text-blue-700 mb-4">
+                                Our system uses a 4-level role hierarchy with
+                                clear separation of responsibilities. Super
+                                Admin manages system and pharmacies, while Admin
+                                handles daily operations.
+                            </p>
+                            <RoleHierarchyIndicator
+                                currentUserRole={user?.role || UserRole.CASHIER}
+                            />
+                        </div>
                     </div>
                 </div>
 
                 {/* Branch Filter */}
                 <div className="flex items-center gap-3 mb-4">
-                    <BranchSelect value={branchId} onChange={setBranchId} />
+                    <BranchSelect
+                        value={branchId}
+                        onChange={setBranchId}
+                        mode="filter"
+                        allowEmpty={true}
+                        placeholder="All Branches"
+                        required={false}
+                    />
                 </div>
 
                 {showForm && (
@@ -209,6 +253,29 @@ const UserManagementPage: React.FC = () => {
                                 userId={permissionUserId}
                                 onClose={closePermissionModal}
                             />
+                        </div>
+                    </div>
+                )}
+
+                {/* Role System Demo Modal */}
+                {showRoleDemo && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl max-h-[95vh] overflow-auto">
+                            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                                <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                                    <FaSitemap className="text-blue-600" />
+                                    Role System & Permission Demonstration
+                                </h2>
+                                <Button
+                                    onClick={() => setShowRoleDemo(false)}
+                                    color="secondary"
+                                >
+                                    Close
+                                </Button>
+                            </div>
+                            <div className="p-6">
+                                <RoleSystemDemo />
+                            </div>
                         </div>
                     </div>
                 )}

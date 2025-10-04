@@ -502,8 +502,8 @@ export class SaleService {
     }> {
         const query: any = {};
 
-        // If not super admin, filter by branch
-        if (userRole && userRole !== UserRole.SUPER_ADMIN && userBranchId) {
+        // Filter by branch for operational staff (not system admins)
+        if (userRole && userBranchId) {
             query.branch = userBranchId;
         }
 
@@ -649,8 +649,8 @@ export class SaleService {
     ): Promise<MappedSale> {
         const query: any = { _id: id };
 
-        // If not super admin, filter by branch
-        if (userRole && userRole !== UserRole.SUPER_ADMIN && userBranchId) {
+        // Filter by branch for operational staff (not system admins)
+        if (userRole && userBranchId) {
             query.branch = userBranchId;
         }
 

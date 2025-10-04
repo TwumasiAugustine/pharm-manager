@@ -190,21 +190,83 @@ export const usePermissions = () => {
 
             const currentRole = userPermissions.user.role;
 
-            // Super admin can manage anyone
-            if (currentRole === 'SUPER_ADMIN') return true;
+            // Role hierarchy checks based on new system
+            if (currentRole === 'SUPER_ADMIN') {
+                // Super admin can only manage admins
+                return targetUserRole === 'ADMIN';
+            }
 
-            // Cannot manage super admin
-            if (targetUserRole === 'SUPER_ADMIN') return false;
+            if (currentRole === 'ADMIN') {
+                // Admin can manage pharmacists and cashiers
+                return (
+                    targetUserRole === 'PHARMACIST' ||
+                    targetUserRole === 'CASHIER'
+                );
+            }
 
-            // Admin can manage non-admin users
-            if (currentRole === 'ADMIN' && targetUserRole !== 'ADMIN')
-                return true;
-
-            // Check MANAGE_PERMISSIONS permission
-            return hasPermission('MANAGE_PERMISSIONS');
+            // Pharmacists and cashiers cannot manage other users
+            return false;
         },
-        [userPermissions, isLoading, hasPermission],
+        [userPermissions, isLoading],
     );
+
+    const canCreateUser = useCallback(
+        (targetUserRole: string): boolean => {
+            if (isLoading || !userPermissions) return false;
+
+            const currentRole = userPermissions.user.role;
+
+            // Role hierarchy for user creation
+            if (currentRole === 'SUPER_ADMIN') {
+                return targetUserRole === 'ADMIN';
+            }
+
+            if (currentRole === 'ADMIN') {
+                return (
+                    targetUserRole === 'PHARMACIST' ||
+                    targetUserRole === 'CASHIER'
+                );
+            }
+
+            return false;
+        },
+        [userPermissions, isLoading],
+    );
+
+    const getUserScope = useCallback((): 'system' | 'pharmacy' | 'branch' => {
+        if (isLoading || !userPermissions) return 'branch';
+
+        const currentRole = userPermissions.user.role;
+
+        switch (currentRole) {
+            case 'SUPER_ADMIN':
+                return 'system';
+            case 'ADMIN':
+                return 'pharmacy';
+            case 'PHARMACIST':
+            case 'CASHIER':
+            default:
+                return 'branch';
+        }
+    }, [userPermissions, isLoading]);
+
+    const canAccessOperationalFeatures = useCallback((): boolean => {
+        if (isLoading || !userPermissions) return false;
+
+        const currentRole = userPermissions.user.role;
+
+        // Super admin cannot access operational features (sales, inventory, etc.)
+        return currentRole !== 'SUPER_ADMIN';
+    }, [userPermissions, isLoading]);
+
+    const canAccessSystemFeatures = useCallback((): boolean => {
+        if (isLoading || !userPermissions) return false;
+
+        const currentRole = userPermissions.user.role;
+
+        // Only super admin can access system-level features
+        return currentRole === 'SUPER_ADMIN';
+    }, [userPermissions, isLoading]);
 
     const isManager = useCallback((): boolean => {
         if (isLoading || !userPermissions) return false;
@@ -222,9 +284,9 @@ export const usePermissions = () => {
         const user = userPermissions.user as typeof userPermissions.user & {
             isManager?: boolean;
             branchId?: string;
-            branch?: string;
+            branch?: unknown;
         };
-        return user?.isManager === true && (user?.branchId || user?.branch);
+        return user?.isManager === true && !!(user?.branchId || user?.branch);
     }, [userPermissions, isLoading]);
 
     // Manager-specific permission helpers
@@ -267,6 +329,10 @@ export const usePermissions = () => {
         hasAnyPermission,
         hasAllPermissions,
         canManageUser,
+        canCreateUser,
+        getUserScope,
+        canAccessOperationalFeatures,
+        canAccessSystemFeatures,
         isManager,
         canActAsManager,
         canManageBranchStaff,

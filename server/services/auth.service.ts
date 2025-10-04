@@ -297,8 +297,8 @@ export class AuthService {
             query.pharmacyId = pharmacyId;
         }
 
-        // If not super admin, filter by branch
-        if (userRole && userRole !== UserRole.SUPER_ADMIN && userBranchId) {
+        // Filter by branch for operational staff
+        if (userRole && userBranchId) {
             query.branch = userBranchId;
         }
 

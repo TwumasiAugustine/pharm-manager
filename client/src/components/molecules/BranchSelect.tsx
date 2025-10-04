@@ -1,38 +1,53 @@
 import { useBranches } from '../../hooks/useBranches';
 import { useCurrentUser } from '../../hooks/useAuth';
-import { UserRole } from '../../types/user.types';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useEffect } from 'react';
+
+interface BranchSelectProps {
+    value?: string;
+    onChange: (id: string) => void;
+    required?: boolean;
+    mode?: 'form' | 'filter'; // New prop to determine behavior
+    allowEmpty?: boolean; // Allow "All Branches" option in filter mode
+    placeholder?: string;
+}
 
 export function BranchSelect({
     value,
     onChange,
     required = true,
-}: {
-    value?: string;
-    onChange: (id: string) => void;
-    required?: boolean;
-}) {
+    mode = 'form',
+    allowEmpty = false,
+    placeholder = 'Select Branch',
+}: BranchSelectProps) {
     const { data: branches, isLoading } = useBranches();
     const { data: user } = useCurrentUser();
+    const { getUserScope } = usePermissions();
 
-    // Determine if user can change branch (only SUPER_ADMIN and ADMIN can)
-    const canChangeBranch =
-        user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.ADMIN;
+    // Determine if user can change branch based on role hierarchy
+    const userScope = getUserScope();
+    const canChangeBranch = userScope === 'system' || userScope === 'pharmacy';
 
     // Get user's assigned branch
     const userBranch = user?.branch;
     const userBranchId = userBranch?.id || user?.branchId;
 
-    // Auto-select user's branch for non-admin users
+    // In filter mode, allow branch selection for visibility/filtering purposes
+    // In form mode, enforce branch restrictions for data entry
+    const shouldEnforceBranchRestriction = mode === 'form' && !canChangeBranch;
+    const isDisabled = shouldEnforceBranchRestriction && !!userBranchId;
+
+    // Auto-select user's branch for non-admin users in form mode
     useEffect(() => {
-        if (!canChangeBranch && userBranchId && !value) {
+        if (shouldEnforceBranchRestriction && userBranchId && !value) {
             onChange(userBranchId);
         }
-    }, [canChangeBranch, userBranchId, value, onChange]);
+    }, [shouldEnforceBranchRestriction, userBranchId, value, onChange]);
 
-    // For non-admin users, if they have a branch, use it and disable the select
-    const effectiveValue = canChangeBranch ? value || '' : userBranchId || '';
-    const isDisabled = !canChangeBranch && !!userBranchId;
+    // For non-admin users in form mode, use their branch; otherwise use provided value
+    const effectiveValue = shouldEnforceBranchRestriction
+        ? userBranchId || ''
+        : value || '';
     if (isLoading)
         return (
             <div className="relative">
@@ -61,8 +76,8 @@ export function BranchSelect({
             </div>
         );
 
-    // Show branch assignment message for non-admin users without branch
-    if (!canChangeBranch && !userBranchId) {
+    // Show branch assignment message for non-admin users without branch in form mode
+    if (shouldEnforceBranchRestriction && !userBranchId) {
         return (
             <div className="relative">
                 <select
@@ -92,7 +107,7 @@ export function BranchSelect({
     }
     return (
         <div className="relative">
-            {!canChangeBranch && userBranchId && (
+            {shouldEnforceBranchRestriction && userBranchId && (
                 <div className="absolute top-0 right-0 -mt-2 -mr-2 z-10">
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         Assigned
@@ -102,14 +117,14 @@ export function BranchSelect({
             <select
                 value={effectiveValue}
                 onChange={(e) =>
-                    canChangeBranch ? onChange(e.target.value) : undefined
+                    isDisabled ? undefined : onChange(e.target.value)
                 }
                 required={required}
                 disabled={isDisabled}
                 aria-label={
                     isDisabled
                         ? `Branch: ${userBranch?.name || 'Assigned Branch'}`
-                        : 'Select Branch'
+                        : placeholder
                 }
                 className={`block w-full rounded-md border border-gray-300 text-sm font-semibold py-2 px-3 pr-8 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all appearance-none ${
                     isDisabled
@@ -117,17 +132,25 @@ export function BranchSelect({
                         : 'bg-white text-gray-700 cursor-pointer'
                 }`}
             >
-                {canChangeBranch && <option value="">Select Branch</option>}
+                {/* Show placeholder/empty option for admins or filter mode */}
+                {(canChangeBranch || mode === 'filter') && (
+                    <option value="">
+                        {mode === 'filter' && allowEmpty
+                            ? 'All Branches'
+                            : placeholder}
+                    </option>
+                )}
                 {branches?.map((branch: { id: string; name: string }) => (
                     <option key={branch.id} value={branch.id}>
                         {branch.name}
-                        {!canChangeBranch && branch.id === userBranchId
+                        {shouldEnforceBranchRestriction &&
+                        branch.id === userBranchId
                             ? ' (Your Branch)'
                             : ''}
                     </option>
                 ))}
                 {/* Show user's branch even if not in the general branches list */}
-                {!canChangeBranch &&
+                {shouldEnforceBranchRestriction &&
                     userBranch &&
                     !branches?.find((b) => b.id === userBranchId) && (
                         <option value={userBranchId}>

@@ -2,43 +2,75 @@ import { Request, Response, NextFunction } from 'express';
 import User from '../models/user.model';
 import { UserService } from '../services/user.service';
 import { UserManagementService } from '../services/user-management.service';
+import { PermissionService } from '../services/permission.service';
 import { successResponse } from '../utils/response';
 import { UserRole } from '../types/user.types';
+import { canCreateRole, canManageRole } from '../constants/permissions';
 
 const userService = new UserService();
 
 // Admin level: Assign permissions to a user
 export const assignPermissions = async (req: Request, res: Response) => {
     try {
-        if (
-            !req.user ||
-            (req.user.role !== UserRole.ADMIN &&
-                req.user.role !== UserRole.SUPER_ADMIN)
-        ) {
-            return res.status(403).json({
-                success: false,
-                message: 'Only admin level users can assign permissions',
-            });
-        }
-
-        // Allow super admin to assign permissions even without pharmacyId (for initial setup)
-        if (!req.user.pharmacyId && req.user.role !== UserRole.SUPER_ADMIN) {
-            return res.status(400).json({
-                success: false,
-                message: 'Pharmacy ID is required',
-            });
-        }
-
+        const currentUser = req.user;
         const { userId, permissions } = req.body;
 
-        // Delegate to user service which uses auth service
-        const user = await userService.assignPermissions(
-            userId,
-            permissions,
-            req.user.pharmacyId || '', // Pass empty string for super admin without pharmacy
-        );
+        if (!currentUser) {
+            return res.status(401).json({
+                success: false,
+                message: 'Authentication required',
+            });
+        }
 
-        res.json({ success: true, user });
+        // Get target user to check if current user can manage them
+        const targetUser = await User.findById(userId);
+        if (!targetUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found',
+            });
+        }
+
+        // Check if current user can manage the target user
+        if (!canManageRole(currentUser.role, targetUser.role)) {
+            return res.status(403).json({
+                success: false,
+                message: `You do not have permission to manage ${targetUser.role} users`,
+            });
+        }
+
+        // Super Admin can assign permissions to admins
+        // Admin can assign permissions to pharmacists and cashiers
+        if (
+            (currentUser.role === UserRole.SUPER_ADMIN &&
+                targetUser.role === UserRole.ADMIN) ||
+            (currentUser.role === UserRole.ADMIN &&
+                (targetUser.role === UserRole.PHARMACIST ||
+                    targetUser.role === UserRole.CASHIER))
+        ) {
+            // Filter permissions to only allow those appropriate for the target role
+            const filteredPermissions = permissions.filter(
+                (permission: string) =>
+                    PermissionService.isPermissionAllowedForRole(
+                        targetUser.role,
+                        permission,
+                    ),
+            );
+
+            const user = await userService.assignPermissions(
+                userId,
+                filteredPermissions,
+                currentUser.pharmacyId || '',
+            );
+
+            res.json({ success: true, user });
+        } else {
+            return res.status(403).json({
+                success: false,
+                message:
+                    'You do not have permission to assign permissions to this user',
+            });
+        }
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -120,12 +152,22 @@ export class UserController {
 
     async createUser(req: Request, res: Response, next: NextFunction) {
         try {
+            const { role: targetRole } = req.body;
+
+            // Check if current user can create the target role
+            if (!req.user?.role || !canCreateRole(req.user.role, targetRole)) {
+                return res.status(403).json({
+                    success: false,
+                    message: `You do not have permission to create ${targetRole} users`,
+                });
+            }
+
             let user;
 
             // Super Admin can create Admins
             if (
                 req.user?.role === UserRole.SUPER_ADMIN &&
-                req.body.role === UserRole.ADMIN
+                targetRole === UserRole.ADMIN
             ) {
                 user = await this.userManagementService.createAdminUser(
                     req.body,
@@ -134,7 +176,11 @@ export class UserController {
                 );
             }
             // Admin can create Pharmacist/Cashier
-            else if (req.user?.role === UserRole.ADMIN) {
+            else if (
+                req.user?.role === UserRole.ADMIN &&
+                (targetRole === UserRole.PHARMACIST ||
+                    targetRole === UserRole.CASHIER)
+            ) {
                 user = await this.userManagementService.createPharmacyUser(
                     req.body,
                     req.user.id,

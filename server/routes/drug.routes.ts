@@ -2,9 +2,10 @@ import { csrfProtection } from '../middlewares/csrf.middleware';
 import { Router } from 'express';
 import { DrugController } from '../controllers/drug.controller';
 import { authenticate } from '../middlewares/auth.middleware';
-import { authorize } from '../middlewares/auth.middleware';
-import { authorizeSuperAdmin } from '../middlewares/authorize.middleware';
-import { UserRole } from '../types/auth.types';
+import { authorize } from '../middlewares/authorize.middleware';
+import { requirePermission } from '../services/permission.service';
+import { DRUG_PERMISSIONS } from '../constants/permissions';
+import { UserRole } from '../types/user.types';
 
 const router = Router();
 const drugController = new DrugController();
@@ -24,27 +25,27 @@ router.get('/', drugController.getDrugs.bind(drugController));
 // Get a specific drug (available to all authenticated users)
 router.get('/:id', drugController.getDrug.bind(drugController));
 
-// Create, update, and delete operations are restricted to super admin only
-router.use(authorizeSuperAdmin());
-
-// Create a new drug
+// Create a new drug (Admin and Pharmacist can create drugs)
 router.post(
     '/',
     csrfProtection,
+    requirePermission(DRUG_PERMISSIONS.CREATE_DRUG),
     drugController.createDrug.bind(drugController),
 );
 
-// Update a drug
+// Update a drug (Admin and Pharmacist can update drugs)
 router.put(
     '/:id',
     csrfProtection,
+    requirePermission(DRUG_PERMISSIONS.UPDATE_DRUG),
     drugController.updateDrug.bind(drugController),
 );
 
-// Delete a drug
+// Delete a drug (Admin only for safety)
 router.delete(
     '/:id',
     csrfProtection,
+    requirePermission(DRUG_PERMISSIONS.DELETE_DRUG),
     drugController.deleteDrug.bind(drugController),
 );
 

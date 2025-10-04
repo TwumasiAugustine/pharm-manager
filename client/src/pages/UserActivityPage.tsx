@@ -4,17 +4,22 @@ import { UserActivityFilter } from '../components/organisms/UserActivityFilter';
 import { UserActivityTable } from '../components/organisms/UserActivityTable';
 import { UserActivityStats } from '../components/organisms/UserActivityStats';
 import { UserSessionModal } from '../components/organisms/UserSessionModal';
+import RoleHierarchyIndicator from '../components/molecules/RoleHierarchyIndicator';
 import {
     useUserActivities,
     useUserActivityStats,
 } from '../hooks/useUserActivity';
 import type { UserActivityFilters } from '../types/user-activity.types';
-import { FaChartLine, FaListAlt, FaFilter } from 'react-icons/fa';
+import { FaChartLine, FaListAlt, FaFilter, FaInfoCircle } from 'react-icons/fa';
 import { useURLFilters } from '../hooks/useURLSearch';
+import { useAuthStore } from '../store/auth.store';
+import { UserRole } from '../types/user.types';
 import SEOMetadata from '../components/atoms/SEOMetadata';
 import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
 
 const UserActivityPage: React.FC = () => {
+    const { user } = useAuthStore();
+
     // SEO configuration
     const seoData = useSEO({
         ...SEO_PRESETS.userActivity,
@@ -115,6 +120,24 @@ const UserActivityPage: React.FC = () => {
                         stats={statsData}
                         isLoading={isLoadingStats}
                         error={statsError as Error | null}
+                    />
+                </div>
+
+                {/* Role Context Section */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                        <FaInfoCircle className="text-blue-600" />
+                        <h3 className="text-lg font-semibold text-blue-900">
+                            Role Context for Activity Tracking
+                        </h3>
+                    </div>
+                    <p className="text-blue-700 mb-4">
+                        Activities are tracked and filtered by user roles.
+                        Understanding the role hierarchy helps interpret user
+                        actions and access patterns.
+                    </p>
+                    <RoleHierarchyIndicator
+                        currentUserRole={user?.role || UserRole.CASHIER}
                     />
                 </div>
 

@@ -14,11 +14,12 @@ import {
 } from '../controllers/pharmacy.controller';
 import { checkAdminFirstSetup } from '../controllers/user.controller';
 import { authenticate } from '../middlewares/auth.middleware';
+import { authorizeAuthenticated } from '../middlewares/authorize.middleware';
+import { requirePermission } from '../services/permission.service';
 import {
-    authorizeAdminLevel,
-    authorizeAuthenticated,
-    authorizeSuperAdmin,
-} from '../middlewares/authorize.middleware';
+    PHARMACY_PERMISSIONS,
+    USER_PERMISSIONS,
+} from '../constants/permissions';
 import { csrfProtection } from '../middlewares/csrf.middleware';
 
 const router = Router();
@@ -28,7 +29,7 @@ router.post(
     '/toggle-sale-shortcode',
     authenticate,
     csrfProtection,
-    authorizeAdminLevel(),
+    requirePermission(PHARMACY_PERMISSIONS.UPDATE_PHARMACY_SETTINGS),
     toggleSaleShortCodeFeature,
 );
 
@@ -48,14 +49,14 @@ router.put(
     '/pharmacy-info',
     authenticate,
     csrfProtection,
-    authorizeAdminLevel(),
+    requirePermission(PHARMACY_PERMISSIONS.UPDATE_PHARMACY_SETTINGS),
     modifyPharmacyInfo,
 );
 
 router.get(
     '/admin-first-setup',
     authenticate,
-    authorizeAdminLevel(),
+    requirePermission(USER_PERMISSIONS.VIEW_USERS),
     checkAdminFirstSetup,
 );
 
@@ -64,26 +65,31 @@ router.patch(
     '/short-code-settings',
     authenticate,
     csrfProtection,
-    authorizeAdminLevel(),
+    requirePermission(PHARMACY_PERMISSIONS.UPDATE_PHARMACY_SETTINGS),
     updateShortCodeSettings,
 );
 
-// Super Admin routes for pharmacy management
+// Super Admin routes for pharmacy management (system-level)
 router.post(
     '/create',
     authenticate,
     csrfProtection,
-    authorizeSuperAdmin(),
+    requirePermission(PHARMACY_PERMISSIONS.MANAGE_PHARMACY),
     createPharmacy,
 );
 
-router.get('/all', authenticate, authorizeSuperAdmin(), getAllPharmacies);
+router.get(
+    '/all',
+    authenticate,
+    requirePermission(PHARMACY_PERMISSIONS.MANAGE_PHARMACY),
+    getAllPharmacies,
+);
 
 router.delete(
     '/:pharmacyId',
     authenticate,
     csrfProtection,
-    authorizeSuperAdmin(),
+    requirePermission(PHARMACY_PERMISSIONS.MANAGE_PHARMACY),
     deletePharmacy,
 );
 
@@ -91,18 +97,23 @@ router.post(
     '/:pharmacyId/assign-admin',
     authenticate,
     csrfProtection,
-    authorizeSuperAdmin(),
+    requirePermission(USER_PERMISSIONS.CREATE_USER), // For creating/assigning admins
     assignAdminToPharmacy,
 );
 
-// Super Admin routes for admin management
-router.get('/admins/all', authenticate, authorizeSuperAdmin(), getAllAdmins);
+// Super Admin routes for admin management (system-level)
+router.get(
+    '/admins/all',
+    authenticate,
+    requirePermission(USER_PERMISSIONS.VIEW_USERS),
+    getAllAdmins,
+);
 
 router.post(
     '/admins/create',
     authenticate,
     csrfProtection,
-    authorizeSuperAdmin(),
+    requirePermission(USER_PERMISSIONS.CREATE_USER),
     createAdminUser,
 );
 

@@ -2,13 +2,14 @@ import { csrfProtection } from '../middlewares/csrf.middleware';
 import { Router } from 'express';
 import { cronController } from '../controllers/cron.controller';
 import { authenticate } from '../middlewares/auth.middleware';
-import { authorizeAdminLevel } from '../middlewares/authorize.middleware';
+import { requirePermission } from '../services/permission.service';
+import { SYSTEM_PERMISSIONS } from '../constants/permissions';
 
 const router = Router();
 
-// Apply authentication and admin level authorization to all cron routes
+// Apply authentication and system management authorization to all cron routes
 router.use(authenticate);
-router.use(authorizeAdminLevel());
+router.use(requirePermission(SYSTEM_PERMISSIONS.MANAGE_SYSTEM));
 
 /**
  * @route GET /api/cron/status

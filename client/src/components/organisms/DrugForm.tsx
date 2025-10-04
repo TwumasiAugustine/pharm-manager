@@ -373,6 +373,7 @@ export const DrugForm = ({
                                     value={selectedBranchId}
                                     onChange={setSelectedBranchId}
                                     required={!isSuperAdmin}
+                                    mode="form"
                                 />
                                 {!selectedBranchId && !isSuperAdmin && (
                                     <p className="mt-1 text-sm text-red-600">
