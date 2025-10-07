@@ -434,7 +434,13 @@ export const createAdminUser = async (req: Request, res: Response) => {
 
 export const fetchPharmacyInfo = async (req: Request, res: Response) => {
     try {
-        const pharmacyInfo = await getPharmacyInfo();
+        // Get pharmacy info based on user's assigned pharmacy (data scoping)
+        // Super admin has platform-wide access and doesn't need specific pharmacy
+        const userPharmacyId =
+            req.user?.role === UserRole.SUPER_ADMIN
+                ? undefined
+                : req.user?.pharmacyId;
+        const pharmacyInfo = await getPharmacyInfo(userPharmacyId, req.user);
         const isConfigured = !!pharmacyInfo;
 
         // Format response to match frontend expectations
@@ -482,7 +488,16 @@ export const modifyPharmacyInfo = async (req: Request, res: Response) => {
     try {
         // Check if pharmacy name is being changed and user has permission
         if (req.body.name) {
-            const currentPharmacyInfo = await getPharmacyInfo();
+            // Get current pharmacy info based on user's assigned pharmacy
+            // Super admin has platform-wide access
+            const userPharmacyId =
+                req.user?.role === UserRole.SUPER_ADMIN
+                    ? undefined
+                    : req.user?.pharmacyId;
+            const currentPharmacyInfo = await getPharmacyInfo(
+                userPharmacyId,
+                req.user,
+            );
             if (
                 currentPharmacyInfo &&
                 currentPharmacyInfo.name !== req.body.name
@@ -507,7 +522,15 @@ export const modifyPharmacyInfo = async (req: Request, res: Response) => {
             }
         }
 
-        const updatedInfo = await updatePharmacyInfo(req.body);
+        const userPharmacyId =
+            req.user?.role === UserRole.SUPER_ADMIN
+                ? undefined
+                : req.user?.pharmacyId;
+        const updatedInfo = await updatePharmacyInfo(
+            req.body,
+            userPharmacyId,
+            req.user,
+        );
 
         // Mark admin's first setup as complete
         // Only mark ADMIN's first setup as completed. SUPER_ADMIN should not
@@ -544,7 +567,12 @@ export const checkPharmacyConfigStatus = async (
     res: Response,
 ) => {
     try {
-        const isConfigured = await checkConfigStatus();
+        // Super admin can check platform-wide config, regular users check their pharmacy
+        const userPharmacyId =
+            req.user?.role === UserRole.SUPER_ADMIN
+                ? undefined
+                : req.user?.pharmacyId;
+        const isConfigured = await checkConfigStatus(userPharmacyId, req.user);
 
         res.status(200).json({
             success: true,

@@ -7,6 +7,7 @@ import {
     getBranchScopingFilter,
 } from '../utils/data-scoping';
 import { getPharmacyInfo } from './pharmacy.service';
+import { UserRole } from '../types/user.types';
 import type {
     ReportFilters,
     ReportResponse,
@@ -15,7 +16,6 @@ import type {
 } from '../types/report.types';
 import puppeteer from 'puppeteer';
 import { Types } from 'mongoose';
-import { UserRole } from '../types/user.types';
 import { ITokenPayload } from '../types/auth.types';
 
 export class ReportService {
@@ -99,8 +99,13 @@ export class ReportService {
                 data = data.slice(startIndex, endIndex);
             }
 
-            // Get pharmacy information
-            const pharmacyInfo = await getPharmacyInfo();
+            // Get pharmacy information based on user's assigned pharmacy
+            // Super admin has platform-wide access
+            const userPharmacyId =
+                user.role === UserRole.SUPER_ADMIN
+                    ? undefined
+                    : user.pharmacyId;
+            const pharmacyInfo = await getPharmacyInfo(userPharmacyId, user);
 
             return {
                 data,
