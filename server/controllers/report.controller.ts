@@ -49,8 +49,7 @@ export class ReportController {
 
             const report = await this.reportService.generateReport(
                 filters,
-                req.user?.role,
-                req.user?.branchId,
+                req.user!,
             );
 
             res.status(200).json(
@@ -75,8 +74,7 @@ export class ReportController {
             const filters: ReportFilters = req.body;
             const pdfBuffer = await this.reportService.exportReportPDF(
                 filters,
-                req.user?.role,
-                req.user?.branchId,
+                req.user!,
             );
 
             res.setHeader('Content-Type', 'application/pdf');
@@ -104,8 +102,7 @@ export class ReportController {
             const filters: ReportFilters = req.body;
             const csvData = await this.reportService.exportReportCSV(
                 filters,
-                req.user?.role,
-                req.user?.branchId,
+                req.user!,
             );
 
             res.setHeader('Content-Type', 'text/csv');
@@ -170,8 +167,7 @@ export class ReportController {
                     format: 'table',
                     branchId,
                 },
-                req.user?.role,
-                req.user?.branchId,
+                req.user!,
             );
 
             res.status(200).json(
@@ -216,8 +212,7 @@ export class ReportController {
                     format: 'table',
                     branchId,
                 },
-                req.user?.role,
-                req.user?.branchId,
+                req.user!,
             );
 
             res.status(200).json(

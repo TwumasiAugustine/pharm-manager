@@ -7,9 +7,14 @@ import {
     updateShortCodeSettings,
     createPharmacy,
     getAllPharmacies,
+    getPharmaciesByRole,
     deletePharmacy,
     assignAdminToPharmacy,
+    removeAdminFromPharmacy,
+    removeAdminFromAllPharmacies,
     getAllAdmins,
+    getAdminsByRole,
+    updateAdminUser,
     createAdminUser,
 } from '../controllers/pharmacy.controller';
 import { checkAdminFirstSetup } from '../controllers/user.controller';
@@ -85,6 +90,54 @@ router.get(
     getAllPharmacies,
 );
 
+// Super Admin routes for admin management (system-level) - PUT BEFORE GENERIC ROUTES
+router.get(
+    '/admins/all',
+    authenticate,
+    requirePermission(USER_PERMISSIONS.VIEW_USERS),
+    getAllAdmins,
+);
+
+router.post(
+    '/admins/create',
+    authenticate,
+    csrfProtection,
+    requirePermission(USER_PERMISSIONS.CREATE_USER),
+    createAdminUser,
+);
+
+router.put(
+    '/admins/:adminId',
+    authenticate,
+    csrfProtection,
+    requirePermission(USER_PERMISSIONS.UPDATE_USER),
+    updateAdminUser,
+);
+
+router.delete(
+    '/admins/:adminId/remove-from-all',
+    authenticate,
+    csrfProtection,
+    requirePermission(USER_PERMISSIONS.MANAGE_USERS), // For removing admins from all pharmacies
+    removeAdminFromAllPharmacies,
+);
+
+// Role-aware routes (accessible by both Super Admin and Admin)
+router.get(
+    '/by-role',
+    authenticate,
+    requirePermission(PHARMACY_PERMISSIONS.VIEW_PHARMACY_INFO),
+    getPharmaciesByRole,
+);
+
+router.get(
+    '/admins/by-role',
+    authenticate,
+    requirePermission(USER_PERMISSIONS.VIEW_USERS),
+    getAdminsByRole,
+);
+
+// Generic pharmacy routes - PUT AFTER SPECIFIC ROUTES
 router.delete(
     '/:pharmacyId',
     authenticate,
@@ -101,20 +154,12 @@ router.post(
     assignAdminToPharmacy,
 );
 
-// Super Admin routes for admin management (system-level)
-router.get(
-    '/admins/all',
-    authenticate,
-    requirePermission(USER_PERMISSIONS.VIEW_USERS),
-    getAllAdmins,
-);
-
-router.post(
-    '/admins/create',
+router.delete(
+    '/:pharmacyId/remove-admin/:adminId',
     authenticate,
     csrfProtection,
-    requirePermission(USER_PERMISSIONS.CREATE_USER),
-    createAdminUser,
+    requirePermission(USER_PERMISSIONS.MANAGE_USERS), // For removing admins
+    removeAdminFromPharmacy,
 );
 
 export default router;

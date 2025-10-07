@@ -2,13 +2,11 @@ import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import User from '../models/user.model';
 import Branch from '../models/branch.model';
-import {
-    NotFoundError,
-    ConflictError,
-    BadRequestError,
-} from '../utils/errors';
+import { NotFoundError, ConflictError, BadRequestError } from '../utils/errors';
 import { IUser } from '../types/user.types';
 import { AuthService } from './auth.service';
+import { ITokenPayload } from '../types/auth.types';
+import { getPharmacyScopingFilter } from '../utils/data-scoping';
 
 // Extended interface for user operations that include branchId
 interface IUserWithBranchId extends Partial<IUser> {

@@ -1,7 +1,6 @@
 import { Drug, IDrug } from '../models/drug.model';
 import Branch from '../models/branch.model';
 import PharmacyInfo from '../models/pharmacy-info.model';
-import { AssignmentService } from './assignment.service';
 import {
     ICreateDrugRequest,
     IDrugSearchParams,
@@ -9,6 +8,8 @@ import {
     IPaginatedDrugsResponse,
 } from '../types/drug.types';
 import { UserRole } from '../types/user.types';
+import { ITokenPayload } from '../types/auth.types';
+import { getBranchScopingFilter } from '../utils/data-scoping';
 import {
     NotFoundError,
     BadRequestError,
@@ -21,22 +22,6 @@ import mongoose, { Types } from 'mongoose';
  */
 export class DrugService {
     /**
-     * Get default branch ID if no branchId is provided
-     * @returns The first available branch ID or throws error if no branches exist
-     */
-    private async getDefaultBranchId(): Promise<string> {
-        return await AssignmentService.getDefaultBranchId();
-    }
-
-    /**
-     * Get pharmacy ID from the first available pharmacy
-     * @returns The pharmacy ID or throws error if no pharmacy exists
-     */
-    private async getPharmacyId(): Promise<string> {
-        return await AssignmentService.getDefaultPharmacyId();
-    }
-
-    /**
      * Create a new drug
      * @param drugData The drug data to create
      * @param userRole The role of the user creating the drug
@@ -47,15 +32,23 @@ export class DrugService {
         drugData: ICreateDrugRequest,
         userRole: UserRole,
         userBranchId?: string,
+        pharmacyId?: string,
     ): Promise<any> {
         // Only admin can create drugs
         if (userRole !== UserRole.ADMIN) {
             throw new ForbiddenError('Only admin can create drugs');
         }
 
+        // Require pharmacy ID for drug creation
+        if (!pharmacyId) {
+            throw new BadRequestError(
+                'Pharmacy ID is required for drug creation',
+            );
+        }
+
         // For admin, if no branchId is provided, create drug in all branches
         if (!drugData.branchId) {
-            return this.createDrugInAllBranches(drugData, userRole);
+            return this.createDrugInAllBranches(drugData, userRole, pharmacyId);
         }
 
         // Use provided branchId for specific branch
@@ -79,9 +72,6 @@ export class DrugService {
                 'Cost price must be a number greater than 0',
             );
         }
-
-        // Get pharmacy ID for the drug
-        const pharmacyId = await this.getPharmacyId();
 
         // Create drug with branch and pharmacy assignment
         const drugCreateData = {
@@ -226,14 +216,12 @@ export class DrugService {
     /**
      * Get a paginated list of drugs with search and filtering
      * @param params Search parameters
-     * @param userRole The role of the user requesting drugs
-     * @param userBranchId The branch ID of the user requesting drugs
+     * @param user The authenticated user (for data scoping)
      * @returns Paginated drugs with metadata
      */
     async getDrugs(
         params: IDrugSearchParams,
-        userRole?: UserRole,
-        userBranchId?: string,
+        user: ITokenPayload,
     ): Promise<IPaginatedDrugsResponse> {
         const {
             page = 1,
@@ -247,13 +235,12 @@ export class DrugService {
             expiryAfter,
         } = params;
 
-        // Build query
+        // Build query with proper data scoping
         const query: any = {};
 
-        // Branch filtering - admin sees all, others see only their branch
-        if (userRole && userRole !== UserRole.ADMIN && userBranchId) {
-            query.branch = userBranchId;
-        }
+        // Apply data scoping based on user role and pharmacy/branch assignment
+        const scopingFilter = getBranchScopingFilter(user);
+        Object.assign(query, scopingFilter);
 
         // Text search
         if (search) {
@@ -409,9 +396,10 @@ export class DrugService {
     private async createDrugInAllBranches(
         drugData: ICreateDrugRequest,
         userRole: UserRole,
+        pharmacyId: string,
     ): Promise<any[]> {
         // Get all available branches
-        const branches = await AssignmentService.getAllBranches();
+        const branches = await Branch.find().sort({ name: 1 });
 
         if (!branches || branches.length === 0) {
             throw new BadRequestError(
@@ -420,7 +408,6 @@ export class DrugService {
         }
 
         const createdDrugs: any[] = [];
-        const pharmacyId = await this.getPharmacyId();
 
         // Create the drug in each branch
         for (const branch of branches) {

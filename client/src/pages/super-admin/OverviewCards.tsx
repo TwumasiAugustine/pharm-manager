@@ -1,26 +1,10 @@
 import React from 'react';
 import { Card, CardContent } from '../../components/molecules/Card';
 import { FaStore, FaUserTie, FaBuilding, FaUsers } from 'react-icons/fa';
-
-interface PharmacySummary {
-    _id: string;
-    name: string;
-    branchCount?: number;
-    userCount?: number;
-}
-
-interface PharmaciesData {
-    pharmacies: PharmacySummary[];
-    pagination: {
-        current: number;
-        pages: number;
-        total: number;
-        limit: number;
-    };
-}
+import type { IPharmacyResponse, IPharmacy } from '../../api/super-admin.api';
 
 interface OverviewCardsProps {
-    pharmaciesData?: PharmaciesData;
+    pharmaciesData?: IPharmacyResponse;
     adminsCount: number;
     loading?: boolean;
 }
@@ -85,7 +69,7 @@ const OverviewCards: React.FC<OverviewCardsProps> = ({
                     <div className="w-full text-center sm:text-left">
                         <h3 className="text-xl sm:text-2xl lg:text-2xl font-bold text-gray-900">
                             {pharmaciesData?.pharmacies?.reduce(
-                                (acc: number, p: PharmacySummary) =>
+                                (acc: number, p: IPharmacy) =>
                                     acc + (p.branchCount || 0),
                                 0,
                             ) || 0}
@@ -101,7 +85,7 @@ const OverviewCards: React.FC<OverviewCardsProps> = ({
                     <div className="w-full text-center sm:text-left">
                         <h3 className="text-xl sm:text-2xl lg:text-2xl font-bold text-gray-900">
                             {pharmaciesData?.pharmacies?.reduce(
-                                (acc: number, p: PharmacySummary) =>
+                                (acc: number, p: IPharmacy) =>
                                     acc + (p.userCount || 0),
                                 0,
                             ) || 0}

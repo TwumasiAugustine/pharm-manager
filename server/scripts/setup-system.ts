@@ -18,7 +18,6 @@ import PharmacyInfo from '../models/pharmacy-info.model';
 import Branch from '../models/branch.model';
 import User from '../models/user.model';
 import { UserRole } from '../types/auth.types';
-import { AssignmentService } from '../services/assignment.service';
 import {
     USER_PERMISSIONS,
     PHARMACY_PERMISSIONS,
@@ -242,18 +241,19 @@ class SystemSetup {
         console.log('━'.repeat(50));
 
         try {
-            const info = await AssignmentService.getAssignmentInfo();
+            const pharmacy = await PharmacyInfo.findOne();
+            const branches = await Branch.find();
 
-            if (info.pharmacy) {
-                console.log(`🏥 Pharmacy: ${info.pharmacy.name}`);
-                console.log(`   📧 Email: ${info.pharmacy.contact.email}`);
-                console.log(`   📞 Phone: ${info.pharmacy.contact.phone}`);
+            if (pharmacy) {
+                console.log(`🏥 Pharmacy: ${pharmacy.name}`);
+                console.log(`   📧 Email: ${pharmacy.contact.email}`);
+                console.log(`   📞 Phone: ${pharmacy.contact.phone}`);
             } else {
                 console.log('🏥 Pharmacy: Not configured');
             }
 
-            console.log(`🏢 Branches: ${info.branches.length} total`);
-            info.branches.forEach((branch, index) => {
+            console.log(`🏢 Branches: ${branches.length} total`);
+            branches.forEach((branch, index) => {
                 console.log(
                     `   ${index + 1}. ${branch.name} (${branch.address.city})`,
                 );

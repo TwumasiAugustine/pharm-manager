@@ -3,7 +3,6 @@ import crypto from 'crypto';
 import mongoose from 'mongoose';
 import User from '../models/user.model';
 import Branch from '../models/branch.model';
-import { AssignmentService } from './assignment.service';
 import { generateTokens, verifyRefreshToken } from '../utils/jwt';
 import {
     BadRequestError,
@@ -19,6 +18,10 @@ import {
     IUser,
 } from '../types/auth.types';
 import { UserRole } from '../types/user.types';
+import {
+    hasPharmacyAccess,
+    validatePharmacyAccess,
+} from '../utils/pharmacy-access';
 
 // Extended interface for user operations that include branchId
 interface IUserWithBranchId extends Partial<IUser> {
@@ -326,55 +329,60 @@ export class AuthService {
         };
     }
 
-    async createUser(data: IUserWithBranchId, adminPharmacyId: string) {
+    async createUser(
+        data: IUserWithBranchId,
+        adminPharmacyId: string,
+        adminId?: string,
+    ) {
         if (!data.name || !data.email || !data.password || !data.role) {
             throw new BadRequestError(
                 'Name, email, password, and role are required',
             );
         }
 
-        // Auto-assign pharmacy and branch if not provided
-        const autoAssignedData = await AssignmentService.autoAssignUserIds(
-            data,
-            [UserRole.PHARMACIST, UserRole.CASHIER].includes(
-                data.role as UserRole,
-            ), // Require branch for non-admin roles
-        );
+        // Use the provided pharmacy ID from admin
+        const effectivePharmacyId = adminPharmacyId;
 
-        // Use auto-assigned pharmacy ID if adminPharmacyId is not provided
-        const effectivePharmacyId =
-            adminPharmacyId || autoAssignedData.pharmacyId;
-
-        // Validate assignments
-        if (autoAssignedData.pharmacyId || autoAssignedData.branchId) {
-            await AssignmentService.validateAssignments(
-                autoAssignedData.pharmacyId,
-                autoAssignedData.branchId,
+        // Validate that required assignments are provided
+        if (!effectivePharmacyId && data.role !== UserRole.SUPER_ADMIN) {
+            throw new BadRequestError(
+                'Pharmacy assignment is required for all users except Super Admin',
             );
         }
 
-        // Validate branch assignment if provided
-        if (autoAssignedData.branchId) {
-            if (!mongoose.Types.ObjectId.isValid(autoAssignedData.branchId)) {
-                throw new BadRequestError('Invalid branch ID format');
+        // Validate that pharmacy exists if provided
+        if (effectivePharmacyId) {
+            const pharmacy = await mongoose
+                .model('PharmacyInfo')
+                .findById(effectivePharmacyId);
+            if (!pharmacy) {
+                throw new BadRequestError(
+                    `Pharmacy with ID ${effectivePharmacyId} not found`,
+                );
             }
-            const branch = await Branch.findById(autoAssignedData.branchId);
+        }
+
+        // Validate that branch exists if provided and belongs to pharmacy
+        if (data.branchId) {
+            const branch = await Branch.findById(data.branchId);
             if (!branch) {
-                throw new NotFoundError('Branch not found');
+                throw new BadRequestError(
+                    `Branch with ID ${data.branchId} not found`,
+                );
             }
-            // Ensure branch belongs to the same pharmacy (only if we have effectivePharmacyId)
+
             if (
                 effectivePharmacyId &&
                 branch.pharmacyId.toString() !== effectivePharmacyId
             ) {
-                throw new UnauthorizedError(
-                    'Cannot assign user to branch from different pharmacy',
+                throw new BadRequestError(
+                    'Branch does not belong to the specified pharmacy',
                 );
             }
         }
 
         // Normalize email
-        const normalizedEmail = normalizeEmail(autoAssignedData.email);
+        const normalizedEmail = normalizeEmail(data.email);
 
         // Prevent duplicate emails within the same pharmacy
         const emailQuery: any = { email: normalizedEmail };
@@ -392,11 +400,10 @@ export class AuthService {
 
         // Note: Password will be hashed by the User model's pre-save hook
         const userData: any = {
-            ...autoAssignedData,
+            ...data,
             email: normalizedEmail,
-            password: autoAssignedData.password, // Let the model handle hashing
-            isFirstSetup:
-                autoAssignedData.role === UserRole.ADMIN ? true : false,
+            password: data.password, // Let the model handle hashing
+            isFirstSetup: data.role === UserRole.ADMIN ? true : false,
         };
 
         // Set pharmacyId if we have one
@@ -408,21 +415,19 @@ export class AuthService {
 
         // Super admin cannot have FINALIZE_SALE permission
         if (
-            autoAssignedData.role === UserRole.SUPER_ADMIN &&
-            autoAssignedData.permissions?.includes('FINALIZE_SALE')
+            data.role === UserRole.SUPER_ADMIN &&
+            data.permissions?.includes('FINALIZE_SALE')
         ) {
-            userData.permissions = autoAssignedData.permissions.filter(
+            userData.permissions = data.permissions.filter(
                 (p: string) => p !== 'FINALIZE_SALE',
             );
-        } else if (autoAssignedData.permissions) {
-            userData.permissions = autoAssignedData.permissions;
+        } else if (data.permissions) {
+            userData.permissions = data.permissions;
         }
 
         // Convert branchId to branch field for MongoDB
-        if (autoAssignedData.branchId) {
-            userData.branch = new mongoose.Types.ObjectId(
-                autoAssignedData.branchId,
-            );
+        if (data.branchId) {
+            userData.branch = new mongoose.Types.ObjectId(data.branchId);
             delete userData.branchId;
         }
 
@@ -440,6 +445,7 @@ export class AuthService {
         id: string,
         data: IUserWithBranchId,
         adminPharmacyId: string,
+        adminId?: string,
     ) {
         // Build query based on whether we have pharmacyId or not (for super admin without pharmacy)
         const query: any = { _id: id };
@@ -450,6 +456,15 @@ export class AuthService {
         const user = await User.findOne(query);
         if (!user) {
             throw new NotFoundError('User not found or access denied');
+        }
+
+        // Validate admin has access to manage users in this pharmacy
+        if (adminId && user.pharmacyId) {
+            await validatePharmacyAccess(
+                adminId,
+                user.pharmacyId.toString(),
+                'update users in this pharmacy',
+            );
         }
 
         // Validate branch assignment if provided
@@ -534,7 +549,7 @@ export class AuthService {
         return userResponse;
     }
 
-    async deleteUser(id: string, adminPharmacyId: string) {
+    async deleteUser(id: string, adminPharmacyId: string, adminId?: string) {
         // Build query based on whether we have pharmacyId or not (for super admin without pharmacy)
         const query: any = { _id: id };
         if (adminPharmacyId) {
@@ -546,6 +561,15 @@ export class AuthService {
             throw new NotFoundError('User not found or access denied');
         }
 
+        // Validate admin has access to delete users in this pharmacy
+        if (adminId && user.pharmacyId) {
+            await validatePharmacyAccess(
+                adminId,
+                user.pharmacyId.toString(),
+                'delete users in this pharmacy',
+            );
+        }
+
         await user.deleteOne();
         return true;
     }
@@ -554,6 +578,7 @@ export class AuthService {
         userId: string,
         permissions: string[],
         adminPharmacyId: string,
+        adminId?: string,
     ) {
         // Build query based on whether we have pharmacyId or not (for super admin without pharmacy)
         const query: any = { _id: userId };
@@ -564,6 +589,15 @@ export class AuthService {
         const user = await User.findOne(query);
         if (!user) {
             throw new NotFoundError('User not found or access denied');
+        }
+
+        // Validate admin has access to modify permissions in this pharmacy
+        if (adminId && user.pharmacyId) {
+            await validatePharmacyAccess(
+                adminId,
+                user.pharmacyId.toString(),
+                'modify user permissions in this pharmacy',
+            );
         }
 
         // Prevent assigning FINALIZE_SALE permission to super admin or admin
@@ -583,5 +617,28 @@ export class AuthService {
         const userObj = user.toObject({ versionKey: false }) as any;
         const { password: _, ...userResponse } = userObj;
         return userResponse;
+    }
+
+    /**
+     * Check if a user has access to a specific pharmacy
+     * Uses the pharmacy access utilities for comprehensive checking
+     */
+    async checkUserPharmacyAccess(
+        userId: string,
+        targetPharmacyId: string,
+    ): Promise<boolean> {
+        return await hasPharmacyAccess(userId, targetPharmacyId);
+    }
+
+    /**
+     * Validate that a user has access to a pharmacy and throw error if not
+     * Uses the pharmacy access utilities for validation
+     */
+    async validateUserPharmacyAccess(
+        userId: string,
+        targetPharmacyId: string,
+        operation: string = 'access this pharmacy',
+    ): Promise<void> {
+        await validatePharmacyAccess(userId, targetPharmacyId, operation);
     }
 }

@@ -169,6 +169,72 @@ export class PharmacyManagementService {
     }
 
     /**
+     * Role-aware: Get pharmacies based on requester's role and scope
+     * - Super Admin: Gets all pharmacies
+     * - Admin: Gets only their assigned pharmacy
+     */
+    async getPharmaciesByRole(
+        requesterId: string,
+        page: number = 1,
+        limit: number = 10,
+        filters: IPharmacyFilters = {},
+    ) {
+        const requester = await User.findById(requesterId);
+        if (!requester) {
+            throw new UnauthorizedError('Requester not found');
+        }
+
+        if (requester.role === UserRole.SUPER_ADMIN) {
+            // Super Admin sees all pharmacies
+            return this.getPharmacies(page, limit, filters);
+        } else if (requester.role === UserRole.ADMIN) {
+            // Admin sees only their assigned pharmacy
+            if (!requester.pharmacyId) {
+                return {
+                    pharmacies: [],
+                    pagination: { current: 1, pages: 0, total: 0, limit },
+                };
+            }
+
+            const pharmacy = await PharmacyInfo.findById(requester.pharmacyId)
+                .populate('createdBy', 'name email role')
+                .populate('admins', 'name email role')
+                .lean();
+
+            if (!pharmacy) {
+                return {
+                    pharmacies: [],
+                    pagination: { current: 1, pages: 0, total: 0, limit },
+                };
+            }
+
+            // Get branch and user counts
+            const [branchCount, userCount] = await Promise.all([
+                Branch.countDocuments({ pharmacyId: pharmacy._id }),
+                User.countDocuments({
+                    pharmacyId: pharmacy._id,
+                    role: { $in: [UserRole.PHARMACIST, UserRole.CASHIER] },
+                }),
+            ]);
+
+            const pharmacyWithCounts = {
+                ...pharmacy,
+                branchCount,
+                userCount,
+            };
+
+            return {
+                pharmacies: [pharmacyWithCounts],
+                pagination: { current: 1, pages: 1, total: 1, limit },
+            };
+        } else {
+            throw new UnauthorizedError(
+                'Insufficient permissions to view pharmacies',
+            );
+        }
+    }
+
+    /**
      * Super Admin: Delete pharmacy (soft delete)
      */
     async deletePharmacy(pharmacyId: string, deletedBy: string) {
@@ -234,8 +300,8 @@ export class PharmacyManagementService {
             await pharmacy.save();
         }
 
-        // Update admin's pharmacy assignment
-        admin.pharmacyId = new mongoose.Types.ObjectId(pharmacyId);
+        // Update admin's pharmacy assignments (DO NOT overwrite primary pharmacyId)
+        // Keep the admin's original primary pharmacy intact
         admin.assignedPharmacies = admin.assignedPharmacies || [];
 
         // Remove existing assignment if present
@@ -293,6 +359,48 @@ export class PharmacyManagementService {
         await admin.save();
 
         return { pharmacy, admin };
+    }
+
+    /**
+     * Super Admin: Remove admin from all pharmacies
+     */
+    async removeAdminFromAllPharmacies(adminId: string) {
+        const admin = await User.findById(adminId);
+        if (!admin) {
+            throw new NotFoundError('Admin user not found');
+        }
+
+        if (admin.role !== UserRole.ADMIN) {
+            throw new BadRequestError('User is not an admin');
+        }
+
+        // Get all pharmacies that have this admin assigned
+        const pharmacies = await PharmacyInfo.find({
+            admins: new mongoose.Types.ObjectId(adminId),
+        });
+
+        // Remove admin from all pharmacies
+        const updatePromises = pharmacies.map(async (pharmacy) => {
+            pharmacy.admins =
+                pharmacy.admins?.filter((id) => id.toString() !== adminId) ||
+                [];
+            return pharmacy.save();
+        });
+
+        await Promise.all(updatePromises);
+
+        // Clear all pharmacy assignments from admin
+        admin.assignedPharmacies = [];
+        admin.pharmacyId = undefined;
+        admin.canManageUsers = false;
+
+        await admin.save();
+
+        return {
+            admin,
+            removedFromPharmacies: pharmacies.length,
+            pharmacyNames: pharmacies.map((p) => p.name),
+        };
     }
 
     /**

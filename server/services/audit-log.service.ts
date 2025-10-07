@@ -7,6 +7,9 @@ import type {
     AuditLogStatsResponse,
 } from '../types/audit-log.types';
 import { NotFoundError, BadRequestError } from '../utils/errors';
+import { ITokenPayload } from '../types/auth.types';
+import { getPharmacyScopingFilter } from '../utils/data-scoping';
+import { UserRole } from '../types/user.types';
 
 export class AuditLogService {
     /**
@@ -31,6 +34,7 @@ export class AuditLogService {
      */
     async getAuditLogs(
         filters: AuditLogFilters,
+        user: ITokenPayload,
     ): Promise<AuditLogsListResponse> {
         const {
             userId,
@@ -43,7 +47,7 @@ export class AuditLogService {
             userRole,
         } = filters;
 
-        // Build query
+        // Build query with data scoping
         const query: any = {};
 
         if (userId) query.userId = userId;
@@ -51,14 +55,9 @@ export class AuditLogService {
         if (resource) query.resource = resource;
         if (userRole) query['details.userRole'] = userRole;
 
-        // If the requester is not a super admin, exclude any logs created by super admins
-        if (filters.requesterRole && filters.requesterRole !== 'SUPER_ADMIN') {
-            // add criteria to exclude logs where details.userRole === 'SUPER_ADMIN'
-            query['$or'] = [
-                { 'details.userRole': { $exists: false } },
-                { 'details.userRole': { $ne: 'SUPER_ADMIN' } },
-            ];
-        }
+        // Apply pharmacy-based data scoping
+        const scopingFilter = getPharmacyScopingFilter(user);
+        Object.assign(query, scopingFilter);
 
         // Date range filter
         if (startDate || endDate) {
@@ -110,7 +109,9 @@ export class AuditLogService {
     /**
      * Get audit log statistics
      */
-    async getAuditLogStats(): Promise<AuditLogStatsResponse> {
+    async getAuditLogStats(
+        user: ITokenPayload,
+    ): Promise<AuditLogStatsResponse> {
         const now = new Date();
         const todayStart = new Date(
             now.getFullYear(),
@@ -118,6 +119,9 @@ export class AuditLogService {
             now.getDate(),
         );
         const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+        // Apply pharmacy-based data scoping
+        const scopingFilter = getPharmacyScopingFilter(user);
 
         const [
             totalLogs,
@@ -127,12 +131,18 @@ export class AuditLogService {
             resourceBreakdown,
             topUsers,
         ] = await Promise.all([
-            AuditLog.countDocuments(),
-            AuditLog.countDocuments({ timestamp: { $gte: todayStart } }),
-            AuditLog.countDocuments({ timestamp: { $gte: weekStart } }),
-            this.getActionBreakdown(),
-            this.getResourceBreakdown(),
-            this.getTopUsers(),
+            AuditLog.countDocuments(scopingFilter),
+            AuditLog.countDocuments({
+                ...scopingFilter,
+                timestamp: { $gte: todayStart },
+            }),
+            AuditLog.countDocuments({
+                ...scopingFilter,
+                timestamp: { $gte: weekStart },
+            }),
+            this.getActionBreakdown(user),
+            this.getResourceBreakdown(user),
+            this.getTopUsers(user),
         ]);
 
         return {
@@ -148,8 +158,14 @@ export class AuditLogService {
     /**
      * Get audit log by ID (admin only)
      */
-    async getAuditLogById(id: string): Promise<AuditLogResponse> {
-        const log = await AuditLog.findById(id)
+    async getAuditLogById(
+        id: string,
+        user: ITokenPayload,
+    ): Promise<AuditLogResponse> {
+        const scopingFilter = getPharmacyScopingFilter(user);
+        const query = { _id: id, ...scopingFilter };
+
+        const log = await AuditLog.findOne(query)
             .populate('userId', 'name email role')
             .lean();
 
@@ -187,15 +203,27 @@ export class AuditLogService {
     /**
      * Helper: Get action breakdown
      */
-    private async getActionBreakdown(): Promise<Record<string, number>> {
-        const result = await AuditLog.aggregate([
-            {
-                $group: {
-                    _id: '$action',
-                    count: { $sum: 1 },
-                },
+    private async getActionBreakdown(
+        user: ITokenPayload,
+    ): Promise<Record<string, number>> {
+        const scopingFilter = getPharmacyScopingFilter(user);
+
+        const pipeline: any[] = [];
+
+        // Add match stage if scoping filter is not empty
+        if (Object.keys(scopingFilter).length > 0) {
+            pipeline.push({ $match: scopingFilter });
+        }
+
+        // Add aggregation stages
+        pipeline.push({
+            $group: {
+                _id: '$action',
+                count: { $sum: 1 },
             },
-        ]);
+        });
+
+        const result = await AuditLog.aggregate(pipeline);
 
         const breakdown: Record<string, number> = {};
         result.forEach((item) => {
@@ -208,15 +236,27 @@ export class AuditLogService {
     /**
      * Helper: Get resource breakdown
      */
-    private async getResourceBreakdown(): Promise<Record<string, number>> {
-        const result = await AuditLog.aggregate([
-            {
-                $group: {
-                    _id: '$resource',
-                    count: { $sum: 1 },
-                },
+    private async getResourceBreakdown(
+        user: ITokenPayload,
+    ): Promise<Record<string, number>> {
+        const scopingFilter = getPharmacyScopingFilter(user);
+
+        const pipeline: any[] = [];
+
+        // Add match stage if scoping filter is not empty
+        if (Object.keys(scopingFilter).length > 0) {
+            pipeline.push({ $match: scopingFilter });
+        }
+
+        // Add aggregation stages
+        pipeline.push({
+            $group: {
+                _id: '$resource',
+                count: { $sum: 1 },
             },
-        ]);
+        });
+
+        const result = await AuditLog.aggregate(pipeline);
 
         const breakdown: Record<string, number> = {};
         result.forEach((item) => {
@@ -229,10 +269,20 @@ export class AuditLogService {
     /**
      * Helper: Get top users by activity
      */
-    private async getTopUsers(): Promise<
-        Array<{ userId: string; userName: string; count: number }>
-    > {
-        const result = await AuditLog.aggregate([
+    private async getTopUsers(
+        user: ITokenPayload,
+    ): Promise<Array<{ userId: string; userName: string; count: number }>> {
+        const scopingFilter = getPharmacyScopingFilter(user);
+
+        const pipeline: any[] = [];
+
+        // Add match stage if scoping filter is not empty
+        if (Object.keys(scopingFilter).length > 0) {
+            pipeline.push({ $match: scopingFilter });
+        }
+
+        // Add aggregation stages
+        pipeline.push(
             {
                 $group: {
                     _id: '$userId',
@@ -257,7 +307,9 @@ export class AuditLogService {
                     count: 1,
                 },
             },
-        ]);
+        );
+
+        const result = await AuditLog.aggregate(pipeline);
 
         return result.map((item) => ({
             userId: item.userId.toString(),

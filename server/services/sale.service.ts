@@ -6,8 +6,9 @@ import { Types } from 'mongoose';
 import mongoose from 'mongoose';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 import { CustomerService } from './customer.service';
-import { AssignmentService } from './assignment.service';
 import { UserRole } from '../types/user.types';
+import { ITokenPayload } from '../types/auth.types';
+import { getBranchScopingFilter } from '../utils/data-scoping';
 
 // Helper type for mapped sale objects
 type MappedSaleItem = {
@@ -50,14 +51,6 @@ export class SaleService {
             );
         }
         return (defaultBranch._id as Types.ObjectId).toString();
-    }
-
-    /**
-     * Get default pharmacy ID for automatic assignment
-     * @returns The default pharmacy ID or throws error if no pharmacy exists
-     */
-    private async getPharmacyId(): Promise<string> {
-        return await AssignmentService.getDefaultPharmacyId();
     }
 
     /**
@@ -109,6 +102,7 @@ export class SaleService {
             branchId?: string;
         },
         userBranchId?: string,
+        pharmacyId?: string,
     ) {
         // Resolve branch ID - use seller's branch, provided branchId, or get default
         const resolvedBranchId =
@@ -130,6 +124,7 @@ export class SaleService {
                     branchId: resolvedBranchId,
                 },
                 userBranchId,
+                pharmacyId,
             );
         }
 
@@ -233,8 +228,12 @@ export class SaleService {
                         );
                     }
 
-                    // Get pharmacyId for automatic assignment
-                    const pharmacyId = await this.getPharmacyId();
+                    // Require pharmacyId for sale creation
+                    if (!pharmacyId) {
+                        throw new BadRequestError(
+                            'Pharmacy ID is required for sale creation',
+                        );
+                    }
 
                     const salePayload: any = {
                         items: saleItems,
@@ -304,6 +303,7 @@ export class SaleService {
                         branchId: resolvedBranchId,
                     },
                     userBranchId,
+                    pharmacyId,
                 );
             }
 
@@ -338,6 +338,7 @@ export class SaleService {
             branchId?: string;
         },
         userBranchId?: string,
+        pharmacyId?: string,
     ) {
         // Use the same branch resolution logic as the main method
         const resolvedBranchId =
@@ -426,8 +427,12 @@ export class SaleService {
                 );
             }
 
-            // Get pharmacyId for automatic assignment
-            const pharmacyId = await this.getPharmacyId();
+            // Require pharmacyId for sale creation
+            if (!pharmacyId) {
+                throw new BadRequestError(
+                    'Pharmacy ID is required for sale creation',
+                );
+            }
 
             const salePayload: any = {
                 items: saleItems,
@@ -472,8 +477,7 @@ export class SaleService {
     /**
      * Get paginated sales list with optional date filtering and branch filtering
      * @param params - Parameters for filtering and pagination
-     * @param userRole - The role of the user requesting sales
-     * @param userBranchId - The branch ID of the user requesting sales
+     * @param user - The authenticated user (for data scoping)
      * @returns Paginated and grouped sales data
      */
     async getSales(
@@ -488,8 +492,7 @@ export class SaleService {
             startDate?: string;
             endDate?: string;
         },
-        userRole?: string,
-        userBranchId?: string,
+        user: ITokenPayload,
     ): Promise<{
         data: MappedSale[];
         groupedData: Record<string, MappedSale[]>;
@@ -502,10 +505,9 @@ export class SaleService {
     }> {
         const query: any = {};
 
-        // Filter by branch for operational staff (not system admins)
-        if (userRole && userBranchId) {
-            query.branch = userBranchId;
-        }
+        // Apply data scoping based on user role and pharmacy/branch assignment
+        const scopingFilter = getBranchScopingFilter(user);
+        Object.assign(query, scopingFilter);
 
         // Date filtering (always use UTC for consistency)
         if (startDate || endDate) {
@@ -642,17 +644,12 @@ export class SaleService {
      * @returns The sale with populated drug, customer, and soldBy fields
      * @throws NotFoundError if the sale doesn't exist
      */
-    async getSaleById(
-        id: string,
-        userRole?: string,
-        userBranchId?: string,
-    ): Promise<MappedSale> {
+    async getSaleById(id: string, user: ITokenPayload): Promise<MappedSale> {
         const query: any = { _id: id };
 
-        // Filter by branch for operational staff (not system admins)
-        if (userRole && userBranchId) {
-            query.branch = userBranchId;
-        }
+        // Apply data scoping based on user role and pharmacy/branch assignment
+        const scopingFilter = getBranchScopingFilter(user);
+        Object.assign(query, scopingFilter);
 
         const sale = await Sale.findOne(query)
             .populate('items.drug')

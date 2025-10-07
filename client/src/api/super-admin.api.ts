@@ -1,5 +1,17 @@
 import api from './api';
 
+export interface IPagination {
+    current: number;
+    pages: number;
+    total: number;
+    limit: number;
+}
+
+export interface IPharmacyResponse {
+    pharmacies: IPharmacy[];
+    pagination: IPagination;
+}
+
 export interface IPharmacy {
     _id: string;
     name: string;
@@ -101,6 +113,17 @@ export const superAdminApi = {
         });
     },
 
+    removeAdminFromPharmacy: async (
+        pharmacyId: string,
+        adminId: string,
+    ): Promise<void> => {
+        await api.delete(`/pharmacy/${pharmacyId}/remove-admin/${adminId}`);
+    },
+
+    removeAdminFromAllPharmacies: async (adminId: string): Promise<void> => {
+        await api.delete(`/pharmacy/admins/${adminId}/remove-from-all`);
+    },
+
     // Admin Management
     getAllAdmins: async (): Promise<unknown[]> => {
         const response = await api.get('/pharmacy/admins/all');
@@ -109,6 +132,35 @@ export const superAdminApi = {
 
     createAdminUser: async (data: ICreateAdminRequest): Promise<unknown> => {
         const response = await api.post('/pharmacy/admins/create', data);
+        return response.data.data;
+    },
+
+    updateAdminUser: async (
+        adminId: string,
+        data: {
+            name?: string;
+            email?: string;
+            pharmacyId?: string;
+            isActive?: boolean;
+        },
+    ): Promise<unknown> => {
+        const response = await api.put(`/pharmacy/admins/${adminId}`, data);
+        return response.data.data;
+    },
+
+    // Role-aware data access
+    getPharmaciesByRole: async (params?: {
+        page?: number;
+        limit?: number;
+        search?: string;
+        isActive?: boolean;
+    }): Promise<IPharmacyResponse> => {
+        const response = await api.get('/pharmacy/by-role', { params });
+        return response.data.data;
+    },
+
+    getAdminsByRole: async (): Promise<unknown[]> => {
+        const response = await api.get('/pharmacy/admins/by-role');
         return response.data.data;
     },
 };

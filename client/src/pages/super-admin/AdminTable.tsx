@@ -1,20 +1,22 @@
 import React from 'react';
 import { DataTable } from '../../components/molecules/DataTable';
-
-interface AdminUser {
-    _id: string;
-    name: string;
-    email: string;
-    isActive: boolean;
-    pharmacyId?: { _id: string; name: string } | null;
-}
+import type { AdminUser } from '../../types/admin.types';
 
 interface AdminTableProps {
     admins: AdminUser[];
     loading?: boolean;
+    onEdit?: (admin: AdminUser) => void;
+    onRemove?: (admin: AdminUser) => void;
+    onRemoveFromAll?: (admin: AdminUser) => void;
 }
 
-const AdminTable: React.FC<AdminTableProps> = ({ admins, loading = false }) => {
+const AdminTable: React.FC<AdminTableProps> = ({
+    admins,
+    loading = false,
+    onEdit,
+    onRemove,
+    onRemoveFromAll,
+}) => {
     const columns = [
         {
             key: 'name',
@@ -56,6 +58,42 @@ const AdminTable: React.FC<AdminTableProps> = ({ admins, loading = false }) => {
                 </span>
             ),
         },
+        ...(onEdit || onRemove || onRemoveFromAll
+            ? [
+                  {
+                      key: 'actions',
+                      header: 'Actions',
+                      render: (admin: AdminUser) => (
+                          <div className="flex gap-2 flex-wrap">
+                              {onEdit && (
+                                  <button
+                                      onClick={() => onEdit(admin)}
+                                      className="px-3 py-1 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 text-xs"
+                                  >
+                                      Edit
+                                  </button>
+                              )}
+                              {admin.pharmacyId && onRemove && (
+                                  <button
+                                      onClick={() => onRemove(admin)}
+                                      className="px-3 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200 text-xs"
+                                  >
+                                      Remove from {admin.pharmacyId.name}
+                                  </button>
+                              )}
+                              {admin.pharmacyId && onRemoveFromAll && (
+                                  <button
+                                      onClick={() => onRemoveFromAll(admin)}
+                                      className="px-3 py-1 bg-red-200 text-red-700 rounded hover:bg-red-300 text-xs"
+                                  >
+                                      Remove from All
+                                  </button>
+                              )}
+                          </div>
+                      ),
+                  },
+              ]
+            : []),
     ];
 
     return <DataTable data={admins} columns={columns} loading={loading} />;

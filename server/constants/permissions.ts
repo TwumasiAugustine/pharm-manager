@@ -293,8 +293,10 @@ export const ROLE_PERMISSIONS = {
         USER_PERMISSIONS.VIEW_USER_ACTIVITY,
 
         // User management for admins only
+        USER_PERMISSIONS.CREATE_USER, // For creating admin users
         USER_PERMISSIONS.UPDATE_USER, // For admin management
         USER_PERMISSIONS.DELETE_USER, // For admin management
+        USER_PERMISSIONS.MANAGE_USERS, // For removing admins from pharmacies
         USER_PERMISSIONS.MANAGE_PERMISSIONS, // For admin permission assignment
     ],
     admin: [

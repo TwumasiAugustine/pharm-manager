@@ -166,6 +166,141 @@ export class UserManagementService {
     }
 
     /**
+     * Role-aware: Get admins based on requester's role and scope
+     * - Super Admin: Gets all admins
+     * - Admin: Gets only admins from their assigned pharmacy
+     */
+    async getAdminsByRole(requesterId: string) {
+        const requester = await User.findById(requesterId);
+        if (!requester) {
+            throw new UnauthorizedError('Requester not found');
+        }
+
+        let query = { role: UserRole.ADMIN };
+
+        if (requester.role === UserRole.SUPER_ADMIN) {
+            // Super Admin sees all admins
+            const admins = await User.find(query)
+                .populate('pharmacyId', 'name')
+                .populate('createdBy', 'name email')
+                .select('-password -refreshToken')
+                .sort({ createdAt: -1 })
+                .lean();
+            return admins;
+        } else if (requester.role === UserRole.ADMIN) {
+            // Admin sees only admins from their pharmacy
+            if (!requester.pharmacyId) {
+                return []; // Admin not assigned to any pharmacy
+            }
+
+            const admins = await User.find({
+                ...query,
+                pharmacyId: requester.pharmacyId,
+            })
+                .populate('pharmacyId', 'name')
+                .populate('createdBy', 'name email')
+                .select('-password -refreshToken')
+                .sort({ createdAt: -1 })
+                .lean();
+            return admins;
+        } else {
+            throw new UnauthorizedError(
+                'Insufficient permissions to view admins',
+            );
+        }
+    }
+
+    /**
+     * Super Admin: Update admin user and reassign to pharmacy
+     */
+    async updateAdminUser(
+        adminId: string,
+        updateData: {
+            name?: string;
+            email?: string;
+            pharmacyId?: string;
+            isActive?: boolean;
+        },
+        updatedBy: string,
+    ) {
+        // Validate updater is Super Admin
+        const updater = await User.findById(updatedBy);
+        if (!updater || updater.role !== UserRole.SUPER_ADMIN) {
+            throw new UnauthorizedError(
+                'Only Super Admin can update admin users',
+            );
+        }
+
+        // Find the admin user
+        const admin = await User.findById(adminId);
+        if (!admin) {
+            throw new NotFoundError('Admin user not found');
+        }
+
+        if (admin.role !== UserRole.ADMIN) {
+            throw new BadRequestError('User is not an admin');
+        }
+
+        // If email is being changed, check for conflicts
+        if (updateData.email && updateData.email !== admin.email) {
+            const existingUser = await User.findOne({
+                email: updateData.email.toLowerCase(),
+                _id: { $ne: adminId },
+            });
+            if (existingUser) {
+                throw new ConflictError('User with this email already exists');
+            }
+        }
+
+        // Handle pharmacy reassignment
+        if (updateData.pharmacyId !== undefined) {
+            // Remove admin from current pharmacy if assigned
+            if (admin.pharmacyId) {
+                await PharmacyInfo.findByIdAndUpdate(admin.pharmacyId, {
+                    $pull: { admins: admin._id },
+                });
+            }
+
+            // Assign to new pharmacy if provided
+            if (updateData.pharmacyId) {
+                const newPharmacy = await PharmacyInfo.findById(
+                    updateData.pharmacyId,
+                );
+                if (!newPharmacy) {
+                    throw new NotFoundError('New pharmacy not found');
+                }
+
+                await PharmacyInfo.findByIdAndUpdate(updateData.pharmacyId, {
+                    $addToSet: { admins: admin._id },
+                });
+            }
+        }
+
+        // Update admin user
+        const updateFields: any = {};
+        if (updateData.name) updateFields.name = updateData.name;
+        if (updateData.email)
+            updateFields.email = updateData.email.toLowerCase();
+        if (updateData.pharmacyId !== undefined) {
+            updateFields.pharmacyId = updateData.pharmacyId
+                ? new mongoose.Types.ObjectId(updateData.pharmacyId)
+                : undefined;
+        }
+        if (updateData.isActive !== undefined)
+            updateFields.isActive = updateData.isActive;
+
+        const updatedAdmin = await User.findByIdAndUpdate(
+            adminId,
+            updateFields,
+            { new: true, runValidators: true },
+        )
+            .populate('pharmacyId', 'name')
+            .select('-password -refreshToken');
+
+        return updatedAdmin;
+    }
+
+    /**
      * Super Admin: Create Admin without immediate pharmacy assignment
      */
     async createUnassignedAdmin(

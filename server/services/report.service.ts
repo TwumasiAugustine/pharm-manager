@@ -2,6 +2,10 @@ import { Drug as DrugModel, type IDrug } from '../models/drug.model';
 import type { IDrugResponse } from '../types/drug.types';
 import { Sale } from '../models/sale.model';
 import Customer from '../models/customer.model';
+import {
+    getPharmacyScopingFilter,
+    getBranchScopingFilter,
+} from '../utils/data-scoping';
 import { getPharmacyInfo } from './pharmacy.service';
 import type {
     ReportFilters,
@@ -12,6 +16,7 @@ import type {
 import puppeteer from 'puppeteer';
 import { Types } from 'mongoose';
 import { UserRole } from '../types/user.types';
+import { ITokenPayload } from '../types/auth.types';
 
 export class ReportService {
     /**
@@ -19,8 +24,7 @@ export class ReportService {
      */
     async generateReport(
         filters: ReportFilters,
-        userRole?: string,
-        userBranchId?: string,
+        user: ITokenPayload,
     ): Promise<ReportResponse> {
         try {
             const {
@@ -38,24 +42,35 @@ export class ReportService {
                 end: dateRange?.end || '',
             };
 
-            // Branch filtering logic - use provided branchId or user's branch
-            const filterBranchId = branchId || userBranchId;
+            // Apply data scoping based on user role and pharmacy/branch assignment
+            const scopingFilter = getBranchScopingFilter(user);
+
+            // If a specific branchId is requested and user has access to it, use it
+            // Otherwise, use the scoping filter to determine appropriate branch access
             const effectiveBranchId =
-                userRole && filterBranchId ? filterBranchId : branchId;
+                branchId && user.role === UserRole.SUPER_ADMIN
+                    ? branchId
+                    : user.branchId;
 
             switch (reportType) {
                 case 'sales':
                     data = await this.generateSalesReport(
                         effectiveDateRange,
+                        scopingFilter,
                         effectiveBranchId,
                     );
                     break;
                 case 'inventory':
-                    data =
-                        await this.generateInventoryReport(effectiveBranchId);
+                    data = await this.generateInventoryReport(
+                        scopingFilter,
+                        effectiveBranchId,
+                    );
                     break;
                 case 'expiry':
-                    data = await this.generateExpiryReport(effectiveBranchId);
+                    data = await this.generateExpiryReport(
+                        scopingFilter,
+                        effectiveBranchId,
+                    );
                     break;
                 case 'financial':
                     data = await this.generateFinancialReport(
@@ -120,9 +135,14 @@ export class ReportService {
             start: string;
             end: string;
         },
+        scopingFilter: any,
         branchId?: string,
     ): Promise<ReportDataItem[]> {
-        const query = this.buildReportDateQuery(dateRange, branchId);
+        const query = this.buildReportDateQuery(
+            dateRange,
+            scopingFilter,
+            branchId,
+        );
 
         const sales = await Sale.find(query)
             .populate('customer', 'name phone')
@@ -180,9 +200,10 @@ export class ReportService {
      * Generate inventory report with enhanced pricing information
      */
     private async generateInventoryReport(
+        scopingFilter: any,
         branchId?: string,
     ): Promise<ReportDataItem[]> {
-        const query: any = {};
+        const query: any = { ...scopingFilter };
         if (branchId) {
             query.branch = new Types.ObjectId(branchId);
         }
@@ -238,10 +259,11 @@ export class ReportService {
      * Generate expiry report with enhanced drug information
      */
     private async generateExpiryReport(
+        scopingFilter: any,
         branchId?: string,
     ): Promise<ReportDataItem[]> {
         const now = new Date();
-        const query: any = {};
+        const query: any = { ...scopingFilter };
         if (branchId) {
             query.branch = new Types.ObjectId(branchId);
         }
@@ -322,9 +344,10 @@ export class ReportService {
             start: string;
             end: string;
         },
+        scopingFilter: any,
         branchId?: string,
     ): Promise<ReportDataItem[]> {
-        return this.generateSalesReport(dateRange, branchId);
+        return this.generateSalesReport(dateRange, scopingFilter, branchId);
     }
 
     /**
@@ -334,9 +357,10 @@ export class ReportService {
      */
     private buildReportDateQuery(
         dateRange: { start: string; end: string },
+        scopingFilter: any,
         branchId?: string,
     ) {
-        const query: any = {};
+        const query: any = { ...scopingFilter };
 
         // Add branch filter if provided
         if (branchId) {
@@ -498,16 +522,11 @@ export class ReportService {
      */
     public async exportReportPDF(
         filters: ReportFilters,
-        userRole?: string,
-        userBranchId?: string,
+        user: ITokenPayload,
     ): Promise<Buffer> {
         let browser = null;
         try {
-            const reportData = await this.generateReport(
-                filters,
-                userRole,
-                userBranchId,
-            );
+            const reportData = await this.generateReport(filters, user);
 
             // Launch browser with proper configuration for Windows
             browser = await puppeteer.launch({
@@ -563,15 +582,10 @@ export class ReportService {
      */
     async exportReportCSV(
         filters: ReportFilters,
-        userRole?: string,
-        userBranchId?: string,
+        user: ITokenPayload,
     ): Promise<string> {
         try {
-            const reportData = await this.generateReport(
-                filters,
-                userRole,
-                userBranchId,
-            );
+            const reportData = await this.generateReport(filters, user);
             const { data, summary, pharmacyInfo } = reportData;
 
             // Create header with pharmacy information
@@ -642,14 +656,9 @@ export class ReportService {
      */
     async getReportSummary(
         filters: ReportFilters,
-        userRole?: string,
-        userBranchId?: string,
+        user: ITokenPayload,
     ): Promise<ReportSummaryData> {
-        const reportData = await this.generateReport(
-            filters,
-            userRole,
-            userBranchId,
-        );
+        const reportData = await this.generateReport(filters, user);
         return reportData.summary;
     }
 

@@ -183,6 +183,80 @@ export const assignAdminToPharmacy = async (req: Request, res: Response) => {
 };
 
 /**
+ * Super Admin: Remove admin from pharmacy
+ */
+export const removeAdminFromPharmacy = async (req: Request, res: Response) => {
+    try {
+        if (!req.user || req.user.role !== UserRole.SUPER_ADMIN) {
+            return res.status(403).json({
+                success: false,
+                message: 'Only Super Admin can remove admins from pharmacies',
+            });
+        }
+
+        const { pharmacyId, adminId } = req.params;
+
+        const result = await pharmacyManagementService.removeAdminFromPharmacy(
+            pharmacyId,
+            adminId,
+        );
+
+        res.json({
+            success: true,
+            message: 'Admin removed from pharmacy successfully',
+            data: result,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message:
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to remove admin',
+        });
+    }
+};
+
+/**
+ * Super Admin: Remove admin from all pharmacies
+ */
+export const removeAdminFromAllPharmacies = async (
+    req: Request,
+    res: Response,
+) => {
+    try {
+        if (!req.user || req.user.role !== UserRole.SUPER_ADMIN) {
+            return res.status(403).json({
+                success: false,
+                message:
+                    'Only Super Admin can remove admins from all pharmacies',
+            });
+        }
+
+        const { adminId } = req.params;
+
+        const result =
+            await pharmacyManagementService.removeAdminFromAllPharmacies(
+                adminId,
+            );
+
+        res.json({
+            success: true,
+            message: 'Admin removed from all pharmacies successfully',
+            data: result,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message:
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to remove admin from all pharmacies',
+        });
+    }
+};
+
+/**
  * Super Admin: Get all admins
  */
 export const getAllAdmins = async (req: Request, res: Response) => {
@@ -208,6 +282,117 @@ export const getAllAdmins = async (req: Request, res: Response) => {
                 error instanceof Error
                     ? error.message
                     : 'Failed to fetch admins',
+        });
+    }
+};
+
+/**
+ * Role-aware: Get pharmacies based on user's role and scope
+ * - Super Admin: Gets all pharmacies
+ * - Admin: Gets only their assigned pharmacy
+ */
+export const getPharmaciesByRole = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Authentication required',
+            });
+        }
+
+        const { page = 1, limit = 10, search, isActive } = req.query;
+        const result = await pharmacyManagementService.getPharmaciesByRole(
+            req.user.id,
+            Number(page),
+            Number(limit),
+            {
+                search: search as string,
+                isActive:
+                    isActive !== undefined ? Boolean(isActive) : undefined,
+            },
+        );
+
+        res.json({
+            success: true,
+            message: 'Pharmacies retrieved successfully',
+            data: result,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message:
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to fetch pharmacies',
+        });
+    }
+};
+
+/**
+ * Role-aware: Get admins based on user's role and scope
+ * - Super Admin: Gets all admins
+ * - Admin: Gets only admins from their pharmacy
+ */
+export const getAdminsByRole = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Authentication required',
+            });
+        }
+
+        const admins = await userManagementService.getAdminsByRole(req.user.id);
+
+        res.json({
+            success: true,
+            message: 'Admins retrieved successfully',
+            data: admins,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message:
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to fetch admins',
+        });
+    }
+};
+
+/**
+ * Super Admin: Update admin user
+ */
+export const updateAdminUser = async (req: Request, res: Response) => {
+    try {
+        if (!req.user || req.user.role !== UserRole.SUPER_ADMIN) {
+            return res.status(403).json({
+                success: false,
+                message: 'Only Super Admin can update admin users',
+            });
+        }
+
+        const { adminId } = req.params;
+        const updateData = req.body;
+
+        const updatedAdmin = await userManagementService.updateAdminUser(
+            adminId,
+            updateData,
+            req.user.id,
+        );
+
+        res.json({
+            success: true,
+            message: 'Admin user updated successfully',
+            data: updatedAdmin,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message:
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to update admin user',
         });
     }
 };

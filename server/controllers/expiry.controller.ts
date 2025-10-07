@@ -38,8 +38,7 @@ export class ExpiryController {
 
             const result = await this.expiryService.getExpiringDrugs(
                 filters,
-                req.user?.role,
-                req.user?.branchId,
+                req.user!,
             );
 
             res.status(200).json(
@@ -64,6 +63,7 @@ export class ExpiryController {
         try {
             const { branchId } = req.query;
             const stats = await this.expiryService.getExpiryStats(
+                req.user!,
                 branchId as string,
             );
 

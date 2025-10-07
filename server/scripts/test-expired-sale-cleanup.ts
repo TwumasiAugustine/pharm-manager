@@ -9,7 +9,6 @@ import { Sale } from '../models/sale.model';
 import { Drug } from '../models/drug.model';
 import PharmacyInfo from '../models/pharmacy-info.model';
 import { ExpiredSaleCleanupService } from '../services/expired-sale-cleanup.service';
-import { AssignmentService } from '../services/assignment.service';
 
 // Load environment variables
 dotenv.config();
@@ -60,8 +59,15 @@ async function testExpiredSaleCleanup() {
         console.log('💊 Step 2: Setup test drug...');
         let testDrug = await Drug.findOne({ name: /test drug/i });
         if (!testDrug) {
-            const pharmacyId = await AssignmentService.getDefaultPharmacyId();
-            const branchId = await AssignmentService.getDefaultBranchId();
+            const pharmacy = await PharmacyInfo.findOne();
+            const branch = await mongoose.model('Branch').findOne();
+
+            if (!pharmacy || !branch) {
+                throw new Error('No pharmacy or branch found for testing');
+            }
+
+            const pharmacyId = (pharmacy as any)._id.toString();
+            const branchId = (branch as any)._id.toString();
 
             testDrug = await Drug.create({
                 name: 'Test Drug for Cleanup',
@@ -100,8 +106,15 @@ async function testExpiredSaleCleanup() {
 
         // Step 3: Create a test sale with short code (unfinalised)
         console.log('🛒 Step 3: Create test sale with short code...');
-        const pharmacyId = await AssignmentService.getDefaultPharmacyId();
-        const branchId = await AssignmentService.getDefaultBranchId();
+        const pharmacy = await PharmacyInfo.findOne();
+        const branch = await mongoose.model('Branch').findOne();
+
+        if (!pharmacy || !branch) {
+            throw new Error('No pharmacy or branch found for testing');
+        }
+
+        const pharmacyId = (pharmacy as any)._id.toString();
+        const branchId = (branch as any)._id.toString();
 
         const testSale = await Sale.create({
             items: [

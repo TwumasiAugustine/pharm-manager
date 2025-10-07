@@ -3,7 +3,6 @@ import { UnauthorizedError, BadRequestError } from '../utils/errors';
 import { Sale } from '../models/sale.model';
 import { Request, Response, NextFunction } from 'express';
 import { SaleService } from '../services/sale.service';
-import { AssignmentService } from '../services/assignment.service';
 import { successResponse } from '../utils/response';
 import { logAuditEvent } from '../middlewares/audit.middleware';
 import { UserRole } from '../types/user.types';
@@ -15,24 +14,14 @@ export class SaleController {
         try {
             const userId = req.user!.id;
 
-            // Safely get user branchId or use default assignment
-            let userBranchId: string | undefined;
-
-            if (req.user?.branchId) {
-                userBranchId = req.user.branchId;
-            } else {
-                // If user doesn't have branchId, try to get default branch
-                try {
-                    userBranchId = await AssignmentService.getDefaultBranchId();
-                    console.log(
-                        `🏢 Using default branch for sale creation: ${userBranchId}`,
-                    );
-                } catch (error) {
-                    // If no default branch available, proceed without branch assignment
-                    console.warn('⚠️ No branch available for sale assignment');
-                    userBranchId = undefined;
-                }
+            // Require branchId for sale creation
+            if (!req.user?.branchId && !req.body.branchId) {
+                throw new BadRequestError(
+                    'Branch assignment is required for sale creation',
+                );
             }
+
+            const userBranchId = req.user?.branchId || req.body.branchId;
 
             // Check if short code feature is enabled
             const pharmacyInfo = await PharmacyInfo.findOne();
@@ -53,6 +42,7 @@ export class SaleController {
                     branchId: req.body.branchId,
                 },
                 userBranchId, // Pass user's branch ID
+                req.user!.pharmacyId, // Pass user's pharmacy ID
             );
 
             // Log audit event for sale creation
@@ -178,8 +168,7 @@ export class SaleController {
                     startDate: startDate as string,
                     endDate: endDate as string,
                 },
-                req.user?.role,
-                req.user?.branchId,
+                req.user!,
             );
             res.json(successResponse(result));
         } catch (err: any) {
@@ -191,8 +180,7 @@ export class SaleController {
         try {
             const sale = await saleService.getSaleById(
                 req.params.id,
-                req.user?.role,
-                req.user?.branchId,
+                req.user!,
             );
             res.json(successResponse(sale));
         } catch (err: any) {

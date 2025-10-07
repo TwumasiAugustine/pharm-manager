@@ -2,6 +2,11 @@ import { Sale } from '../models/sale.model';
 import { Drug } from '../models/drug.model';
 import Customer from '../models/customer.model';
 import { Types } from 'mongoose';
+import { ITokenPayload } from '../types/auth.types';
+import {
+    getBranchScopingFilter,
+    getPharmacyScopingFilter,
+} from '../utils/data-scoping';
 
 export class DashboardService {
     /**

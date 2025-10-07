@@ -7,6 +7,8 @@ import type {
     IExpiryNotification,
 } from '../types/expiry.types';
 import { UserRole } from '../types/user.types';
+import { ITokenPayload } from '../types/auth.types';
+import { getBranchScopingFilter } from '../utils/data-scoping';
 
 export class ExpiryService {
     /**
@@ -26,29 +28,28 @@ export class ExpiryService {
             limit?: number;
             branchId?: string;
         },
-        userRole?: string,
-        userBranchId?: string,
+        user: ITokenPayload,
     ) {
         const today = new Date();
         const futureDate = new Date();
         futureDate.setDate(today.getDate() + daysRange);
 
-        // Build query
+        // Build query with data scoping
         const query: any = {
             expiryDate: { $lte: futureDate },
             quantity: { $gt: 0 }, // Only show drugs with stock
         };
 
+        // Apply data scoping based on user role and pharmacy/branch assignment
+        const scopingFilter = getBranchScopingFilter(user);
+        Object.assign(query, scopingFilter);
+
         if (category) {
             query.category = { $regex: category, $options: 'i' };
         }
 
-        // Branch filtering logic - use provided branchId or user's branch
-        const filterBranchId = branchId || userBranchId;
-        if (userRole && filterBranchId) {
-            query.branch = filterBranchId;
-        } else if (branchId) {
-            // Filter by specific branch if provided
+        // If a specific branchId is requested and user is SUPER_ADMIN, allow it
+        if (branchId && user.role === UserRole.SUPER_ADMIN) {
             query.branch = branchId;
         }
 
@@ -144,7 +145,10 @@ export class ExpiryService {
     /**
      * Get expiry statistics with enhanced financial impact analysis
      */
-    async getExpiryStats(branchId?: string): Promise<IExpiryStats> {
+    async getExpiryStats(
+        user: ITokenPayload,
+        branchId?: string,
+    ): Promise<IExpiryStats> {
         const today = new Date();
         const next7Days = new Date();
         next7Days.setDate(today.getDate() + 7);
@@ -155,9 +159,15 @@ export class ExpiryService {
         const next90Days = new Date();
         next90Days.setDate(today.getDate() + 90);
 
-        // Build query with optional branch filtering
+        // Build query with data scoping
         const query: any = { quantity: { $gt: 0 } };
-        if (branchId) {
+
+        // Apply data scoping based on user role and pharmacy/branch assignment
+        const scopingFilter = getBranchScopingFilter(user);
+        Object.assign(query, scopingFilter);
+
+        // If a specific branchId is requested and user is SUPER_ADMIN, allow it
+        if (branchId && user.role === UserRole.SUPER_ADMIN) {
             query.branch = branchId;
         }
 

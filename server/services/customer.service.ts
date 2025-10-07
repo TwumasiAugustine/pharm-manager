@@ -2,8 +2,9 @@ import Customer from '../models/customer.model';
 import { NotFoundError } from '../utils/errors';
 import { Sale } from '../models/sale.model';
 import { Types } from 'mongoose';
-import { AssignmentService } from './assignment.service';
 import { UserRole } from '../types/user.types';
+import { ITokenPayload } from '../types/auth.types';
+import { getBranchScopingFilter } from '../utils/data-scoping';
 
 export class CustomerService {
     /**
@@ -23,12 +24,9 @@ export class CustomerService {
         userBranchId?: string,
         userPharmacyId?: string,
     ) {
-        // Get pharmacy ID (use user's pharmacy or default)
-        let pharmacyId: string;
-        if (userPharmacyId) {
-            pharmacyId = userPharmacyId;
-        } else {
-            pharmacyId = await AssignmentService.getDefaultPharmacyId();
+        // Require pharmacy ID for customer creation
+        if (!userPharmacyId) {
+            throw new Error('Pharmacy ID is required for customer creation');
         }
 
         const customerData = {
@@ -36,7 +34,7 @@ export class CustomerService {
             // Convert empty email string to undefined to work with sparse index
             email:
                 data.email && data.email.trim() !== '' ? data.email : undefined,
-            pharmacyId: new Types.ObjectId(pharmacyId),
+            pharmacyId: new Types.ObjectId(userPharmacyId),
             branch: userBranchId ? new Types.ObjectId(userBranchId) : undefined,
         };
 
@@ -47,8 +45,7 @@ export class CustomerService {
     /**
      * Get all customers with pagination and filtering
      * @param params - Search parameters for customers
-     * @param userRole - The role of the user requesting customers
-     * @param userBranchId - The branch ID of the user requesting customers
+     * @param user - The authenticated user from req.user
      * @returns A paginated list of customers
      */
     async getCustomers(
@@ -57,15 +54,13 @@ export class CustomerService {
             limit?: number;
             search?: string;
         },
-        userRole?: string,
-        userBranchId?: string,
+        user: ITokenPayload,
     ) {
         const query: any = {};
 
-        // If not super admin, filter by branch
-        if (userRole && userRole !== UserRole.SUPER_ADMIN && userBranchId) {
-            query.branch = userBranchId;
-        }
+        // Apply data scoping based on user role and pharmacy/branch assignment
+        const scopingFilter = getBranchScopingFilter(user);
+        Object.assign(query, scopingFilter);
 
         if (params.search) {
             // Search in name, phone, and email fields
@@ -92,21 +87,15 @@ export class CustomerService {
     /**
      * Get a single customer by their ID
      * @param id - The ID of the customer
-     * @param userRole - The role of the user requesting the customer
-     * @param userBranchId - The branch ID of the user requesting the customer
+     * @param user - The authenticated user from req.user
      * @returns The customer object or null if not found
      */
-    async getCustomerById(
-        id: string,
-        userRole?: string,
-        userBranchId?: string,
-    ) {
+    async getCustomerById(id: string, user: ITokenPayload) {
         const query: any = { _id: id };
 
-        // If not super admin, filter by branch
-        if (userRole && userRole !== UserRole.SUPER_ADMIN && userBranchId) {
-            query.branch = userBranchId;
-        }
+        // Apply data scoping based on user role and pharmacy/branch assignment
+        const scopingFilter = getBranchScopingFilter(user);
+        Object.assign(query, scopingFilter);
 
         const customer = await Customer.findOne(query).populate({
             path: 'purchases',

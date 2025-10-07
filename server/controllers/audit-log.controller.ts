@@ -30,10 +30,12 @@ export class AuditLogController {
                 page: req.query.page ? Number(req.query.page) : 1,
                 limit: req.query.limit ? Number(req.query.limit) : 10,
                 userRole: req.query.userRole as string,
-                requesterRole: (req.user as any)?.role as string,
             };
 
-            const result = await this.auditLogService.getAuditLogs(filters);
+            const result = await this.auditLogService.getAuditLogs(
+                filters,
+                req.user!,
+            );
 
             res.status(200).json(
                 successResponse(result, 'Audit logs retrieved successfully'),
@@ -54,7 +56,9 @@ export class AuditLogController {
         next: NextFunction,
     ): Promise<void> {
         try {
-            const stats = await this.auditLogService.getAuditLogStats();
+            const stats = await this.auditLogService.getAuditLogStats(
+                req.user!,
+            );
 
             res.status(200).json(
                 successResponse(
@@ -79,7 +83,10 @@ export class AuditLogController {
     ): Promise<void> {
         try {
             const { id } = req.params;
-            const auditLog = await this.auditLogService.getAuditLogById(id);
+            const auditLog = await this.auditLogService.getAuditLogById(
+                id,
+                req.user!,
+            );
 
             res.status(200).json(
                 successResponse(auditLog, 'Audit log retrieved successfully'),

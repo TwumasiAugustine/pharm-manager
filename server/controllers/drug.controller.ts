@@ -30,6 +30,7 @@ export class DrugController {
                 drugData,
                 user.role,
                 user.branchId,
+                user.pharmacyId,
             );
 
             // Log audit event for drug creation
@@ -224,11 +225,7 @@ export class DrugController {
             };
 
             const user = req.user!;
-            const result = await drugService.getDrugs(
-                params,
-                user.role,
-                user.branchId,
-            );
+            const result = await drugService.getDrugs(params, user);
 
             res.status(200).json(
                 successResponse(result, 'Drugs retrieved successfully'),
