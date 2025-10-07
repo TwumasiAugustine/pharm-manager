@@ -97,6 +97,60 @@ export class AuditLogController {
     }
 
     /**
+     * Get platform-wide audit log statistics
+     * @route GET /api/audit-logs/platform-stats
+     * @access Private (Super Admin only)
+     */
+    async getPlatformStats(
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> {
+        try {
+            const stats = await this.auditLogService.getPlatformStats(
+                req.user!,
+            );
+
+            res.status(200).json(
+                successResponse(
+                    stats,
+                    'Platform audit statistics retrieved successfully',
+                ),
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Get recent security alerts
+     * @route GET /api/audit-logs/security-alerts
+     * @access Private (Super Admin only)
+     */
+    async getSecurityAlerts(
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> {
+        try {
+            const hours = req.query.hours ? Number(req.query.hours) : 24;
+            const alerts = await this.auditLogService.getSecurityAlerts(
+                req.user!,
+                hours,
+            );
+
+            res.status(200).json(
+                successResponse(
+                    alerts,
+                    `Security alerts for last ${hours} hours retrieved successfully`,
+                ),
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
      * Delete old audit logs (cleanup utility)
      * @route DELETE /api/audit-logs/cleanup
      * @access Private (Admin only)

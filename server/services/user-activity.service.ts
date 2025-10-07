@@ -8,7 +8,10 @@ import {
     UserSessionInfo,
     UserActivitySummary,
 } from '../types/user-activity.types';
-import { BadRequestError } from '../utils/errors';
+import { BadRequestError, NotFoundError } from '../utils/errors';
+import { ITokenPayload } from '../types/auth.types';
+import { getPharmacyScopingFilter } from '../utils/data-scoping';
+import { UserRole } from '../types/user.types';
 
 export class UserActivityService {
     /**
@@ -25,7 +28,7 @@ export class UserActivityService {
             const populatedActivity = await UserActivity.findById(
                 savedActivity._id,
             )
-                .populate('userId', 'name email role')
+                .populate('userId', 'name email role pharmacyId')
                 .lean();
 
             return this.formatActivityResponse(populatedActivity as any);
@@ -39,8 +42,8 @@ export class UserActivityService {
      */
     async getUserActivities(
         filters: UserActivityFilters,
+        user: ITokenPayload,
     ): Promise<UserActivitySummary> {
-        const { requesterRole } = filters as any;
         const {
             page = 1,
             limit = 10,
@@ -55,8 +58,18 @@ export class UserActivityService {
             ipAddress,
         } = filters;
 
-        // Build query
+        // Build query with proper data scoping
         const query: any = {};
+
+        // Apply pharmacy-based data scoping
+        // Super admin sees all activities, others see only their pharmacy's activities
+        if (user.role !== UserRole.SUPER_ADMIN) {
+            const scopingFilter = getPharmacyScopingFilter(user);
+            // Join with users to filter by pharmacy
+            query['userId'] = {
+                $in: await User.find(scopingFilter).distinct('_id'),
+            };
+        }
 
         if (userId) query.userId = userId;
         if (sessionId) query.sessionId = sessionId;
@@ -76,18 +89,10 @@ export class UserActivityService {
         // Calculate skip value
         const skip = (page - 1) * limit;
 
-        // If requester is not super admin, exclude activities where user role is SUPER_ADMIN
-        if (requesterRole && requesterRole !== 'SUPER_ADMIN') {
-            query['$or'] = [
-                { 'userId.role': { $exists: false } },
-                { 'userId.role': { $ne: 'SUPER_ADMIN' } },
-            ];
-        }
-
         // Execute query with pagination
         const [activities, totalCount] = await Promise.all([
             UserActivity.find(query)
-                .populate('userId', 'name email role')
+                .populate('userId', 'name email role pharmacyId')
                 .sort({ timestamp: -1 })
                 .skip(skip)
                 .limit(limit)
@@ -103,168 +108,361 @@ export class UserActivityService {
             );
         }
 
-        // Calculate pagination info
+        // Format response data
+        const formattedActivities = filteredActivities.map((activity: any) =>
+            this.formatActivityResponse(activity),
+        );
+
+        // Calculate total pages
         const totalPages = Math.ceil(totalCount / limit);
-        const hasNextPage = page < totalPages;
-        const hasPrevPage = page > 1;
 
         return {
             totalActivities: totalCount,
-            activities: filteredActivities.map((activity) =>
-                this.formatActivityResponse(activity as any),
-            ),
+            activities: formattedActivities,
             totalPages,
             currentPage: page,
-            hasNextPage,
-            hasPrevPage,
+            hasNextPage: page < totalPages,
+            hasPrevPage: page > 1,
         };
     }
 
     /**
-     * Get user activity statistics
+     * Build activity query with filters and data scoping
      */
-    async getUserActivityStats(
-        filters: Partial<UserActivityFilters> = {},
-    ): Promise<UserActivityStats> {
-        const { startDate, endDate, userId } = filters;
+    private async buildActivityQuery(
+        filters: UserActivityFilters,
+        user: ITokenPayload,
+    ): Promise<any> {
+        const query: any = {};
 
-        // Build base query
-        const baseQuery: any = {};
-        if (userId) baseQuery.userId = userId;
-        if (startDate || endDate) {
-            baseQuery.timestamp = {};
-            if (startDate) baseQuery.timestamp.$gte = startDate;
-            if (endDate) baseQuery.timestamp.$lte = endDate;
+        // Apply data scoping
+        if (user.role !== UserRole.SUPER_ADMIN) {
+            const scopingFilter = getPharmacyScopingFilter(user);
+            query['userId'] = {
+                $in: await User.find(scopingFilter).distinct('_id'),
+            };
         }
 
-        // Get overview statistics
+        // Apply filters
+        if (filters.userId) {
+            query.userId = filters.userId;
+        }
+
+        if (filters.sessionId) {
+            query.sessionId = filters.sessionId;
+        }
+
+        if (filters.activityType) {
+            query['activity.type'] = filters.activityType;
+        }
+
+        if (filters.resource) {
+            query['activity.resource'] = filters.resource;
+        }
+
+        if (filters.startDate || filters.endDate) {
+            query.timestamp = {};
+            if (filters.startDate) {
+                query.timestamp.$gte = new Date(filters.startDate);
+            }
+            if (filters.endDate) {
+                query.timestamp.$lte = new Date(filters.endDate);
+            }
+        }
+
+        return query;
+    }
+
+    /**
+     * Get comprehensive user activity statistics
+     */
+    async getUserActivityStats(
+        filters: UserActivityFilters,
+        user: ITokenPayload,
+    ): Promise<UserActivityStats> {
+        // Build base query with data scoping
+        const query = await this.buildActivityQuery(filters, user);
+
+        // Calculate comprehensive statistics
+        const now = new Date();
+        const today = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+        );
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
         const [
             totalActivities,
-            uniqueUsers,
+            activeUsers,
             activeSessions,
             totalSessions,
-            activityBreakdown,
-            resourceBreakdown,
-            userBreakdown,
-            hourlyActivity,
-            dailyActivity,
+            activityTypeStats,
+            resourceStats,
+            userStats,
+            hourlyStats,
+            dailyStats,
             topActions,
         ] = await Promise.all([
-            UserActivity.countDocuments(baseQuery),
-            UserActivity.distinct('userId', baseQuery).then(
+            UserActivity.countDocuments(query),
+            UserActivity.distinct('userId', query).then(
                 (users) => users.length,
             ),
-            UserActivity.distinct('sessionId', {
-                ...baseQuery,
-                'session.isActive': true,
-            }).then((sessions) => sessions.length),
-            UserActivity.distinct('sessionId', baseQuery).then(
+            UserActivity.countDocuments({ ...query, 'session.isActive': true }),
+            UserActivity.distinct('sessionId', query).then(
                 (sessions) => sessions.length,
             ),
-            this.getActivityBreakdown(baseQuery),
-            this.getResourceBreakdown(baseQuery),
-            this.getUserBreakdown(baseQuery),
-            this.getHourlyActivity(baseQuery),
-            this.getDailyActivity(baseQuery),
-            this.getTopActions(baseQuery),
+            this.getActivityTypeBreakdown(query),
+            this.getResourceBreakdown(query),
+            this.getUserBreakdown(query),
+            this.getHourlyActivity(query),
+            this.getDailyActivity(query),
+            this.getTopActions(query),
         ]);
 
         // Calculate average session duration
-        const avgDurationResult = await UserActivity.aggregate([
-            { $match: baseQuery },
+        const sessionDurations = await UserActivity.aggregate([
+            { $match: query },
+            {
+                $group: {
+                    _id: '$sessionId',
+                    start: { $min: '$timestamp' },
+                    end: { $max: '$timestamp' },
+                },
+            },
+            {
+                $project: {
+                    duration: { $subtract: ['$end', '$start'] },
+                },
+            },
             {
                 $group: {
                     _id: null,
-                    avgDuration: { $avg: '$session.duration' },
+                    avgDuration: { $avg: '$duration' },
                 },
             },
         ]);
-        const averageSessionDuration = avgDurationResult[0]?.avgDuration || 0;
+
+        const averageSessionDuration =
+            sessionDurations.length > 0
+                ? Math.round(sessionDurations[0].avgDuration / 1000 / 60) // Convert to minutes
+                : 0;
+
+        return {
+            overview: {
+                totalActivities,
+                activeUsers,
+                activeSessions,
+                totalSessions,
+                averageSessionDuration,
+                totalUniqueUsers: activeUsers,
+            },
+            activityBreakdown: activityTypeStats,
+            resourceBreakdown: resourceStats,
+            userBreakdown: userStats,
+            hourlyActivity: hourlyStats,
+            dailyActivity: dailyStats,
+            topActions,
+        };
+    }
+
+    /**
+     * Calculate activity statistics with proper data scoping
+     */
+    private async calculateActivityStats(
+        baseQuery: any,
+        user: ITokenPayload,
+    ): Promise<UserActivityStats> {
+        // Get activities for the last 24 hours
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const last24hQuery = {
+            ...baseQuery,
+            timestamp: { $gte: twentyFourHoursAgo },
+        };
+
+        // Get activities for the last 7 days
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const last7dQuery = { ...baseQuery, timestamp: { $gte: sevenDaysAgo } };
+
+        const [
+            totalActivities,
+            last24hActivities,
+            last7dActivities,
+            uniqueUsers,
+            activeSessions,
+        ] = await Promise.all([
+            UserActivity.countDocuments(baseQuery),
+            UserActivity.countDocuments(last24hQuery),
+            UserActivity.countDocuments(last7dQuery),
+            UserActivity.distinct('userId', baseQuery).then(
+                (users) => users.length,
+            ),
+            UserActivity.countDocuments({
+                ...baseQuery,
+                'session.isActive': true,
+            }),
+        ]);
+
+        // Calculate activity distribution by type
+        const activityDistribution = await UserActivity.aggregate([
+            { $match: baseQuery },
+            { $group: { _id: '$activity.type', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+        ]);
 
         return {
             overview: {
                 totalActivities,
                 activeUsers: uniqueUsers,
                 activeSessions,
-                totalSessions,
-                averageSessionDuration: Math.round(averageSessionDuration),
+                totalSessions: 0, // Would need session tracking
+                averageSessionDuration: 0, // Would need session tracking
                 totalUniqueUsers: uniqueUsers,
             },
-            activityBreakdown,
-            resourceBreakdown,
-            userBreakdown,
-            hourlyActivity,
-            dailyActivity,
-            topActions,
+            activityBreakdown: activityDistribution.map((item) => ({
+                type: item.type,
+                count: item.count,
+                percentage:
+                    totalActivities > 0
+                        ? Math.round((item.count / totalActivities) * 100)
+                        : 0,
+            })),
+            resourceBreakdown: [],
+            userBreakdown: [],
+            hourlyActivity: [],
+            dailyActivity: [],
+            topActions: [],
         };
     }
 
     /**
-     * Get detailed session information for a user
+     * Get active user sessions with enhanced information for super admin
      */
-    async getUserSession(sessionId: string): Promise<UserSessionInfo | null> {
-        const activities = await UserActivity.find({ sessionId })
+    async getActiveSessions(user: ITokenPayload): Promise<UserSessionInfo[]> {
+        const query: any = { 'session.isActive': true };
+
+        // Apply data scoping
+        if (user.role !== UserRole.SUPER_ADMIN) {
+            const scopingFilter = getPharmacyScopingFilter(user);
+            query['userId'] = {
+                $in: await User.find(scopingFilter).distinct('_id'),
+            };
+        }
+
+        const sessions = await UserActivity.aggregate([
+            { $match: query },
+            {
+                $group: {
+                    _id: '$sessionId',
+                    userId: { $first: '$userId' },
+                    startTime: { $min: '$timestamp' },
+                    lastActivity: { $max: '$timestamp' },
+                    activityCount: { $sum: 1 },
+                    ipAddress: { $first: '$session.ipAddress' },
+                    userAgent: { $first: '$session.userAgent' },
+                },
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'userId',
+                    foreignField: '_id',
+                    as: 'user',
+                },
+            },
+            { $unwind: '$user' },
+            { $sort: { lastActivity: -1 } },
+        ]);
+
+        return sessions.map((session) => ({
+            sessionId: session._id,
+            userId: session.userId.toString(),
+            userName: session.user.name,
+            userEmail: session.user.email,
+            userRole: session.user.role,
+            loginTime: session.startTime,
+            lastActivity: session.lastActivity,
+            duration: Date.now() - session.startTime.getTime(),
+            activityCount: session.activityCount,
+            ipAddress: session.ipAddress,
+            userAgent: session.userAgent,
+            isActive: true,
+            activities: [], // Would need to fetch detailed activities if needed
+        }));
+    }
+
+    /**
+     * Get detailed information about a specific user session
+     */
+    async getUserSession(
+        sessionId: string,
+        user: ITokenPayload,
+    ): Promise<UserSessionInfo> {
+        const query: any = { sessionId };
+
+        // Apply data scoping
+        if (user.role !== UserRole.SUPER_ADMIN) {
+            const scopingFilter = getPharmacyScopingFilter(user);
+            query['userId'] = {
+                $in: await User.find(scopingFilter).distinct('_id'),
+            };
+        }
+
+        const activities = await UserActivity.find(query)
             .populate('userId', 'name email role')
-            .sort({ timestamp: 1 })
+            .sort({ timestamp: -1 })
             .lean();
 
-        if (!activities.length) return null;
+        if (activities.length === 0) {
+            throw new NotFoundError('Session not found');
+        }
 
-        const firstActivity = activities[0] as any;
-        const lastActivity = activities[activities.length - 1] as any;
+        const firstActivity = activities[activities.length - 1];
+        const lastActivity = activities[0];
+        const user_info = firstActivity.userId as any;
 
-        const loginTime = firstActivity.session.loginTime;
-        const lastActivityTime = lastActivity.session.lastActivity;
-        const duration = Math.round(
-            (lastActivityTime.getTime() - loginTime.getTime()) / (1000 * 60),
-        ); // in minutes
+        const sessionActivities = activities.map((activity) => ({
+            type: activity.activity.type,
+            resource: activity.activity.resource,
+            action: activity.activity.action,
+            timestamp: activity.timestamp,
+            resourceName: activity.activity.resourceName,
+        }));
 
         return {
             sessionId,
-            userId: firstActivity.userId._id.toString(),
-            userName: firstActivity.userId.name,
-            userEmail: firstActivity.userId.email,
-            userRole: firstActivity.userId.role,
-            loginTime,
-            lastActivity: lastActivityTime,
-            duration,
+            userId: user_info._id.toString(),
+            userName: user_info.name,
+            userEmail: user_info.email,
+            userRole: user_info.role,
+            loginTime: firstActivity.timestamp,
+            lastActivity: lastActivity.timestamp,
+            duration:
+                lastActivity.timestamp.getTime() -
+                firstActivity.timestamp.getTime(),
             activityCount: activities.length,
             ipAddress: firstActivity.session.ipAddress,
             userAgent: firstActivity.session.userAgent,
             location: firstActivity.session.location,
             isActive: firstActivity.session.isActive,
-            activities: activities.map((activity: any) => ({
-                type: activity.activity.type,
-                resource: activity.activity.resource,
-                action: activity.activity.action,
-                timestamp: activity.timestamp,
-                resourceName: activity.activity.resourceName,
-            })),
+            activities: sessionActivities,
         };
     }
 
     /**
-     * Update session status (mark as inactive on logout)
+     * Cleanup old user activities
      */
-    async updateSessionStatus(
-        sessionId: string,
-        isActive: boolean,
-    ): Promise<void> {
-        await UserActivity.updateMany(
-            { sessionId },
-            {
-                $set: {
-                    'session.isActive': isActive,
-                    'session.lastActivity': new Date(),
-                },
-            },
-        );
-    }
+    async cleanupOldActivities(
+        daysToKeep: number,
+        user: ITokenPayload,
+    ): Promise<number> {
+        // Only super admin can perform cleanup
+        if (user.role !== UserRole.SUPER_ADMIN) {
+            throw new BadRequestError(
+                'Insufficient permissions for cleanup operation',
+            );
+        }
 
-    /**
-     * Clean up old activity records
-     */
-    async cleanupOldActivities(daysToKeep: number = 90): Promise<number> {
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
 
@@ -276,18 +474,17 @@ export class UserActivityService {
     }
 
     /**
-     * Get user activity breakdown by type
+     * Helper: Get activity type breakdown
      */
-    private async getActivityBreakdown(baseQuery: any) {
-        const breakdown = await UserActivity.aggregate([
-            { $match: baseQuery },
+    private async getActivityTypeBreakdown(query: any) {
+        const result = await UserActivity.aggregate([
+            { $match: query },
             { $group: { _id: '$activity.type', count: { $sum: 1 } } },
             { $sort: { count: -1 } },
         ]);
 
-        const total = breakdown.reduce((sum, item) => sum + item.count, 0);
-
-        return breakdown.map((item) => ({
+        const total = result.reduce((sum, item) => sum + item.count, 0);
+        return result.map((item) => ({
             type: item._id,
             count: item.count,
             percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
@@ -295,18 +492,17 @@ export class UserActivityService {
     }
 
     /**
-     * Get resource breakdown
+     * Helper: Get resource breakdown
      */
-    private async getResourceBreakdown(baseQuery: any) {
-        const breakdown = await UserActivity.aggregate([
-            { $match: baseQuery },
+    private async getResourceBreakdown(query: any) {
+        const result = await UserActivity.aggregate([
+            { $match: query },
             { $group: { _id: '$activity.resource', count: { $sum: 1 } } },
             { $sort: { count: -1 } },
         ]);
 
-        const total = breakdown.reduce((sum, item) => sum + item.count, 0);
-
-        return breakdown.map((item) => ({
+        const total = result.reduce((sum, item) => sum + item.count, 0);
+        return result.map((item) => ({
             resource: item._id,
             count: item.count,
             percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
@@ -314,54 +510,48 @@ export class UserActivityService {
     }
 
     /**
-     * Get user breakdown with activity counts
+     * Helper: Get user breakdown
      */
-    private async getUserBreakdown(baseQuery: any) {
-        const breakdown = await UserActivity.aggregate([
-            { $match: baseQuery },
+    private async getUserBreakdown(query: any) {
+        const result = await UserActivity.aggregate([
+            { $match: query },
             {
                 $group: {
                     _id: '$userId',
-                    count: { $sum: 1 },
+                    activityCount: { $sum: 1 },
                     lastActivity: { $max: '$timestamp' },
-                    avgDuration: { $avg: '$session.duration' },
                 },
             },
-            { $sort: { count: -1 } },
+            { $sort: { activityCount: -1 } },
             { $limit: 10 },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'user',
+                },
+            },
+            { $unwind: '$user' },
         ]);
 
-        // Populate user details
-        const userIds = breakdown.map((item) => item._id);
-        const users = await User.find({ _id: { $in: userIds } }).lean();
-        const userMap = users.reduce(
-            (map: Record<string, any>, user: any) => {
-                map[user._id.toString()] = user;
-                return map;
-            },
-            {} as Record<string, any>,
-        );
-
-        return breakdown.map((item) => {
-            const user = userMap[item._id.toString()];
-            return {
-                userId: item._id.toString(),
-                userName: user?.name || 'Unknown',
-                userEmail: user?.email || 'Unknown',
-                userRole: user?.role || 'Unknown',
-                activityCount: item.count,
-                lastActivity: item.lastActivity,
-                averageSessionDuration: Math.round(item.avgDuration || 0),
-            };
-        });
+        return result.map((item) => ({
+            userId: item._id.toString(),
+            userName: item.user.name,
+            userEmail: item.user.email,
+            userRole: item.user.role,
+            activityCount: item.activityCount,
+            lastActivity: item.lastActivity,
+            averageSessionDuration: 0, // Would need session tracking for this
+        }));
     }
 
     /**
-     * Get hourly activity distribution
+     * Helper: Get hourly activity
      */
-    private async getHourlyActivity(baseQuery: any) {
-        const hourlyData = await UserActivity.aggregate([
-            { $match: baseQuery },
+    private async getHourlyActivity(query: any) {
+        const result = await UserActivity.aggregate([
+            { $match: query },
             {
                 $group: {
                     _id: { $hour: '$timestamp' },
@@ -371,31 +561,29 @@ export class UserActivityService {
             { $sort: { _id: 1 } },
         ]);
 
-        // Fill in missing hours with 0 count
-        const result = Array.from({ length: 24 }, (_, hour) => {
-            const found = hourlyData.find((item) => item._id === hour);
-            return {
-                hour,
-                count: found ? found.count : 0,
-            };
+        // Fill in missing hours
+        const hourlyData = Array.from({ length: 24 }, (_, hour) => ({
+            hour,
+            count: 0,
+        }));
+
+        result.forEach((item) => {
+            if (item._id >= 0 && item._id < 24) {
+                hourlyData[item._id].count = item.count;
+            }
         });
 
-        return result;
+        return hourlyData;
     }
 
     /**
-     * Get daily activity for the last 30 days
+     * Helper: Get daily activity
      */
-    private async getDailyActivity(baseQuery: any) {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    private async getDailyActivity(query: any) {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const dailyQuery = { ...query, timestamp: { $gte: sevenDaysAgo } };
 
-        const dailyQuery = {
-            ...baseQuery,
-            timestamp: { $gte: thirtyDaysAgo },
-        };
-
-        const dailyData = await UserActivity.aggregate([
+        const result = await UserActivity.aggregate([
             { $match: dailyQuery },
             {
                 $group: {
@@ -424,7 +612,7 @@ export class UserActivityService {
             { $sort: { date: 1 } },
         ]);
 
-        return dailyData.map((item) => ({
+        return result.map((item) => ({
             date: item.date.toISOString().split('T')[0],
             count: item.count,
             uniqueUsers: item.uniqueUsers,
@@ -432,11 +620,11 @@ export class UserActivityService {
     }
 
     /**
-     * Get top actions performed
+     * Helper: Get top actions
      */
-    private async getTopActions(baseQuery: any) {
-        const topActions = await UserActivity.aggregate([
-            { $match: baseQuery },
+    private async getTopActions(query: any) {
+        const result = await UserActivity.aggregate([
+            { $match: query },
             {
                 $group: {
                     _id: {
@@ -450,7 +638,7 @@ export class UserActivityService {
             { $limit: 10 },
         ]);
 
-        return topActions.map((item) => ({
+        return result.map((item) => ({
             action: item._id.action,
             resource: item._id.resource,
             count: item.count,
@@ -470,9 +658,25 @@ export class UserActivityService {
                 role: activity.userId.role,
             },
             sessionId: activity.sessionId,
-            activity: activity.activity,
-            session: activity.session,
-            performance: activity.performance,
+            activity: {
+                type: activity.activity.type,
+                resource: activity.activity.resource,
+                resourceId: activity.activity.resourceId,
+                resourceName: activity.activity.resourceName,
+                action: activity.activity.action,
+                metadata: activity.activity.metadata,
+            },
+            session: {
+                loginTime: new Date(
+                    activity.session.startTime || activity.timestamp,
+                ),
+                lastActivity: activity.timestamp,
+                ipAddress: activity.session.ipAddress,
+                userAgent: activity.session.userAgent,
+                location: activity.session.location,
+                isActive: activity.session.isActive,
+                duration: activity.session.duration,
+            },
             timestamp: activity.timestamp,
             createdAt: activity.createdAt,
             updatedAt: activity.updatedAt,
@@ -480,22 +684,108 @@ export class UserActivityService {
     }
 
     /**
-     * Cleanup old user activity records
+     * Get user activity summary for dashboard
      */
-    async cleanupOldActivity(daysToKeep: number): Promise<number> {
-        try {
-            const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+    async getUserActivitySummary(user: ITokenPayload): Promise<any> {
+        const query: any = {};
 
-            const result = await UserActivity.deleteMany({
-                timestamp: { $lt: cutoffDate },
-            });
-
-            return result.deletedCount || 0;
-        } catch (error) {
-            throw new BadRequestError(
-                'Failed to cleanup old user activity records',
-            );
+        // Apply data scoping
+        if (user.role !== UserRole.SUPER_ADMIN) {
+            const scopingFilter = getPharmacyScopingFilter(user);
+            query['userId'] = {
+                $in: await User.find(scopingFilter).distinct('_id'),
+            };
         }
+
+        const [
+            todayActivities,
+            weeklyActivities,
+            monthlyActivities,
+            topUsers,
+            recentActivities,
+        ] = await Promise.all([
+            this.getActivitiesInPeriod(query, 1),
+            this.getActivitiesInPeriod(query, 7),
+            this.getActivitiesInPeriod(query, 30),
+            this.getTopActiveUsers(query, 5),
+            this.getRecentActivities(query, 10),
+        ]);
+
+        return {
+            summary: {
+                today: todayActivities,
+                thisWeek: weeklyActivities,
+                thisMonth: monthlyActivities,
+            },
+            topUsers,
+            recentActivities,
+        };
+    }
+
+    private async getActivitiesInPeriod(
+        baseQuery: any,
+        days: number,
+    ): Promise<number> {
+        const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+        return UserActivity.countDocuments({
+            ...baseQuery,
+            timestamp: { $gte: startDate },
+        });
+    }
+
+    private async getTopActiveUsers(
+        baseQuery: any,
+        limit: number,
+    ): Promise<any[]> {
+        return UserActivity.aggregate([
+            { $match: baseQuery },
+            {
+                $group: {
+                    _id: '$userId',
+                    activityCount: { $sum: 1 },
+                    lastActivity: { $max: '$timestamp' },
+                },
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'user',
+                },
+            },
+            { $unwind: '$user' },
+            { $sort: { activityCount: -1 } },
+            { $limit: limit },
+            {
+                $project: {
+                    userId: '$_id',
+                    userName: '$user.name',
+                    userRole: '$user.role',
+                    activityCount: 1,
+                    lastActivity: 1,
+                },
+            },
+        ]);
+    }
+
+    private async getRecentActivities(
+        baseQuery: any,
+        limit: number,
+    ): Promise<any[]> {
+        const activities = await UserActivity.find(baseQuery)
+            .populate('userId', 'name role')
+            .sort({ timestamp: -1 })
+            .limit(limit)
+            .lean();
+
+        return activities.map((activity) => ({
+            id: activity._id.toString(),
+            userName: (activity.userId as any).name,
+            userRole: (activity.userId as any).role,
+            action: activity.activity.type,
+            resource: activity.activity.resource,
+            timestamp: activity.timestamp,
+        }));
     }
 }

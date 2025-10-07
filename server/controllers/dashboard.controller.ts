@@ -39,6 +39,7 @@ export class DashboardController {
                     period,
                     branchId,
                 },
+                req.user!, // Pass user context for data scoping
             );
 
             res.status(200).json(
@@ -73,11 +74,14 @@ export class DashboardController {
                 period?: 'day' | 'week' | 'month';
             };
 
-            const trends = await this.dashboardService.getSalesTrends({
-                startDate,
-                endDate,
-                period,
-            });
+            const trends = await this.dashboardService.getSalesTrends(
+                {
+                    startDate,
+                    endDate,
+                    period,
+                },
+                req.user!,
+            );
 
             res.status(200).json(
                 successResponse(trends, 'Sales trends retrieved successfully'),

@@ -191,16 +191,16 @@ export const usePermissions = () => {
             const currentRole = userPermissions.user.role;
 
             // Role hierarchy checks based on new system
-            if (currentRole === 'SUPER_ADMIN') {
+            if (currentRole === 'super_admin') {
                 // Super admin can only manage admins
-                return targetUserRole === 'ADMIN';
+                return targetUserRole === 'admin';
             }
 
-            if (currentRole === 'ADMIN') {
+            if (currentRole === 'admin') {
                 // Admin can manage pharmacists and cashiers
                 return (
-                    targetUserRole === 'PHARMACIST' ||
-                    targetUserRole === 'CASHIER'
+                    targetUserRole === 'pharmacist' ||
+                    targetUserRole === 'cashier'
                 );
             }
 
@@ -217,14 +217,14 @@ export const usePermissions = () => {
             const currentRole = userPermissions.user.role;
 
             // Role hierarchy for user creation
-            if (currentRole === 'SUPER_ADMIN') {
-                return targetUserRole === 'ADMIN';
+            if (currentRole === 'super_admin') {
+                return targetUserRole === 'admin';
             }
 
-            if (currentRole === 'ADMIN') {
+            if (currentRole === 'admin') {
                 return (
-                    targetUserRole === 'PHARMACIST' ||
-                    targetUserRole === 'CASHIER'
+                    targetUserRole === 'pharmacist' ||
+                    targetUserRole === 'cashier'
                 );
             }
 
@@ -239,12 +239,12 @@ export const usePermissions = () => {
         const currentRole = userPermissions.user.role;
 
         switch (currentRole) {
-            case 'SUPER_ADMIN':
+            case 'super_admin':
                 return 'system';
-            case 'ADMIN':
+            case 'admin':
                 return 'pharmacy';
-            case 'PHARMACIST':
-            case 'CASHIER':
+            case 'pharmacist':
+            case 'cashier':
             default:
                 return 'branch';
         }
@@ -256,7 +256,7 @@ export const usePermissions = () => {
         const currentRole = userPermissions.user.role;
 
         // Super admin cannot access operational features (sales, inventory, etc.)
-        return currentRole !== 'SUPER_ADMIN';
+        return currentRole !== 'super_admin';
     }, [userPermissions, isLoading]);
 
     const canAccessSystemFeatures = useCallback((): boolean => {
@@ -265,7 +265,7 @@ export const usePermissions = () => {
         const currentRole = userPermissions.user.role;
 
         // Only super admin can access system-level features
-        return currentRole === 'SUPER_ADMIN';
+        return currentRole === 'super_admin';
     }, [userPermissions, isLoading]);
 
     const isManager = useCallback((): boolean => {

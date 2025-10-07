@@ -6,6 +6,7 @@ import { SaleService } from '../services/sale.service';
 import { successResponse } from '../utils/response';
 import { logAuditEvent } from '../middlewares/audit.middleware';
 import { UserRole } from '../types/user.types';
+import { getBranchScopingFilter } from '../utils/data-scoping';
 
 const saleService = new SaleService();
 
@@ -77,8 +78,21 @@ export class SaleController {
     async getSaleByShortCode(req: Request, res: Response, next: NextFunction) {
         try {
             const { code } = req.params;
-            const sale = await Sale.findOne({ shortCode: code });
-            if (!sale) throw new BadRequestError('Invalid or expired code');
+
+            // Apply branch-level data scoping for cashiers and pharmacists
+            const scopingFilter = getBranchScopingFilter(req.user!);
+            const query: any = { shortCode: code };
+
+            // Add data scoping to prevent cross-branch short code access
+            Object.assign(query, scopingFilter);
+
+            const sale = await Sale.findOne(query);
+            if (!sale) {
+                throw new BadRequestError(
+                    'Invalid or expired code, or code not available in your branch',
+                );
+            }
+
             res.json(successResponse(sale));
         } catch (err: any) {
             next(err);
@@ -108,10 +122,20 @@ export class SaleController {
                 throw new UnauthorizedError('No permission to finalize sale');
             }
             const { code } = req.body;
-            // Find sale by code
-            const sale = await Sale.findOne({ shortCode: code });
+
+            // Apply branch-level data scoping for cashiers and pharmacists
+            const scopingFilter = getBranchScopingFilter(req.user!);
+            const query: any = { shortCode: code };
+
+            // Add data scoping to prevent cross-branch short code access
+            Object.assign(query, scopingFilter);
+
+            // Find sale by code with branch scoping
+            const sale = await Sale.findOne(query);
             if (!sale) {
-                throw new BadRequestError('Invalid or expired code');
+                throw new BadRequestError(
+                    'Invalid or expired code, or code not available in your branch',
+                );
             }
 
             // Get pharmacy settings for expiry time

@@ -15,25 +15,30 @@ export class DashboardService {
      * @param endDate - End date for filtering (optional)
      * @param period - Time period filter ('day', 'week', 'month', 'year')
      * @param branchId - Branch ID for filtering (optional)
+     * @param user - User context for data scoping
      * @returns Dashboard analytics data
      */
-    async getDashboardAnalytics({
-        startDate,
-        endDate,
-        period = 'month',
-        branchId,
-    }: {
-        startDate?: string;
-        endDate?: string;
-        period?: 'day' | 'week' | 'month' | 'year';
-        branchId?: string;
-    }) {
-        // Build date filter query
+    async getDashboardAnalytics(
+        {
+            startDate,
+            endDate,
+            period = 'month',
+            branchId,
+        }: {
+            startDate?: string;
+            endDate?: string;
+            period?: 'day' | 'week' | 'month' | 'year';
+            branchId?: string;
+        },
+        user: ITokenPayload,
+    ) {
+        // Build date filter query with data scoping
         const dateQuery = this.buildDateQuery(
             startDate,
             endDate,
             period,
             branchId,
+            user,
         );
 
         // Run all analytics queries in parallel
@@ -55,9 +60,9 @@ export class DashboardService {
             this.getTotalRevenue(dateQuery),
             this.getTotalProfit(dateQuery),
             this.getTopSellingDrugs(dateQuery),
-            this.getLowStockDrugs(branchId),
-            this.getTotalCustomers(),
-            this.getTotalDrugs(branchId),
+            this.getLowStockDrugs(branchId, user),
+            this.getTotalCustomers(user),
+            this.getTotalDrugs(branchId, user),
             this.getSalesByPeriod(dateQuery, period),
             this.getRevenueByPeriod(dateQuery, period),
             this.getProfitByPeriod(dateQuery, period),
@@ -97,16 +102,25 @@ export class DashboardService {
      * @param period - Grouping period
      * @returns Sales trend data
      */
-    async getSalesTrends({
-        startDate,
-        endDate,
-        period = 'day',
-    }: {
-        startDate?: string;
-        endDate?: string;
-        period?: 'day' | 'week' | 'month';
-    }) {
-        const dateQuery = this.buildDateQuery(startDate, endDate, period);
+    async getSalesTrends(
+        {
+            startDate,
+            endDate,
+            period = 'day',
+        }: {
+            startDate?: string;
+            endDate?: string;
+            period?: 'day' | 'week' | 'month';
+        },
+        user: ITokenPayload,
+    ) {
+        const dateQuery = this.buildDateQuery(
+            startDate,
+            endDate,
+            period,
+            undefined,
+            user,
+        );
 
         const [salesByPeriod, revenueByPeriod] = await Promise.all([
             this.getSalesByPeriod(dateQuery, period),
@@ -127,11 +141,18 @@ export class DashboardService {
         endDate?: string,
         period?: string,
         branchId?: string,
+        user?: ITokenPayload,
     ) {
         const query: any = {};
 
-        // Add branch filter if provided
-        if (branchId) {
+        // Apply data scoping based on user role and assignments
+        if (user) {
+            const scopingFilter = getBranchScopingFilter(user);
+            Object.assign(query, scopingFilter);
+        }
+
+        // Add branch filter if provided (and not already set by scoping)
+        if (branchId && !query.branch) {
             query.branch = new Types.ObjectId(branchId);
         }
 
@@ -340,9 +361,21 @@ export class DashboardService {
     /**
      * Get drugs with low stock (quantity < 10) with branch filtering
      */
-    private async getLowStockDrugs(branchId?: string, threshold = 10) {
+    private async getLowStockDrugs(
+        branchId?: string,
+        user?: ITokenPayload,
+        threshold = 10,
+    ) {
         const query: any = { quantity: { $lt: threshold } };
-        if (branchId) {
+
+        // Apply data scoping based on user role and assignments
+        if (user) {
+            const scopingFilter = getBranchScopingFilter(user);
+            Object.assign(query, scopingFilter);
+        }
+
+        // Add branch filter if provided (and not already set by scoping)
+        if (branchId && !query.branch) {
             query.branch = new Types.ObjectId(branchId);
         }
 
@@ -369,18 +402,38 @@ export class DashboardService {
     /**
      * Get total number of customers
      */
-    private async getTotalCustomers(): Promise<number> {
-        return await Customer.countDocuments();
+    private async getTotalCustomers(user?: ITokenPayload): Promise<number> {
+        const query: any = {};
+
+        // Apply data scoping based on user role and assignments
+        if (user) {
+            const scopingFilter = getPharmacyScopingFilter(user);
+            Object.assign(query, scopingFilter);
+        }
+
+        return await Customer.countDocuments(query);
     }
 
     /**
      * Get total number of drugs with branch filtering
      */
-    private async getTotalDrugs(branchId?: string): Promise<number> {
+    private async getTotalDrugs(
+        branchId?: string,
+        user?: ITokenPayload,
+    ): Promise<number> {
         const query: any = {};
-        if (branchId) {
+
+        // Apply data scoping based on user role and assignments
+        if (user) {
+            const scopingFilter = getBranchScopingFilter(user);
+            Object.assign(query, scopingFilter);
+        }
+
+        // Add branch filter if provided (and not already set by scoping)
+        if (branchId && !query.branch) {
             query.branch = new Types.ObjectId(branchId);
         }
+
         return await Drug.countDocuments(query);
     }
 

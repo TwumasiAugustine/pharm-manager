@@ -3,6 +3,8 @@ import { AuditLogController } from '../controllers/audit-log.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { requirePermission } from '../services/permission.service';
 import { AUDIT_PERMISSIONS } from '../constants/permissions';
+import { authorize } from '../middlewares/authorize.middleware';
+import { UserRole } from '../types/user.types';
 
 const router = Router();
 const auditLogController = new AuditLogController();
@@ -41,6 +43,31 @@ router.get(
     authenticate,
     requirePermission(AUDIT_PERMISSIONS.VIEW_AUDIT_LOGS),
     auditLogController.getAuditLogById.bind(auditLogController),
+);
+
+/**
+ * @route   GET /api/audit-logs/platform-stats
+ * @desc    Get platform-wide audit log statistics
+ * @access  Private (Super Admin only)
+ */
+router.get(
+    '/platform-stats',
+    authenticate,
+    authorize([UserRole.SUPER_ADMIN]),
+    auditLogController.getPlatformStats.bind(auditLogController),
+);
+
+/**
+ * @route   GET /api/audit-logs/security-alerts
+ * @desc    Get recent security alerts
+ * @access  Private (Super Admin only)
+ * @query   ?hours=24 (number of hours to look back, default 24)
+ */
+router.get(
+    '/security-alerts',
+    authenticate,
+    authorize([UserRole.SUPER_ADMIN]),
+    auditLogController.getSecurityAlerts.bind(auditLogController),
 );
 
 /**

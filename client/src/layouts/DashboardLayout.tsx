@@ -119,7 +119,7 @@ const navItems: NavItem[] = [
         icon: FaHistory,
         label: 'Audit Logs',
         match: (pathname: string) => pathname === '/audit-logs',
-        adminOnly: true,
+        superAdminOnly: true,
     },
     {
         to: '/user-activity',
@@ -133,7 +133,7 @@ const navItems: NavItem[] = [
         icon: FaCogs,
         label: 'Task Management',
         match: (pathname: string) => pathname === '/cron-management',
-        adminOnly: true,
+        superAdminOnly: true,
     },
     {
         to: '/pharmacy-setup',
@@ -279,10 +279,7 @@ function Sidebar({
                         // Now apply the existing per-item restrictions for other roles.
 
                         // Admin-only items (visible to Admins only)
-                        if (
-                            item.adminOnly &&
-                            userRole !== UserRole.ADMIN
-                        ) {
+                        if (item.adminOnly && userRole !== UserRole.ADMIN) {
                             return null;
                         }
 

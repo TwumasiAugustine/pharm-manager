@@ -64,11 +64,10 @@ export class UserActivityController {
                 }
             }
 
-            // Attach requester role so service can hide super-admin activities from non-super-admins
-            (filters as any).requesterRole = (req.user as any)?.role;
-
-            const result =
-                await this.userActivityService.getUserActivities(filters);
+            const result = await this.userActivityService.getUserActivities(
+                filters,
+                req.user!,
+            );
 
             res.status(200).json(
                 successResponse(
@@ -110,8 +109,10 @@ export class UserActivityController {
                 }
             }
 
-            const stats =
-                await this.userActivityService.getUserActivityStats(filters);
+            const stats = await this.userActivityService.getUserActivityStats(
+                filters,
+                req.user!,
+            );
 
             res.status(200).json(
                 successResponse(
@@ -141,8 +142,10 @@ export class UserActivityController {
                 throw new BadRequestError('Session ID is required');
             }
 
-            const session =
-                await this.userActivityService.getUserSession(sessionId);
+            const session = await this.userActivityService.getUserSession(
+                sessionId,
+                req.user!,
+            );
 
             if (!session) {
                 res.status(404).json({
@@ -208,8 +211,10 @@ export class UserActivityController {
                 }
             }
 
-            const result =
-                await this.userActivityService.getUserActivities(filters);
+            const result = await this.userActivityService.getUserActivities(
+                filters,
+                req.user!,
+            );
 
             res.status(200).json(
                 successResponse(
@@ -243,7 +248,10 @@ export class UserActivityController {
             }
 
             const deletedCount =
-                await this.userActivityService.cleanupOldActivities(days);
+                await this.userActivityService.cleanupOldActivities(
+                    days,
+                    req.user!,
+                );
 
             res.status(200).json(
                 successResponse(

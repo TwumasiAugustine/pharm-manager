@@ -147,10 +147,6 @@ function App() {
                                     />
                                     <Route element={<ProtectedRoute />}>
                                         <Route
-                                            path="/dashboard"
-                                            element={<DashboardPage />}
-                                        />
-                                        <Route
                                             path="/drugs"
                                             element={<DrugsPage />}
                                         />
@@ -185,6 +181,18 @@ function App() {
                                         <Route
                                             path="/reports"
                                             element={<ReportsPage />}
+                                        />
+                                    </Route>
+                                    <Route
+                                        element={
+                                            <ProtectedRoute
+                                                allowedRoles={[UserRole.ADMIN]}
+                                            />
+                                        }
+                                    >
+                                        <Route
+                                            path="/dashboard"
+                                            element={<DashboardPage />}
                                         />
                                     </Route>
                                     <Route
