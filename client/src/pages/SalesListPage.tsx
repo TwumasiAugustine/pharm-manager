@@ -1,10 +1,7 @@
-import { BranchSelect } from '../components/molecules/BranchSelect';
 import React, { useState, useRef, useEffect } from 'react';
 import { useSales } from '../hooks/useSales';
 import { useNavigate } from 'react-router-dom';
-import { FaEye, FaCalendarAlt } from 'react-icons/fa';
 import { Table } from '../components/molecules/Table';
-import type { TableColumn, TableAction } from '../components/molecules/Table';
 import DashboardLayout from '../layouts/DashboardLayout';
 import PermissionGuard from '../components/atoms/PermissionGuard';
 import { PERMISSION_KEYS } from '../types/permission.types';
@@ -21,10 +18,10 @@ import type {
     Sale,
     SaleSearchParams,
     SaleItem,
-    DrugDetails,
 } from '../types/sale.types';
-import { Input } from '../components/atoms/Input';
-import { SalesPageActions } from '../components/organisms/SalesPageActions';
+import { SalesHeader } from '../components/organisms/SalesHeader';
+import { SalesFilters } from '../components/organisms/SalesFilters';
+import { useSalesTableConfig } from '../components/organisms/useSalesTableConfig';
 import { useURLFilters } from '../hooks/useURLSearch';
 import SEOMetadata from '../components/atoms/SEOMetadata';
 import { useSEO, SEO_PRESETS } from '../hooks/useSEO';
@@ -70,10 +67,16 @@ const SalesListPage: React.FC = () => {
         branchId: filters.branchId,
     });
 
-    // Show data loading screen for initial load only (not for filter changes)
     const showDataLoadingScreen = useDataLoading(isLoading, !data);
-
-    // Debug log to check data structure
+    const [expandedDate, setExpandedDate] = useState<string | null>(null);
+    
+    const { groupedColumns, groupedActions, saleColumns, saleActions } =
+        useSalesTableConfig({
+            onViewDetails: (group) =>
+                setExpandedDate(
+                    group.date === expandedDate ? null : group.date,
+                ),
+        });
     React.useEffect(() => {
         if (data === undefined) {
             console.error('No data received from sales API.');
@@ -134,155 +137,10 @@ const SalesListPage: React.FC = () => {
         };
     }, [dropdownRef]);
 
-    // Handle toggle between grouped and ungrouped view
     const toggleGrouping = () => {
         setFilter('groupByDate', !filters.groupByDate);
-        setFilter('page', 1); // Reset to first page when changing view type
+        setFilter('page', 1);
     };
-
-    // Grouped sales columns
-    const groupedColumns: TableColumn<GroupedSales>[] = [
-        {
-            header: 'Date',
-            accessor: (group) => format(parseISO(group.date), 'PPP'),
-            className: 'font-semibold',
-        },
-        {
-            header: 'Sales Count',
-            accessor: (group) => group.saleCount,
-            className: 'text-center',
-        },
-        {
-            header: 'Items Sold',
-            accessor: (group) => group.totalItems,
-            className: 'text-center',
-        },
-        {
-            header: 'Total Amount',
-            accessor: (group) => `GH₵${group.totalAmount.toFixed(2)}`,
-            className: 'text-right font-bold',
-        },
-    ];
-
-    // Actions for grouped sales
-    const groupedActions: TableAction<GroupedSales>[] = [
-        {
-            label: 'View Details',
-            onClick: (group) =>
-                setExpandedDate(
-                    group.date === expandedDate ? null : group.date,
-                ),
-            icon: <FaEye className="h-4 w-4" />,
-        },
-    ];
-
-    // Individual sale columns (for expanded view)
-    const saleColumns: TableColumn<Sale>[] = [
-        {
-            header: 'Sale ID',
-            accessor: (sale) => sale._id,
-            className: 'font-mono text-xs',
-        },
-        {
-            header: 'Date',
-            accessor: (sale) => {
-                try {
-                    // Format as full date instead of just time
-                    return format(new Date(sale.createdAt), 'PPP');
-                } catch (e) {
-                    const message =
-                        e && typeof e === 'object' && 'message' in e
-                            ? (e as { message: string }).message
-                            : String(e);
-                    console.error(
-                        'Error formatting date:',
-                        sale.createdAt,
-                        message,
-                    );
-                    return 'Invalid date';
-                }
-            },
-        },
-        {
-            header: 'Sold By',
-            accessor: (sale) => {
-                if (typeof sale.soldBy === 'object' && sale.soldBy) {
-                    return sale.soldBy.name || 'Unknown';
-                }
-                return 'Unknown';
-            },
-        },
-        {
-            header: 'Customer',
-            accessor: (sale) => {
-                if (typeof sale.customer === 'object' && sale.customer) {
-                    const name = sale.customer.name || 'Walk-in Customer';
-                    const phone = sale.customer.phone
-                        ? ` (${sale.customer.phone})`
-                        : '';
-                    return `${name}${phone}`;
-                }
-                return 'Walk-in Customer';
-            },
-        },
-        {
-            header: 'Items Sold',
-            accessor: (sale) => {
-                if (!sale.items || !Array.isArray(sale.items))
-                    return 'No items';
-                return sale.items
-                    .map((item: SaleItem) => {
-                        // Access the drug object correctly and show brand if available
-                        if (item.drug && item.drug.name) {
-                            // Explicitly cast to DrugDetails for type safety
-                            const drugDetails = item.drug as DrugDetails;
-                            const brand = drugDetails.brand
-                                ? ` (${drugDetails.brand})`
-                                : '';
-                            return `${drugDetails.name}${brand} x${item.quantity}`;
-                        } else if (item.name) {
-                            const brand = item.brand ? ` (${item.brand})` : '';
-                            return `${item.name}${brand} x${item.quantity}`;
-                        } else if (item.drugId) {
-                            return `Drug #${item.drugId} x${item.quantity}`;
-                        }
-                        return 'Unknown Item';
-                    })
-                    .join(', ');
-            },
-        },
-        {
-            header: 'Finalized',
-            accessor: (sale) => (sale.finalized ? 'Yes' : 'No'),
-            className: 'text-center',
-        },
-        {
-            header: 'Total Amount',
-            accessor: (sale) => {
-                const amount =
-                    typeof sale.totalAmount === 'number' ? sale.totalAmount : 0;
-                return `GH₵${amount.toFixed(2)}`;
-            },
-            className: 'text-right',
-        },
-    ];
-
-    const saleActions: TableAction<Sale>[] = [
-        {
-            label: 'View',
-            onClick: (sale) => {
-                if (sale._id || sale.id) {
-                    navigate(`/sales/${sale._id || sale.id}`);
-                } else {
-                    console.error('Sale ID is missing:', sale);
-                }
-            },
-            icon: <FaEye className="h-4 w-4" />,
-        },
-    ];
-
-    // Track which date group is expanded
-    const [expandedDate, setExpandedDate] = useState<string | null>(null);
 
     // Extract the ungrouped sales data
     const salesData = React.useMemo(() => {
@@ -441,47 +299,40 @@ const SalesListPage: React.FC = () => {
         }
     }, [data, filters.sortOrder]);
 
-    // Loading skeleton component
     const SalesListSkeleton = () => (
         <DashboardLayout>
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
                 <div className="animate-pulse">
-                    {/* Header skeleton */}
-                    <div className="flex justify-between items-center mb-6">
-                        <div className="h-8 bg-gray-200 rounded w-48"></div>
-                        <div className="hidden lg:flex space-x-2">
-                            <div className="h-10 bg-gray-200 rounded w-32"></div>
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+                        <div className="h-8 bg-gray-200 rounded w-32 sm:w-48"></div>
+                        <div className="hidden sm:flex space-x-2">
                             <div className="h-10 bg-gray-200 rounded w-24"></div>
-                            <div className="h-10 bg-gray-200 rounded w-36"></div>
+                            <div className="h-10 bg-gray-200 rounded w-20"></div>
                         </div>
-                        <div className="lg:hidden h-10 bg-gray-200 rounded w-20"></div>
+                        <div className="sm:hidden h-10 bg-gray-200 rounded w-16"></div>
                     </div>
 
-                    {/* Table skeleton */}
                     <div className="space-y-4">
-                        {/* Table header */}
-                        <div className="grid grid-cols-4 gap-4 pb-3 border-b">
+                        <div className="hidden sm:grid sm:grid-cols-4 gap-4 pb-3 border-b">
                             <div className="h-5 bg-gray-200 rounded"></div>
                             <div className="h-5 bg-gray-200 rounded"></div>
                             <div className="h-5 bg-gray-200 rounded"></div>
                             <div className="h-5 bg-gray-200 rounded"></div>
                         </div>
 
-                        {/* Table rows */}
                         {[...Array(5)].map((_, i) => (
                             <div
                                 key={i}
-                                className="grid grid-cols-4 gap-4 py-3 border-b border-gray-100"
+                                className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 py-3 border-b border-gray-100"
                             >
                                 <div className="h-5 bg-gray-200 rounded"></div>
                                 <div className="h-5 bg-gray-200 rounded"></div>
-                                <div className="h-5 bg-gray-200 rounded"></div>
+                                <div className="h-5 bg-gray-200 rounded col-span-2 hidden sm:block"></div>
                                 <div className="h-5 bg-gray-200 rounded"></div>
                             </div>
                         ))}
                     </div>
 
-                    {/* Pagination skeleton */}
                     <div className="mt-6 flex justify-center">
                         <div className="flex space-x-2">
                             <div className="h-10 bg-gray-200 rounded w-10"></div>
@@ -528,123 +379,29 @@ const SalesListPage: React.FC = () => {
                     </div>
                 }
             >
-                <div className="bg-white rounded-lg shadow-md p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                        <BranchSelect
-                            value={filters.branchId}
-                            onChange={handleBranchChange}
-                        />
-                    </div>
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-semibold">
-                            Sales History
-                        </h2>
+                <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                    <SalesHeader
+                        branchId={filters.branchId}
+                        showActionsDropdown={showActionsDropdown}
+                        isLoading={isLoading}
+                        isGrouped={!!filters.groupByDate}
+                        actionsDropdownRef={dropdownRef}
+                        onBranchChange={handleBranchChange}
+                        onToggleActionsDropdown={() =>
+                            setShowActionsDropdown(!showActionsDropdown)
+                        }
+                        onToggleFilters={() => setShowFilters(!showFilters)}
+                        onRefresh={() => refetch()}
+                        onToggleGrouping={toggleGrouping}
+                        onCreateSale={() => navigate('/sales/new')}
+                    />
 
-                        {/* Sales Actions Component */}
-                        <SalesPageActions
-                            showActionsDropdown={showActionsDropdown}
-                            onToggleActionsDropdown={() =>
-                                setShowActionsDropdown(!showActionsDropdown)
-                            }
-                            onToggleFilters={() => setShowFilters(!showFilters)}
-                            onRefresh={() => refetch()}
-                            onToggleGrouping={toggleGrouping}
-                            onCreateSale={() => navigate('/sales/new')}
-                            isLoading={isLoading}
-                            isGrouped={!!filters.groupByDate}
-                            actionsDropdownRef={dropdownRef}
-                        />
-                    </div>
-                    {/* Filter controls */}
                     {showFilters && (
-                        <div className="mb-6 p-4 border rounded-md bg-gray-50">
-                            <h3 className="text-lg font-medium mb-4">
-                                Filter Sales
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Start Date
-                                    </label>
-                                    <div className="relative">
-                                        <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                        <Input
-                                            type="date"
-                                            value={filters.startDate || ''}
-                                            onChange={(e) =>
-                                                handleFilterChange(
-                                                    'startDate',
-                                                    e.target.value,
-                                                )
-                                            }
-                                            className="pl-10"
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        End Date
-                                    </label>
-                                    <div className="relative">
-                                        <FaCalendarAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                        <Input
-                                            type="date"
-                                            value={filters.endDate || ''}
-                                            onChange={(e) =>
-                                                handleFilterChange(
-                                                    'endDate',
-                                                    e.target.value,
-                                                )
-                                            }
-                                            className="pl-10"
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Sort By
-                                    </label>
-                                    <select
-                                        value={`${filters.sortBy}-${filters.sortOrder}`}
-                                        onChange={(e) => {
-                                            const [sortBy, sortOrder] =
-                                                e.target.value.split('-');
-                                            handleFilterChange(
-                                                'sortBy',
-                                                sortBy,
-                                            );
-                                            handleFilterChange(
-                                                'sortOrder',
-                                                sortOrder,
-                                            );
-                                        }}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        aria-label="Sort sales by"
-                                    >
-                                        <option value="date-desc">
-                                            Date (Newest First)
-                                        </option>
-                                        <option value="date-asc">
-                                            Date (Oldest First)
-                                        </option>
-                                        <option value="total-desc">
-                                            Amount (High to Low)
-                                        </option>
-                                        <option value="total-asc">
-                                            Amount (Low to High)
-                                        </option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="flex justify-end">
-                                <button
-                                    onClick={applyFilters}
-                                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                                >
-                                    Apply Filters
-                                </button>
-                            </div>
-                        </div>
+                        <SalesFilters
+                            filters={filters}
+                            onFilterChange={handleFilterChange}
+                            onApply={applyFilters}
+                        />
                     )}
 
                     {/* Conditionally show either grouped or individual sales */}
