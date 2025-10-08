@@ -179,28 +179,6 @@ function App() {
                                             element={<ReportsPage />}
                                         />
                                     </Route>
-
-                                    {/* Super Admin and Admin Routes */}
-                                    <Route
-                                        element={
-                                            <ProtectedRoute
-                                                allowedRoles={[
-                                                    UserRole.SUPER_ADMIN,
-                                                    UserRole.ADMIN,
-                                                ]}
-                                            />
-                                        }
-                                    >
-                                        <Route
-                                            path="/audit-logs"
-                                            element={<AuditLogsPage />}
-                                        />
-                                        <Route
-                                            path="/user-activity"
-                                            element={<UserActivityPage />}
-                                        />
-                                    </Route>
-
                                     {/* Super Admin Only Routes */}
                                     <Route
                                         element={
@@ -216,11 +194,14 @@ function App() {
                                             element={<SuperAdminDashboard />}
                                         />
                                         <Route
+                                            path="/audit-logs"
+                                            element={<AuditLogsPage />}
+                                        />
+                                        <Route
                                             path="/cron-management"
                                             element={<CronManagementPage />}
                                         />
                                     </Route>
-
                                     {/* Admin Only Routes */}
                                     <Route
                                         element={
@@ -234,6 +215,10 @@ function App() {
                                             element={<DashboardPage />}
                                         />
                                         <Route
+                                            path="/user-activity"
+                                            element={<UserActivityPage />}
+                                        />
+                                        <Route
                                             path="/branches"
                                             element={<BranchManagementPage />}
                                         />
@@ -245,8 +230,7 @@ function App() {
                                             path="/users"
                                             element={<UserManagementPage />}
                                         />
-                                    </Route>
-
+                                    </Route>{' '}
                                     {/* Operational Staff Routes (Pharmacist & Cashier) */}
                                     <Route
                                         element={

@@ -316,4 +316,81 @@ export class UserActivityController {
             next(error);
         }
     };
+
+    /**
+     * Get detailed activity analytics for admins
+     * @route GET /api/user-activities/analytics
+     * @access Private (Admin only)
+     */
+    getActivityAnalytics = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> => {
+        try {
+            const { timeframe = 'week', resource, action } = req.query;
+
+            // Build filters
+            const filters: Partial<UserActivityFilters> = {};
+
+            // Set time range based on timeframe
+            const now = new Date();
+            switch (timeframe) {
+                case 'today':
+                    filters.startDate = new Date(
+                        now.getFullYear(),
+                        now.getMonth(),
+                        now.getDate(),
+                    );
+                    break;
+                case 'week':
+                    filters.startDate = new Date(
+                        now.getTime() - 7 * 24 * 60 * 60 * 1000,
+                    );
+                    break;
+                case 'month':
+                    filters.startDate = new Date(
+                        now.getTime() - 30 * 24 * 60 * 60 * 1000,
+                    );
+                    break;
+                case 'quarter':
+                    filters.startDate = new Date(
+                        now.getTime() - 90 * 24 * 60 * 60 * 1000,
+                    );
+                    break;
+            }
+
+            if (resource) filters.resource = resource as any;
+            if (action) filters.activityType = action as any;
+
+            // Get comprehensive stats
+            const stats = await this.userActivityService.getUserActivityStats(
+                filters,
+                req.user!,
+            );
+
+            // Get additional activity summary
+            const summary =
+                await this.userActivityService.getUserActivitySummary(
+                    req.user!,
+                );
+
+            res.status(200).json(
+                successResponse(
+                    {
+                        timeframe,
+                        stats,
+                        summary: {
+                            todayActivity: summary.todayActivity,
+                            weeklyActivity: summary.weeklyActivity,
+                            recentActivities: summary.recentActivities,
+                        },
+                    },
+                    'Activity analytics retrieved successfully',
+                ),
+            );
+        } catch (error) {
+            next(error);
+        }
+    };
 }

@@ -6,6 +6,8 @@ import type {
     UserSessionResponse,
     ActiveSessionsResponse,
     UserActivitySummaryResponse,
+    SpecificActivitySummary,
+    DetailedActivity,
 } from '../types/user-activity.types';
 
 /**
@@ -99,6 +101,39 @@ export const userActivityApi = {
      */
     getUserActivitySummary: async (): Promise<UserActivitySummaryResponse> => {
         const response = await api.get('/user-activities/summary');
+        return response.data;
+    },
+
+    /**
+     * Get detailed activity analytics for admins
+     */
+    getActivityAnalytics: async (
+        params: {
+            timeframe?: 'today' | 'week' | 'month' | 'quarter';
+            resource?: string;
+            action?: string;
+        } = {},
+    ): Promise<{
+        success: boolean;
+        message: string;
+        data: {
+            timeframe: string;
+            stats: UserActivityStatsResponse['data'];
+            summary: {
+                todayActivity: SpecificActivitySummary;
+                weeklyActivity: SpecificActivitySummary;
+                recentActivities: DetailedActivity[];
+            };
+        };
+    }> => {
+        const urlParams = new URLSearchParams();
+        if (params.timeframe) urlParams.append('timeframe', params.timeframe);
+        if (params.resource) urlParams.append('resource', params.resource);
+        if (params.action) urlParams.append('action', params.action);
+
+        const response = await api.get(
+            `/user-activities/analytics?${urlParams}`,
+        );
         return response.data;
     },
 

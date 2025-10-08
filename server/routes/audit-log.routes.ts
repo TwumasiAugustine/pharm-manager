@@ -10,15 +10,15 @@ const router = Router();
 const auditLogController = new AuditLogController();
 
 /**
- * @route   GET /api/audit-logs
- * @desc    Get paginated audit logs with filtering
- * @access  Private (Admin level for audit oversight)
+ * @route   GET /api/audit-logs/platform-stats
+ * @desc    Get platform-wide audit log statistics
+ * @access  Private (Super Admin only)
  */
 router.get(
-    '/',
+    '/platform-stats',
     authenticate,
-    requirePermission(AUDIT_PERMISSIONS.VIEW_AUDIT_LOGS),
-    auditLogController.getAuditLogs.bind(auditLogController),
+    authorize([UserRole.SUPER_ADMIN]),
+    auditLogController.getPlatformStats.bind(auditLogController),
 );
 
 /**
@@ -34,27 +34,15 @@ router.get(
 );
 
 /**
- * @route   GET /api/audit-logs/:id
- * @desc    Get specific audit log by ID
+ * @route   GET /api/audit-logs
+ * @desc    Get paginated audit logs with filtering
  * @access  Private (Admin level for audit oversight)
  */
 router.get(
-    '/:id',
+    '/',
     authenticate,
     requirePermission(AUDIT_PERMISSIONS.VIEW_AUDIT_LOGS),
-    auditLogController.getAuditLogById.bind(auditLogController),
-);
-
-/**
- * @route   GET /api/audit-logs/platform-stats
- * @desc    Get platform-wide audit log statistics
- * @access  Private (Super Admin only)
- */
-router.get(
-    '/platform-stats',
-    authenticate,
-    authorize([UserRole.SUPER_ADMIN]),
-    auditLogController.getPlatformStats.bind(auditLogController),
+    auditLogController.getAuditLogs.bind(auditLogController),
 );
 
 /**
@@ -81,6 +69,18 @@ router.delete(
     authenticate,
     requirePermission(AUDIT_PERMISSIONS.MANAGE_AUDIT_LOGS),
     auditLogController.cleanupOldLogs.bind(auditLogController),
+);
+
+/**
+ * @route   GET /api/audit-logs/:id
+ * @desc    Get specific audit log by ID
+ * @access  Private (Admin level for audit oversight)
+ */
+router.get(
+    '/:id',
+    authenticate,
+    requirePermission(AUDIT_PERMISSIONS.VIEW_AUDIT_LOGS),
+    auditLogController.getAuditLogById.bind(auditLogController),
 );
 
 export default router;

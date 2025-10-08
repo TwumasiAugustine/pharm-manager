@@ -42,18 +42,18 @@ export const AuditLogsPage: React.FC = () => {
     });
 
     // URL-based filters for audit logs
-    const { filters, setFilter } = useURLFilters(
+    const { filters, setFilter, setFilters } = useURLFilters(
         {
             page: 1,
             limit: 10,
-            userId: '',
-            pharmacyId: '',
-            branchId: '',
+            userId: undefined,
+            pharmacyId: undefined,
+            branchId: undefined,
             action: undefined,
             resource: undefined,
-            startDate: '',
-            endDate: '',
-            userRole: '',
+            startDate: undefined,
+            endDate: undefined,
+            userRole: undefined,
         },
         {
             debounceMs: 300,
@@ -92,10 +92,8 @@ export const AuditLogsPage: React.FC = () => {
     const refreshAuditLogs = useRefreshAuditLogs();
 
     const handleFiltersChange = (newFilters: AuditLogFilters) => {
-        // Update individual filter values
-        Object.entries(newFilters).forEach(([key, value]) => {
-            setFilter(key as keyof AuditLogFilters, value);
-        });
+        // Use setFilters to update all filters at once to avoid debouncing issues
+        setFilters(newFilters as Partial<Record<string, unknown>>);
     };
 
     const handlePageChange = (page: number) => {
@@ -144,106 +142,188 @@ export const AuditLogsPage: React.FC = () => {
     return (
         <DashboardLayout>
             <SEOMetadata {...seoData} />
-            <div className="min-h-screen bg-gray-50">
-                {/* Header */}
-                <div className="bg-white shadow-sm border-b">
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+                {/* Enhanced Header */}
+                <div className="bg-white shadow-lg border-b border-gray-200">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="py-6">
-                            <div>
-                                <h1 className="text-3xl font-bold text-gray-900">
-                                    Audit Logs
-                                </h1>
-                                <p className="mt-1 text-sm text-gray-600">
-                                    Track and monitor all user activities and
-                                    system changes
-                                    {isSuperAdmin &&
-                                        ' across the entire platform'}
-                                </p>
-                            </div>
+                        <div className="py-8">
+                            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                                <div className="space-y-2">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+                                            <FiEye className="h-8 w-8 text-white" />
+                                        </div>
+                                        <div>
+                                            <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
+                                                Audit Logs
+                                            </h1>
+                                            <p className="text-lg text-gray-600 font-medium">
+                                                Track and monitor all user activities and system changes
+                                                {isSuperAdmin && (
+                                                    <span className="text-blue-600 font-semibold"> across the entire platform</span>
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
 
-                            {/* Tab Navigation for Super Admin */}
-                            {isSuperAdmin && (
-                                <div className="mt-6">
-                                    <nav className="flex space-x-8">
+                                {/* Quick Actions */}
+                                <div className="flex items-center space-x-3">
+                                    <button
+                                        onClick={handleRefresh}
+                                        className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 transition-all duration-200 hover:scale-105"
+                                    >
+                                        <FiEye className="mr-2 h-4 w-4" />
+                                        Refresh
+                                    </button>
+                                    {isSuperAdmin && (
                                         <button
-                                            onClick={() => setActiveTab('logs')}
-                                            className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
-                                                activeTab === 'logs'
-                                                    ? 'border-blue-500 text-blue-600'
-                                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                            }`}
-                                        >
-                                            <FiEye className="mr-2 h-4 w-4" />
-                                            Audit Logs
-                                        </button>
-                                        <button
-                                            onClick={() =>
-                                                setActiveTab('security')
-                                            }
-                                            className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
-                                                activeTab === 'security'
-                                                    ? 'border-blue-500 text-blue-600'
-                                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                            }`}
-                                        >
-                                            <FiShield className="mr-2 h-4 w-4" />
-                                            Security Alerts
-                                        </button>
-                                        <button
-                                            onClick={() =>
-                                                setActiveTab('platform')
-                                            }
-                                            className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
-                                                activeTab === 'platform'
-                                                    ? 'border-blue-500 text-blue-600'
-                                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                            }`}
+                                            onClick={handleCleanup}
+                                            className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg shadow-md hover:from-red-600 hover:to-red-700 transition-all duration-200 hover:scale-105"
                                         >
                                             <FiBarChart className="mr-2 h-4 w-4" />
-                                            Platform Stats
+                                            Cleanup
                                         </button>
-                                    </nav>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Enhanced Tab Navigation for Super Admin */}
+                            {isSuperAdmin && (
+                                <div className="mt-8">
+                                    <div className="border-b border-gray-200 bg-gray-50 rounded-t-xl p-1">
+                                        <nav className="flex space-x-1">
+                                            <button
+                                                onClick={() => setActiveTab('logs')}
+                                                className={`flex items-center px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                                                    activeTab === 'logs'
+                                                        ? 'bg-white text-blue-600 shadow-md border border-blue-200'
+                                                        : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+                                                }`}
+                                            >
+                                                <FiEye className="mr-2 h-5 w-5" />
+                                                Audit Logs
+                                                {activeTab === 'logs' && (
+                                                    <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                        Active
+                                                    </span>
+                                                )}
+                                            </button>
+                                            <button
+                                                onClick={() => setActiveTab('security')}
+                                                className={`flex items-center px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                                                    activeTab === 'security'
+                                                        ? 'bg-white text-red-600 shadow-md border border-red-200'
+                                                        : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+                                                }`}
+                                            >
+                                                <FiShield className="mr-2 h-5 w-5" />
+                                                Security Alerts
+                                                {activeTab === 'security' && (
+                                                    <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                        Active
+                                                    </span>
+                                                )}
+                                            </button>
+                                            <button
+                                                onClick={() => setActiveTab('platform')}
+                                                className={`flex items-center px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                                                    activeTab === 'platform'
+                                                        ? 'bg-white text-purple-600 shadow-md border border-purple-200'
+                                                        : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+                                                }`}
+                                            >
+                                                <FiBarChart className="mr-2 h-5 w-5" />
+                                                Platform Stats
+                                                {activeTab === 'platform' && (
+                                                    <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                        Active
+                                                    </span>
+                                                )}
+                                            </button>
+                                        </nav>
+                                    </div>
                                 </div>
                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* Main Content */}
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                {/* Enhanced Main Content */}
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     {/* Tab Content */}
                     {(!isSuperAdmin || activeTab === 'logs') && (
-                        <>
-                            {/* Statistics */}
+                        <div className="space-y-8">
+                            {/* Statistics Card */}
                             {statsData && (
-                                <AuditLogStats
-                                    stats={statsData}
-                                    isLoading={statsLoading}
-                                />
+                                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+                                    <div className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 px-6 py-4">
+                                        <h3 className="text-xl font-bold text-white flex items-center">
+                                            <FiBarChart className="mr-3 h-6 w-6" />
+                                            Audit Statistics
+                                        </h3>
+                                        <p className="text-blue-100 text-sm mt-1">
+                                            Real-time insights into system activities
+                                        </p>
+                                    </div>
+                                    <div className="p-6">
+                                        <AuditLogStats
+                                            stats={statsData}
+                                            isLoading={statsLoading}
+                                        />
+                                    </div>
+                                </div>
                             )}
 
-                            {/* Filters */}
-                            <AuditLogFilter
-                                filters={filters}
-                                onFiltersChange={handleFiltersChange}
-                                onRefresh={handleRefresh}
-                                onCleanup={handleCleanup}
-                                isLoading={
-                                    auditLogsLoading ||
-                                    cleanupMutation.isPending
-                                }
-                            />
+                            {/* Filters Card */}
+                            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+                                <AuditLogFilter
+                                    filters={filters}
+                                    onFiltersChange={handleFiltersChange}
+                                    onRefresh={handleRefresh}
+                                    onCleanup={handleCleanup}
+                                    isLoading={
+                                        auditLogsLoading ||
+                                        cleanupMutation.isPending
+                                    }
+                                />
+                            </div>
 
-                            {/* Audit Logs Table */}
-                            <AuditLogTable
-                                data={auditLogsData?.data || []}
-                                isLoading={auditLogsLoading}
-                            />
+                            {/* Audit Logs Table Card */}
+                            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+                                <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                                                <FiEye className="mr-3 h-6 w-6 text-blue-500" />
+                                                Audit Log Records
+                                            </h3>
+                                            <p className="text-gray-600 text-sm mt-1">
+                                                {auditLogsData?.pagination?.total || 0} total records found
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            {auditLogsLoading && (
+                                                <div className="flex items-center text-blue-600">
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                                                    <span className="text-sm font-medium">Loading...</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-6">
+                                    <AuditLogTable
+                                        data={auditLogsData?.data || []}
+                                        isLoading={auditLogsLoading}
+                                    />
+                                </div>
+                            </div>
 
-                            {/* Pagination */}
+                            {/* Pagination Card */}
                             {auditLogsData?.pagination &&
                                 auditLogsData.pagination.totalPages > 1 && (
-                                    <div className="mt-6">
+                                    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
                                         <Pagination
                                             currentPage={
                                                 auditLogsData.pagination.page
@@ -265,66 +345,97 @@ export const AuditLogsPage: React.FC = () => {
                                     </div>
                                 )}
 
-                            {/* Summary */}
+                            {/* Enhanced Summary Card */}
                             {auditLogsData && (
-                                <div className="mt-6 bg-white rounded-lg shadow-sm border p-4">
-                                    <div className="text-sm text-gray-600">
+                                <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-2xl shadow-xl border border-blue-200 p-6">
+                                    <div className="flex items-center mb-4">
+                                        <div className="p-2 bg-blue-100 rounded-lg">
+                                            <FiBarChart className="h-5 w-5 text-blue-600" />
+                                        </div>
+                                        <h4 className="ml-3 text-lg font-bold text-gray-900">
+                                            Active Filters Summary
+                                        </h4>
+                                    </div>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                                         {filters.action && (
-                                            <span>
-                                                {' '}
-                                                • Action: {filters.action}
-                                            </span>
+                                            <div className="bg-white rounded-lg p-3 border border-blue-200">
+                                                <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">Action</span>
+                                                <p className="text-sm font-semibold text-gray-900 mt-1">{filters.action}</p>
+                                            </div>
                                         )}
                                         {filters.resource && (
-                                            <span>
-                                                {' '}
-                                                • Resource: {filters.resource}
-                                            </span>
+                                            <div className="bg-white rounded-lg p-3 border border-purple-200">
+                                                <span className="text-xs font-medium text-purple-600 uppercase tracking-wide">Resource</span>
+                                                <p className="text-sm font-semibold text-gray-900 mt-1">{filters.resource}</p>
+                                            </div>
                                         )}
                                         {filters.userRole && (
-                                            <span>
-                                                {' '}
-                                                • Role: {filters.userRole}
-                                            </span>
+                                            <div className="bg-white rounded-lg p-3 border border-green-200">
+                                                <span className="text-xs font-medium text-green-600 uppercase tracking-wide">Role</span>
+                                                <p className="text-sm font-semibold text-gray-900 mt-1">{filters.userRole}</p>
+                                            </div>
                                         )}
                                         {filters.pharmacyId && (
-                                            <span>
-                                                {' '}
-                                                • Pharmacy ID:{' '}
-                                                {filters.pharmacyId}
-                                            </span>
+                                            <div className="bg-white rounded-lg p-3 border border-orange-200">
+                                                <span className="text-xs font-medium text-orange-600 uppercase tracking-wide">Pharmacy</span>
+                                                <p className="text-sm font-semibold text-gray-900 mt-1">{filters.pharmacyId}</p>
+                                            </div>
                                         )}
                                         {filters.branchId && (
-                                            <span>
-                                                {' '}
-                                                • Branch ID: {filters.branchId}
-                                            </span>
+                                            <div className="bg-white rounded-lg p-3 border border-pink-200">
+                                                <span className="text-xs font-medium text-pink-600 uppercase tracking-wide">Branch</span>
+                                                <p className="text-sm font-semibold text-gray-900 mt-1">{filters.branchId}</p>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
                             )}
-                        </>
+                        </div>
                     )}
 
-                    {/* Security Alerts Tab (Super Admin Only) */}
+                    {/* Enhanced Security Alerts Tab (Super Admin Only) */}
                     {isSuperAdmin && activeTab === 'security' && (
-                        <SecurityAlerts
-                            alerts={securityAlertsData || []}
-                            isLoading={securityAlertsLoading}
-                            hours={24}
-                        />
+                        <div className="bg-white rounded-2xl shadow-xl border border-red-200 overflow-hidden">
+                            <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4">
+                                <h3 className="text-xl font-bold text-white flex items-center">
+                                    <FiShield className="mr-3 h-6 w-6" />
+                                    Security Alerts
+                                </h3>
+                                <p className="text-red-100 text-sm mt-1">
+                                    Monitor security threats and suspicious activities
+                                </p>
+                            </div>
+                            <div className="p-6">
+                                <SecurityAlerts
+                                    alerts={securityAlertsData || []}
+                                    isLoading={securityAlertsLoading}
+                                    hours={24}
+                                />
+                            </div>
+                        </div>
                     )}
 
-                    {/* Platform Stats Tab (Super Admin Only) */}
+                    {/* Enhanced Platform Stats Tab (Super Admin Only) */}
                     {isSuperAdmin && activeTab === 'platform' && (
-                        <>
-                            {platformStatsData && (
-                                <PlatformAuditStats
-                                    stats={platformStatsData}
-                                    isLoading={platformStatsLoading}
-                                />
-                            )}
-                        </>
+                        <div className="bg-white rounded-2xl shadow-xl border border-purple-200 overflow-hidden">
+                            <div className="bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-4">
+                                <h3 className="text-xl font-bold text-white flex items-center">
+                                    <FiBarChart className="mr-3 h-6 w-6" />
+                                    Platform Statistics
+                                </h3>
+                                <p className="text-purple-100 text-sm mt-1">
+                                    Comprehensive platform-wide analytics and insights
+                                </p>
+                            </div>
+                            <div className="p-6">
+                                {platformStatsData && (
+                                    <PlatformAuditStats
+                                        stats={platformStatsData}
+                                        isLoading={platformStatsLoading}
+                                    />
+                                )}
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>

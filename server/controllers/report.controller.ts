@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ReportService } from '../services/report.service';
 import { successResponse } from '../utils/response';
 import type { ReportFilters } from '../types/report.types';
+import { trackActivity } from '../utils/activity-tracker';
 
 export class ReportController {
     private reportService: ReportService;
@@ -52,6 +53,28 @@ export class ReportController {
                 req.user!,
             );
 
+            // Track report generation activity
+            if (req.user) {
+                trackActivity(req.user.id, 'VIEW', 'REPORT', {
+                    endpoint: req.path,
+                    method: req.method,
+                    action: 'generateReport',
+                    reportFilters: {
+                        dateRange: filters.dateRange,
+                        branchId: filters.branchId,
+                        category: filters.category,
+                        reportType: filters.reportType || 'sales',
+                    },
+                    reportMetrics: {
+                        totalPages: report.totalPages || 0,
+                        currentPage: report.currentPage || 0,
+                        data: Array.isArray(report.data)
+                            ? report.data.length
+                            : 0,
+                    },
+                });
+            }
+
             res.status(200).json(
                 successResponse(report, 'Report generated successfully', 200),
             );
@@ -76,6 +99,22 @@ export class ReportController {
                 filters,
                 req.user!,
             );
+
+            // Track PDF export activity
+            if (req.user) {
+                trackActivity(req.user.id, 'DOWNLOAD', 'REPORT', {
+                    endpoint: req.path,
+                    method: req.method,
+                    action: 'exportPDF',
+                    exportFormat: 'PDF',
+                    reportFilters: {
+                        dateRange: filters.dateRange,
+                        branchId: filters.branchId,
+                        category: filters.category,
+                    },
+                    fileSize: pdfBuffer.length,
+                });
+            }
 
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader(
@@ -104,6 +143,22 @@ export class ReportController {
                 filters,
                 req.user!,
             );
+
+            // Track CSV export activity
+            if (req.user) {
+                trackActivity(req.user.id, 'DOWNLOAD', 'REPORT', {
+                    endpoint: req.path,
+                    method: req.method,
+                    action: 'exportCSV',
+                    exportFormat: 'CSV',
+                    reportFilters: {
+                        dateRange: filters.dateRange,
+                        branchId: filters.branchId,
+                        category: filters.category,
+                    },
+                    dataSize: csvData.length,
+                });
+            }
 
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader(

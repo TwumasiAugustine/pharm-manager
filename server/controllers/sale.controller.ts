@@ -7,6 +7,7 @@ import { successResponse } from '../utils/response';
 import { logAuditEvent } from '../middlewares/audit.middleware';
 import { UserRole } from '../types/user.types';
 import { getBranchScopingFilter } from '../utils/data-scoping';
+import { trackActivity } from '../utils/activity-tracker';
 
 const saleService = new SaleService();
 
@@ -48,6 +49,17 @@ export class SaleController {
 
             // Log audit event for sale creation
             setImmediate(async () => {
+                // Track sale creation activity
+                await trackActivity(req.user!.id, 'CREATE', 'SALE', {
+                    action: 'Process Sale',
+                    resourceId: sale._id.toString(),
+                    resourceName: `Sale #${sale.saleNumber}`,
+                    totalAmount: sale.totalAmount,
+                    itemCount: sale.items.length,
+                    paymentMethod: sale.paymentMethod,
+                    customer: req.body.customerId ? 'Registered' : 'Walk-in',
+                });
+
                 await logAuditEvent(
                     req.user!.id,
                     'CREATE',

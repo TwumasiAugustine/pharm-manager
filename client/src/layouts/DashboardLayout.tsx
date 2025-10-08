@@ -31,12 +31,13 @@ import {
     FaChevronLeft,
     FaChevronRight,
     FaCrown,
+    FaBuilding,
 } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 
-// Sidebar navigation items with clear role-based access control
+// Sidebar navigation items with clear role-based access control and logical organization
 const navItems: NavItem[] = [
-    // Super Admin Only
+    // === SUPER ADMIN SECTION ===
     {
         to: '/super-admin',
         icon: FaCrown,
@@ -49,14 +50,7 @@ const navItems: NavItem[] = [
         icon: FaHistory,
         label: 'Audit Logs',
         match: (pathname: string) => pathname === '/audit-logs',
-        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
-    },
-    {
-        to: '/user-activity',
-        icon: FaUserSecret,
-        label: 'User Activity',
-        match: (pathname: string) => pathname === '/user-activity',
-        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+        allowedRoles: [UserRole.SUPER_ADMIN], // Only Super Admin can see audit logs
     },
     {
         to: '/cron-management',
@@ -66,7 +60,23 @@ const navItems: NavItem[] = [
         allowedRoles: [UserRole.SUPER_ADMIN],
     },
 
-    // Admin Only
+    // === ADMIN SECTION ===
+    {
+        to: '/dashboard',
+        icon: FaTachometerAlt,
+        label: 'Admin Dashboard',
+        match: (pathname: string) => pathname === '/dashboard',
+        allowedRoles: [UserRole.ADMIN],
+    },
+    {
+        to: '/user-activity',
+        icon: FaUserSecret,
+        label: 'User Activity',
+        match: (pathname: string) => pathname === '/user-activity',
+        allowedRoles: [UserRole.ADMIN], // Only Admin can see user activity
+    },
+
+    // === USER MANAGEMENT SECTION ===
     {
         to: '/users',
         icon: FaUsers,
@@ -75,13 +85,8 @@ const navItems: NavItem[] = [
             pathname === '/users' || /^\/users\/[^/]+$/.test(pathname),
         allowedRoles: [UserRole.ADMIN],
     },
-    {
-        to: '/branches',
-        icon: FaCogs,
-        label: 'Branch Management',
-        match: (pathname: string) => pathname === '/branches',
-        allowedRoles: [UserRole.ADMIN],
-    },
+
+    // === PHARMACY MANAGEMENT SECTION ===
     {
         to: '/pharmacy-setup',
         icon: FaCog,
@@ -89,15 +94,15 @@ const navItems: NavItem[] = [
         match: (pathname: string) => pathname === '/pharmacy-setup',
         allowedRoles: [UserRole.ADMIN],
     },
-
-    // Operational Users (Admin, Pharmacist, Cashier)
     {
-        to: '/dashboard',
-        icon: FaTachometerAlt,
-        label: 'Dashboard',
-        match: (pathname: string) => pathname === '/dashboard',
-        allowedRoles: [UserRole.ADMIN, UserRole.PHARMACIST, UserRole.CASHIER],
+        to: '/branches',
+        icon: FaBuilding,
+        label: 'Branch Management',
+        match: (pathname: string) => pathname === '/branches',
+        allowedRoles: [UserRole.ADMIN],
     },
+
+    // === INVENTORY MANAGEMENT SECTION ===
     {
         to: '/drugs',
         icon: FaPills,
@@ -105,6 +110,15 @@ const navItems: NavItem[] = [
         match: (pathname: string) => pathname === '/drugs',
         allowedRoles: [UserRole.ADMIN, UserRole.PHARMACIST, UserRole.CASHIER],
     },
+    {
+        to: '/expiry',
+        icon: FaExclamationTriangle,
+        label: 'Expiry Tracker',
+        match: (pathname: string) => pathname === '/expiry',
+        allowedRoles: [UserRole.ADMIN, UserRole.PHARMACIST],
+    },
+
+    // === SALES MANAGEMENT SECTION ===
     {
         to: '/sales',
         icon: FaShoppingCart,
@@ -124,14 +138,7 @@ const navItems: NavItem[] = [
         allowedRoles: [UserRole.ADMIN, UserRole.PHARMACIST, UserRole.CASHIER],
     },
 
-    // Pharmacist and Admin
-    {
-        to: '/expiry',
-        icon: FaExclamationTriangle,
-        label: 'Expiry Tracker',
-        match: (pathname: string) => pathname === '/expiry',
-        allowedRoles: [UserRole.ADMIN, UserRole.PHARMACIST],
-    },
+    // === REPORTING SECTION ===
     {
         to: '/reports',
         icon: FaChartBar,

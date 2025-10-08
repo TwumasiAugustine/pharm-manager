@@ -10,7 +10,8 @@ import {
     endUserSession,
 } from '../middlewares/user-activity.middleware';
 import { UserRole } from '../types/user.types';
-import User from '../models/user.model'
+import User from '../models/user.model';
+import { trackActivity, markSessionInactive } from '../utils/activity-tracker';
 const authService = new AuthService();
 
 export class AuthController {
@@ -104,6 +105,17 @@ export class AuthController {
                 // Initialize user activity session
                 const sessionId = initializeUserSession(result.user.id, req);
 
+                // Track login activity
+                await trackActivity(result.user.id, 'LOGIN', 'USER', {
+                    action: 'User Login',
+                    resourceName: result.user.name,
+                    userRole: result.user.role,
+                    loginTime: new Date(),
+                    ipAddress:
+                        req.ip || req.connection.remoteAddress || 'unknown',
+                    userAgent: req.get('User-Agent') || 'unknown',
+                });
+
                 await logAuditEvent(
                     result.user.id,
                     'LOGIN',
@@ -147,8 +159,18 @@ export class AuthController {
 
             // End user session and log audit event for logout
             setImmediate(async () => {
+                // Track logout activity
+                await trackActivity(req.user!.id, 'LOGOUT', 'USER', {
+                    action: 'User Logout',
+                    resourceName: req.user!.name,
+                    ipAddress:
+                        req.ip || req.connection.remoteAddress || 'unknown',
+                    userAgent: req.get('User-Agent') || 'unknown',
+                });
+
                 // End user activity session
                 await endUserSession(req.user!.id, req);
+                await markSessionInactive(req.user!.id);
 
                 await logAuditEvent(
                     req.user!.id,
@@ -261,10 +283,14 @@ export class AuthController {
 
             let branch = null;
             if (userDoc && userDoc.branch) {
-                branch = {
-                    id: userDoc.branch._id,
-                    name: userDoc.branch.name,
-                };
+                // Type assertion to handle ObjectId vs IBranch
+                const branchData = userDoc.branch as any;
+                if (branchData && branchData.name) {
+                    branch = {
+                        id: branchData._id,
+                        name: branchData.name,
+                    };
+                }
             }
 
             res.status(200).json(

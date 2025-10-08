@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Branch from '../models/branch.model';
 import PharmacyInfo from '../models/pharmacy-info.model';
 import { UserRole } from '../types/user.types';
+import { trackActivity } from '../utils/activity-tracker';
 
 export const createBranch = async (req: Request, res: Response) => {
     try {
@@ -28,6 +29,27 @@ export const createBranch = async (req: Request, res: Response) => {
         };
 
         const branch = await Branch.create(branchData);
+
+        // Track branch creation activity
+        if (req.user) {
+            trackActivity(req.user.id, 'CREATE', 'BRANCH', {
+                endpoint: req.path,
+                method: req.method,
+                action: 'createBranch',
+                resourceId: branch._id?.toString(),
+                resourceName: branch.name,
+                branchId: branch._id,
+                branchData: {
+                    name: branch.name,
+                    address: branch.address,
+                    phone: branch.contact?.phone,
+                    email: branch.contact?.email,
+                },
+                pharmacyId: userPharmacyId,
+                pharmacyName: pharmacy.name,
+            });
+        }
+
         res.status(201).json(branch);
     } catch (err) {
         let message = 'Unknown error';
@@ -53,6 +75,26 @@ export const getBranches = async (req: Request, res: Response) => {
         }
 
         const branches = await Branch.find(query);
+
+        // Track branch listing activity
+        if (req.user) {
+            trackActivity(req.user.id, 'VIEW', 'BRANCH', {
+                endpoint: req.path,
+                method: req.method,
+                action: 'getBranches',
+                dataScope:
+                    req.user?.role === UserRole.SUPER_ADMIN
+                        ? 'all_pharmacies'
+                        : 'pharmacy_specific',
+                pharmacyId:
+                    req.user?.role !== UserRole.SUPER_ADMIN
+                        ? userPharmacyId
+                        : undefined,
+                resultCount: branches.length,
+                userRole: req.user.role,
+            });
+        }
+
         res.json(branches);
     } catch (err) {
         let message = 'Unknown error';
@@ -87,6 +129,27 @@ export const updateBranch = async (req: Request, res: Response) => {
             });
         }
 
+        // Track branch update activity
+        if (req.user) {
+            trackActivity(req.user.id, 'UPDATE', 'BRANCH', {
+                endpoint: req.path,
+                method: req.method,
+                action: 'updateBranch',
+                resourceId: req.params.id,
+                resourceName: branch.name,
+                branchId: req.params.id,
+                updatedFields: Object.keys(req.body),
+                updatedData: {
+                    name: branch.name,
+                    address: branch.address,
+                    phone: branch.contact?.phone,
+                    email: branch.contact?.email,
+                },
+                userRole: req.user.role,
+                pharmacyId: branch.pharmacyId,
+            });
+        }
+
         res.json(branch);
     } catch (err) {
         let message = 'Unknown error';
@@ -116,6 +179,27 @@ export const deleteBranch = async (req: Request, res: Response) => {
         if (!branch) {
             return res.status(404).json({
                 error: 'Branch not found or access denied',
+            });
+        }
+
+        // Track branch deletion activity
+        if (req.user) {
+            trackActivity(req.user.id, 'DELETE', 'BRANCH', {
+                endpoint: req.path,
+                method: req.method,
+                action: 'deleteBranch',
+                resourceId: req.params.id,
+                resourceName: branch.name,
+                branchId: req.params.id,
+                deletedBranch: {
+                    name: branch.name,
+                    address: branch.address,
+                    phone: branch.contact?.phone,
+                    email: branch.contact?.email,
+                },
+                userRole: req.user.role,
+                pharmacyId: branch.pharmacyId,
+                reason: 'Branch deletion',
             });
         }
 

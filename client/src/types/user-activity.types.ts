@@ -17,7 +17,9 @@ export interface UserActivityFilters {
         | 'CUSTOMER'
         | 'REPORT'
         | 'SYSTEM'
-        | 'DASHBOARD';
+        | 'DASHBOARD'
+        | 'BRANCH'
+        | 'EXPIRY';
     startDate?: string;
     endDate?: string;
     isActive?: boolean;
@@ -170,14 +172,79 @@ export interface UserActivitySummaryResponse {
         totalSessions: number;
         activeSessions: number;
         totalUsers: number;
-        todayActivity: number;
-        weeklyActivity: number;
+        todayActivity: SpecificActivitySummary;
+        weeklyActivity: SpecificActivitySummary;
+        monthlyActivity?: number; // Backward compatibility
         topActiveUsers: Array<{
             userId: string;
             userName: string;
             activityCount: number;
             lastActivity: string;
         }>;
-        recentActivities: UserActivity[];
+        recentActivities: DetailedActivity[];
+    };
+}
+
+// New interfaces for enhanced activity tracking
+export interface SpecificActivitySummary {
+    totalActivities: number;
+    byResource: Record<string, ResourceActivity[]>;
+    topActions: TopActivity[];
+}
+
+export interface ResourceActivity {
+    action: string;
+    count: number;
+    uniqueUsers: number;
+    totalCount?: number; // For weekly data
+    dailyBreakdown?: DailyActivityBreakdown[]; // For weekly data
+}
+
+export interface DailyActivityBreakdown {
+    day: string;
+    count: number;
+    users: number;
+}
+
+export interface TopActivity {
+    resource: string;
+    action: string;
+    count: number;
+    uniqueUsers: number;
+    totalCount?: number; // For weekly data
+    dailyBreakdown?: DailyActivityBreakdown[]; // For weekly data
+}
+
+export interface DetailedActivity {
+    id: string;
+    user: {
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+    };
+    activity: {
+        type: string;
+        resource: string;
+        action: string;
+        resourceName?: string;
+        description: string;
+    };
+    timestamp: string;
+    ipAddress?: string;
+}
+
+// Analytics response interface
+export interface ActivityAnalyticsResponse {
+    success: boolean;
+    message: string;
+    data: {
+        timeframe: string;
+        stats: UserActivityStats;
+        summary: {
+            todayActivity: SpecificActivitySummary;
+            weeklyActivity: SpecificActivitySummary;
+            recentActivities: DetailedActivity[];
+        };
     };
 }

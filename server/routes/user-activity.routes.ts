@@ -67,6 +67,18 @@ router.get(
 );
 
 /**
+ * @route   GET /api/user-activities/analytics
+ * @desc    Get detailed activity analytics for admins
+ * @access  Private (Admin level for user oversight)
+ * @query   timeframe (today|week|month|quarter), resource, action
+ */
+router.get(
+    '/analytics',
+    requirePermission(USER_PERMISSIONS.VIEW_USER_ACTIVITY),
+    userActivityController.getActivityAnalytics,
+);
+
+/**
  * @route   GET /api/user-activities/summary
  * @desc    Get user activity summary for dashboard
  * @access  Private

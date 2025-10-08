@@ -7,6 +7,7 @@ import {
     IUpdateDrugRequest,
 } from '../types/drug.types';
 import { logAuditEvent } from '../middlewares/audit.middleware';
+import { trackActivity } from '../utils/activity-tracker';
 
 const drugService = new DrugService();
 
@@ -35,6 +36,16 @@ export class DrugController {
 
             // Log audit event for drug creation
             setImmediate(async () => {
+                // Track drug creation activity
+                await trackActivity(req.user!.id, 'CREATE', 'DRUG', {
+                    action: 'Create Drug',
+                    resourceId: drug._id?.toString(),
+                    resourceName: `${drug.name} (${drug.brand})`,
+                    category: drug.category,
+                    quantity: drug.quantity,
+                    price: drug.price,
+                });
+
                 await logAuditEvent(
                     req.user!.id,
                     'CREATE',
@@ -76,6 +87,15 @@ export class DrugController {
 
             const drug = await drugService.getDrugById(id, user);
 
+            // Track drug view activity
+            setImmediate(async () => {
+                await trackActivity(req.user!.id, 'VIEW', 'DRUG', {
+                    action: 'View Drug',
+                    resourceId: drug._id?.toString(),
+                    resourceName: `${drug.name} (${drug.brand})`,
+                });
+            });
+
             res.status(200).json(
                 successResponse({ drug: drug }, 'Drug retrieved successfully'),
             );
@@ -107,6 +127,16 @@ export class DrugController {
 
             // Log audit event for drug update
             setImmediate(async () => {
+                // Track drug update activity
+                await trackActivity(req.user!.id, 'UPDATE', 'DRUG', {
+                    action: 'Update Drug',
+                    resourceId: drug._id?.toString(),
+                    resourceName: `${drug.name} (${drug.brand})`,
+                    updatedFields: Object.keys(updateData),
+                    newQuantity: drug.quantity,
+                    newPrice: drug.sellingPrice,
+                });
+
                 await logAuditEvent(
                     req.user!.id,
                     'UPDATE',

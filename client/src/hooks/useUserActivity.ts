@@ -84,6 +84,24 @@ export const useUserActivitySummary = () => {
 };
 
 /**
+ * Hook to fetch detailed activity analytics for admins
+ */
+export const useActivityAnalytics = (
+    params: {
+        timeframe?: 'today' | 'week' | 'month' | 'quarter';
+        resource?: string;
+        action?: string;
+    } = {},
+) => {
+    return useQuery({
+        queryKey: [USER_ACTIVITY_QUERY_KEY, 'analytics', params],
+        queryFn: () => userActivityApi.getActivityAnalytics(params),
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        select: (data) => data.data,
+    });
+};
+
+/**
  * Hook to clean up old activity records (Admin only)
  */
 export const useCleanupOldActivities = () => {

@@ -64,14 +64,22 @@ export class UserActivityService {
         // Build query with proper data scoping
         const query: any = {};
 
-        // Apply branch-level data scoping for Cashiers/Pharmacists
-        // Super admin sees all activities, others see only their pharmacy/branch activities
+        // Apply pharmacy-level data scoping
+        // Super admin sees all activities, admins see only their pharmacy activities
         if (user.role !== UserRole.SUPER_ADMIN) {
-            const scopingFilter = getBranchScopingFilter(user);
-            // Join with users to filter by pharmacy and branch
-            query['userId'] = {
-                $in: await User.find(scopingFilter).distinct('_id'),
-            };
+            if (user.role === UserRole.ADMIN) {
+                // Admin sees all users in their pharmacy
+                const pharmacyUsers = await User.find({
+                    pharmacyId: user.pharmacyId,
+                }).distinct('_id');
+                query['userId'] = { $in: pharmacyUsers };
+            } else {
+                // Pharmacist/Cashier see only users in their branch
+                const scopingFilter = getBranchScopingFilter(user);
+                const branchUsers =
+                    await User.find(scopingFilter).distinct('_id');
+                query['userId'] = { $in: branchUsers };
+            }
         }
 
         if (userId) query.userId = userId;
@@ -140,10 +148,19 @@ export class UserActivityService {
 
         // Apply data scoping
         if (user.role !== UserRole.SUPER_ADMIN) {
-            const scopingFilter = getBranchScopingFilter(user);
-            query['userId'] = {
-                $in: await User.find(scopingFilter).distinct('_id'),
-            };
+            if (user.role === UserRole.ADMIN) {
+                // Admin sees all users in their pharmacy
+                const pharmacyUsers = await User.find({
+                    pharmacyId: user.pharmacyId,
+                }).distinct('_id');
+                query['userId'] = { $in: pharmacyUsers };
+            } else {
+                // Pharmacist/Cashier see only users in their branch
+                const scopingFilter = getBranchScopingFilter(user);
+                const branchUsers =
+                    await User.find(scopingFilter).distinct('_id');
+                query['userId'] = { $in: branchUsers };
+            }
         }
 
         // Apply filters
@@ -346,10 +363,19 @@ export class UserActivityService {
 
         // Apply data scoping
         if (user.role !== UserRole.SUPER_ADMIN) {
-            const scopingFilter = getBranchScopingFilter(user);
-            query['userId'] = {
-                $in: await User.find(scopingFilter).distinct('_id'),
-            };
+            if (user.role === UserRole.ADMIN) {
+                // Admin sees all users in their pharmacy
+                const pharmacyUsers = await User.find({
+                    pharmacyId: user.pharmacyId,
+                }).distinct('_id');
+                query['userId'] = { $in: pharmacyUsers };
+            } else {
+                // Pharmacist/Cashier see only users in their branch
+                const scopingFilter = getBranchScopingFilter(user);
+                const branchUsers =
+                    await User.find(scopingFilter).distinct('_id');
+                query['userId'] = { $in: branchUsers };
+            }
         }
 
         const sessions = await UserActivity.aggregate([
@@ -405,10 +431,19 @@ export class UserActivityService {
 
         // Apply data scoping
         if (user.role !== UserRole.SUPER_ADMIN) {
-            const scopingFilter = getBranchScopingFilter(user);
-            query['userId'] = {
-                $in: await User.find(scopingFilter).distinct('_id'),
-            };
+            if (user.role === UserRole.ADMIN) {
+                // Admin sees all users in their pharmacy
+                const pharmacyUsers = await User.find({
+                    pharmacyId: user.pharmacyId,
+                }).distinct('_id');
+                query['userId'] = { $in: pharmacyUsers };
+            } else {
+                // Pharmacist/Cashier see only users in their branch
+                const scopingFilter = getBranchScopingFilter(user);
+                const branchUsers =
+                    await User.find(scopingFilter).distinct('_id');
+                query['userId'] = { $in: branchUsers };
+            }
         }
 
         const activities = await UserActivity.find(query)
@@ -694,10 +729,19 @@ export class UserActivityService {
 
         // Apply data scoping
         if (user.role !== UserRole.SUPER_ADMIN) {
-            const scopingFilter = getBranchScopingFilter(user);
-            query['userId'] = {
-                $in: await User.find(scopingFilter).distinct('_id'),
-            };
+            if (user.role === UserRole.ADMIN) {
+                // Admin sees all users in their pharmacy
+                const pharmacyUsers = await User.find({
+                    pharmacyId: user.pharmacyId,
+                }).distinct('_id');
+                query['userId'] = { $in: pharmacyUsers };
+            } else {
+                // Pharmacist/Cashier see only users in their branch
+                const scopingFilter = getBranchScopingFilter(user);
+                const branchUsers =
+                    await User.find(scopingFilter).distinct('_id');
+                query['userId'] = { $in: branchUsers };
+            }
         }
 
         const [
@@ -710,11 +754,11 @@ export class UserActivityService {
             activeSessions,
             totalUsers,
         ] = await Promise.all([
-            this.getActivitiesInPeriod(query, 1),
-            this.getActivitiesInPeriod(query, 7),
+            this.getTodaySpecificActivities(query),
+            this.getWeeklySpecificActivities(query),
             this.getActivitiesInPeriod(query, 30),
             this.getTopActiveUsers(query, 5),
-            this.getRecentActivities(query, 10),
+            this.getRecentSpecificActivities(query, 10),
             this.getTotalSessions(query),
             this.getActiveSessionsCount(query),
             this.getTotalUsers(query),
@@ -726,6 +770,7 @@ export class UserActivityService {
             totalUsers,
             todayActivity,
             weeklyActivity,
+            monthlyActivity,
             topActiveUsers,
             recentActivities,
         };
@@ -876,6 +921,293 @@ export class UserActivityService {
         ]);
 
         return result.length > 0 ? result[0].totalUsers : 0;
+    }
+
+    /**
+     * Get today's specific activities with action breakdown
+     */
+    private async getTodaySpecificActivities(baseQuery: any): Promise<any> {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const query = {
+            ...baseQuery,
+            timestamp: { $gte: today, $lt: tomorrow },
+        };
+
+        const activities = await UserActivity.aggregate([
+            { $match: query },
+            {
+                $group: {
+                    _id: {
+                        resource: '$activity.resource',
+                        action: '$activity.action',
+                    },
+                    count: { $sum: 1 },
+                    users: { $addToSet: '$userId' },
+                },
+            },
+            {
+                $project: {
+                    resource: '$_id.resource',
+                    action: '$_id.action',
+                    count: 1,
+                    uniqueUsers: { $size: '$users' },
+                },
+            },
+            { $sort: { count: -1 } },
+        ]);
+
+        // Group by resource for better organization
+        const resourceGroups: any = {};
+        let totalActivities = 0;
+
+        activities.forEach((activity) => {
+            const resource = activity.resource || 'unknown';
+            if (!resourceGroups[resource]) {
+                resourceGroups[resource] = [];
+            }
+            resourceGroups[resource].push({
+                action: activity.action,
+                count: activity.count,
+                uniqueUsers: activity.uniqueUsers,
+            });
+            totalActivities += activity.count;
+        });
+
+        return {
+            totalActivities,
+            byResource: resourceGroups,
+            topActions: activities.slice(0, 10),
+        };
+    }
+
+    /**
+     * Get this week's specific activities with action breakdown
+     */
+    private async getWeeklySpecificActivities(baseQuery: any): Promise<any> {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        weekAgo.setHours(0, 0, 0, 0);
+
+        const query = {
+            ...baseQuery,
+            timestamp: { $gte: weekAgo },
+        };
+
+        const activities = await UserActivity.aggregate([
+            { $match: query },
+            {
+                $group: {
+                    _id: {
+                        resource: '$activity.resource',
+                        action: '$activity.action',
+                        day: {
+                            $dateToString: {
+                                format: '%Y-%m-%d',
+                                date: '$timestamp',
+                            },
+                        },
+                    },
+                    count: { $sum: 1 },
+                    users: { $addToSet: '$userId' },
+                },
+            },
+            {
+                $group: {
+                    _id: {
+                        resource: '$_id.resource',
+                        action: '$_id.action',
+                    },
+                    totalCount: { $sum: '$count' },
+                    dailyBreakdown: {
+                        $push: {
+                            day: '$_id.day',
+                            count: '$count',
+                            users: { $size: '$users' },
+                        },
+                    },
+                    uniqueUsers: { $addToSet: '$users' },
+                },
+            },
+            {
+                $project: {
+                    resource: '$_id.resource',
+                    action: '$_id.action',
+                    totalCount: 1,
+                    dailyBreakdown: 1,
+                    uniqueUsers: {
+                        $size: {
+                            $reduce: {
+                                input: '$uniqueUsers',
+                                initialValue: [],
+                                in: { $setUnion: ['$$value', '$$this'] },
+                            },
+                        },
+                    },
+                },
+            },
+            { $sort: { totalCount: -1 } },
+        ]);
+
+        // Group by resource
+        const resourceGroups: any = {};
+        let totalActivities = 0;
+
+        activities.forEach((activity) => {
+            const resource = activity.resource || 'unknown';
+            if (!resourceGroups[resource]) {
+                resourceGroups[resource] = [];
+            }
+            resourceGroups[resource].push({
+                action: activity.action,
+                totalCount: activity.totalCount,
+                uniqueUsers: activity.uniqueUsers,
+                dailyBreakdown: activity.dailyBreakdown,
+            });
+            totalActivities += activity.totalCount;
+        });
+
+        return {
+            totalActivities,
+            byResource: resourceGroups,
+            topActions: activities.slice(0, 15),
+        };
+    }
+
+    /**
+     * Get recent specific activities with detailed information
+     */
+    private async getRecentSpecificActivities(
+        baseQuery: any,
+        limit: number,
+    ): Promise<any[]> {
+        const activities = await UserActivity.find(baseQuery)
+            .populate('userId', 'name email role')
+            .sort({ timestamp: -1 })
+            .limit(limit)
+            .lean();
+
+        return activities.map((activity: any) => ({
+            id: activity._id,
+            user: {
+                id: activity.userId._id,
+                name: activity.userId.name,
+                email: activity.userId.email,
+                role: activity.userId.role,
+            },
+            activity: {
+                type: activity.activity.type,
+                resource: activity.activity.resource,
+                action: activity.activity.action,
+                resourceName: activity.activity.resourceName,
+                description: this.getActivityDescription(activity.activity),
+            },
+            timestamp: activity.timestamp,
+            ipAddress: activity.session?.ipAddress,
+        }));
+    }
+
+    /**
+     * Generate human-readable activity description
+     */
+    private getActivityDescription(activity: any): string {
+        const { resource, action, resourceName } = activity;
+        const name = resourceName || 'item';
+
+        switch (resource) {
+            case 'DRUG':
+                switch (action) {
+                    case 'CREATE':
+                        return `Created new drug: ${name}`;
+                    case 'UPDATE':
+                        return `Updated drug: ${name}`;
+                    case 'DELETE':
+                        return `Deleted drug: ${name}`;
+                    case 'VIEW':
+                        return `Viewed drug: ${name}`;
+                    default:
+                        return `${action} drug: ${name}`;
+                }
+            case 'SALE':
+                switch (action) {
+                    case 'CREATE':
+                        return `Processed new sale: ${name}`;
+                    case 'UPDATE':
+                        return `Updated sale: ${name}`;
+                    case 'DELETE':
+                        return `Cancelled sale: ${name}`;
+                    case 'VIEW':
+                        return `Viewed sale: ${name}`;
+                    default:
+                        return `${action} sale: ${name}`;
+                }
+            case 'CUSTOMER':
+                switch (action) {
+                    case 'CREATE':
+                        return `Added new customer: ${name}`;
+                    case 'UPDATE':
+                        return `Updated customer: ${name}`;
+                    case 'DELETE':
+                        return `Removed customer: ${name}`;
+                    case 'VIEW':
+                        return `Viewed customer: ${name}`;
+                    default:
+                        return `${action} customer: ${name}`;
+                }
+            case 'USER':
+                switch (action) {
+                    case 'CREATE':
+                        return `Created new user: ${name}`;
+                    case 'UPDATE':
+                        return `Updated user: ${name}`;
+                    case 'DELETE':
+                        return `Deleted user: ${name}`;
+                    case 'LOGIN':
+                        return `User logged in`;
+                    case 'LOGOUT':
+                        return `User logged out`;
+                    default:
+                        return `${action} user: ${name}`;
+                }
+            case 'BRANCH':
+                switch (action) {
+                    case 'CREATE':
+                        return `Created new branch: ${name}`;
+                    case 'UPDATE':
+                        return `Updated branch: ${name}`;
+                    case 'DELETE':
+                        return `Deleted branch: ${name}`;
+                    default:
+                        return `${action} branch: ${name}`;
+                }
+            case 'REPORT':
+                switch (action) {
+                    case 'GENERATE':
+                        return `Generated report: ${name}`;
+                    case 'VIEW':
+                        return `Viewed report: ${name}`;
+                    case 'EXPORT':
+                        return `Exported report: ${name}`;
+                    default:
+                        return `${action} report: ${name}`;
+                }
+            case 'EXPIRY':
+                switch (action) {
+                    case 'CHECK':
+                        return `Checked expiry for: ${name}`;
+                    case 'UPDATE':
+                        return `Updated expiry data`;
+                    case 'ALERT':
+                        return `Generated expiry alert`;
+                    default:
+                        return `${action} expiry: ${name}`;
+                }
+            default:
+                return `${action} ${resource}: ${name}`;
+        }
     }
 
     /**

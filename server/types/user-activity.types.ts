@@ -17,7 +17,9 @@ export interface UserActivityFilters {
         | 'CUSTOMER'
         | 'REPORT'
         | 'SYSTEM'
-        | 'DASHBOARD';
+        | 'DASHBOARD'
+        | 'BRANCH'
+        | 'EXPIRY';
     startDate?: Date;
     endDate?: Date;
     isActive?: boolean;
@@ -47,7 +49,9 @@ export interface CreateUserActivityRequest {
             | 'CUSTOMER'
             | 'REPORT'
             | 'SYSTEM'
-            | 'DASHBOARD';
+            | 'DASHBOARD'
+            | 'BRANCH'
+            | 'EXPIRY';
         resourceId?: string;
         resourceName?: string;
         action: string;

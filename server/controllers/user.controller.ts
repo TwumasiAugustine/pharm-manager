@@ -6,6 +6,7 @@ import { PermissionService } from '../services/permission.service';
 import { successResponse } from '../utils/response';
 import { UserRole } from '../types/user.types';
 import { canCreateRole, canManageRole } from '../constants/permissions';
+import { trackActivity } from '../utils/activity-tracker';
 
 const userService = new UserService();
 
@@ -144,6 +145,28 @@ export class UserController {
                         isActive !== undefined ? Boolean(isActive) : undefined,
                 },
             );
+
+            // Track user list viewing activity
+            if (req.user) {
+                trackActivity(req.user.id, 'VIEW', 'USER', {
+                    endpoint: req.path,
+                    method: req.method,
+                    action: 'getUsers',
+                    pagination: {
+                        page: Number(page),
+                        limit: Number(limit),
+                    },
+                    filters: {
+                        search: search as string,
+                        role: role as UserRole,
+                        branchId: branchId as string,
+                        isActive: isActive,
+                    },
+                    resultCount: result.users?.length || 0,
+                    totalCount: result.pagination?.total || 0,
+                });
+            }
+
             res.json(successResponse(result, 'Users retrieved successfully'));
         } catch (error) {
             next(error);
@@ -193,6 +216,27 @@ export class UserController {
                 });
             }
 
+            // Track user creation activity
+            if (req.user && user) {
+                trackActivity(req.user.id, 'CREATE', 'USER', {
+                    endpoint: req.path,
+                    method: req.method,
+                    action: 'createUser',
+                    resourceId: user._id?.toString() || user.id,
+                    resourceName: user.name,
+                    createdUserId: user._id || user.id,
+                    userData: {
+                        fullName: user.name,
+                        email: user.email,
+                        role: user.role,
+                        branchId: user.branch,
+                        pharmacyId: user.pharmacyId,
+                    },
+                    targetRole: targetRole,
+                    creatorRole: req.user.role,
+                });
+            }
+
             res.json(successResponse(user, 'User created successfully'));
         } catch (error) {
             next(error);
@@ -206,6 +250,27 @@ export class UserController {
                 req.body,
                 req.user?.id || '',
             );
+
+            // Track user update activity
+            if (req.user && user) {
+                trackActivity(req.user.id, 'UPDATE', 'USER', {
+                    endpoint: req.path,
+                    method: req.method,
+                    action: 'updateUser',
+                    resourceId: req.params.id,
+                    resourceName: user.name,
+                    targetUserId: req.params.id,
+                    updatedFields: Object.keys(req.body),
+                    updatedData: {
+                        fullName: user.name,
+                        email: user.email,
+                        role: user.role,
+                        isActive: user.isActive,
+                    },
+                    updaterRole: req.user.role,
+                });
+            }
+
             res.json(successResponse(user, 'User updated successfully'));
         } catch (error) {
             next(error);
@@ -218,6 +283,26 @@ export class UserController {
                 req.params.id,
                 req.user?.id || '',
             );
+
+            // Track user deactivation activity
+            if (req.user && user) {
+                trackActivity(req.user.id, 'DELETE', 'USER', {
+                    endpoint: req.path,
+                    method: req.method,
+                    action: 'deactivateUser',
+                    resourceId: req.params.id,
+                    resourceName: user.name,
+                    targetUserId: req.params.id,
+                    deactivatedUser: {
+                        fullName: user.name,
+                        email: user.email,
+                        role: user.role,
+                        previousStatus: 'active',
+                    },
+                    deactivatorRole: req.user.role,
+                });
+            }
+
             res.json(successResponse(user, 'User deactivated successfully'));
         } catch (error) {
             next(error);
@@ -229,6 +314,21 @@ export class UserController {
             const stats = await this.userManagementService.getUserStats(
                 req.user?.id || '',
             );
+
+            // Track user stats viewing activity
+            if (req.user) {
+                trackActivity(req.user.id, 'VIEW', 'USER', {
+                    endpoint: req.path,
+                    method: req.method,
+                    action: 'getUserStats',
+                    statsData: {
+                        totalUsers: stats.totalUsers,
+                        activeUsers: stats.activeUsers,
+                        roleDistribution: stats.roleDistribution,
+                    },
+                });
+            }
+
             res.json(
                 successResponse(
                     stats,

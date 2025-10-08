@@ -282,6 +282,9 @@ export const ROLE_PERMISSIONS = {
         // System-level permissions only
         ...SYSTEM_LEVEL_PERMISSIONS,
 
+        // Audit permissions (for platform oversight)
+        ...Object.values(AUDIT_PERMISSIONS),
+
         // View-only access to operational data for oversight
         PHARMACY_PERMISSIONS.VIEW_PHARMACY_INFO,
         PHARMACY_PERMISSIONS.UPDATE_PHARMACY_NAME, // Super Admin can change pharmacy name
