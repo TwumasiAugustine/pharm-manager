@@ -167,29 +167,6 @@ const UserForm: React.FC<UserFormProps> = ({
                     )}
                 </div>
 
-                {/* Role-specific information */}
-                {formData.role === UserRole.ADMIN && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h3 className="font-medium text-blue-900 mb-2">
-                            Admin Role Information
-                        </h3>
-                        <ul className="text-sm text-blue-800 space-y-1">
-                            <li>
-                                • Can create and manage Pharmacist and Cashier
-                                users
-                            </li>
-                            <li>
-                                • Can assign permissions to operational staff
-                            </li>
-                            <li>
-                                • Has access to all operational features within
-                                their pharmacy
-                            </li>
-                            <li>• Cannot access system-level administration</li>
-                        </ul>
-                    </div>
-                )}
-
                 {shouldShowManagerOption && (
                     <div className="flex items-center space-x-2">
                         <input

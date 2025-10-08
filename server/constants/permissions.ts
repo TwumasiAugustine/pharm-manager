@@ -85,7 +85,7 @@ export const REPORT_PERMISSIONS = {
 export const SYSTEM_PERMISSIONS = {
     MANAGE_SYSTEM_SETTINGS: 'MANAGE_SYSTEM_SETTINGS',
     MANAGE_SYSTEM: 'MANAGE_SYSTEM',
-    VIEW_AUDIT_LOGS: 'VIEW_AUDIT_LOGS',
+    VIEW_SYSTEM_AUDIT_LOGS: 'VIEW_SYSTEM_AUDIT_LOGS',
     MANAGE_CRON_JOBS: 'MANAGE_CRON_JOBS',
     BACKUP_RESTORE: 'BACKUP_RESTORE',
     SYSTEM_MONITORING: 'SYSTEM_MONITORING',
@@ -208,9 +208,6 @@ export const SYSTEM_LEVEL_PERMISSIONS = [
 
     // System Administration
     ...Object.values(SYSTEM_PERMISSIONS),
-
-    // User Management (creating admins)
-    USER_PERMISSIONS.CREATE_USER, // Only for creating admins
 ] as const;
 
 // Operational permissions (excluded from SUPER_ADMIN by default)
@@ -305,6 +302,7 @@ export const ROLE_PERMISSIONS = {
         USER_PERMISSIONS.UPDATE_USER,
         USER_PERMISSIONS.DELETE_USER,
         USER_PERMISSIONS.VIEW_USERS,
+        USER_PERMISSIONS.MANAGE_USERS,
         USER_PERMISSIONS.MANAGE_PERMISSIONS,
         USER_PERMISSIONS.VIEW_USER_ACTIVITY,
 
@@ -335,6 +333,11 @@ export const ROLE_PERMISSIONS = {
 
         // Expiry Management (full access)
         ...Object.values(EXPIRY_PERMISSIONS),
+
+        // Audit Management (pharmacy-scoped access)
+        AUDIT_PERMISSIONS.VIEW_AUDIT_LOGS,
+        AUDIT_PERMISSIONS.MANAGE_AUDIT_LOGS,
+        AUDIT_PERMISSIONS.EXPORT_AUDIT_LOGS,
     ],
     pharmacist: [
         // User Management (view only)
@@ -552,7 +555,7 @@ export const getPermissionDescription = (permission: string): string => {
         // System Administration
         [SYSTEM_PERMISSIONS.MANAGE_SYSTEM_SETTINGS]:
             'Manage system configuration',
-        [SYSTEM_PERMISSIONS.VIEW_AUDIT_LOGS]: 'View system audit logs',
+        [SYSTEM_PERMISSIONS.VIEW_SYSTEM_AUDIT_LOGS]: 'View system audit logs',
         [SYSTEM_PERMISSIONS.MANAGE_CRON_JOBS]: 'Manage scheduled tasks',
         [SYSTEM_PERMISSIONS.BACKUP_RESTORE]: 'Backup and restore system data',
         [SYSTEM_PERMISSIONS.SYSTEM_MONITORING]: 'Monitor system performance',

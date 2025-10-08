@@ -10,7 +10,7 @@ import {
     endUserSession,
 } from '../middlewares/user-activity.middleware';
 import { UserRole } from '../types/user.types';
-
+import User from '../models/user.model'
 const authService = new AuthService();
 
 export class AuthController {
@@ -256,7 +256,7 @@ export class AuthController {
             }
 
             // Populate branch if present
-            const User = require('../models/user.model').default;
+
             let userDoc = await User.findById(req.user.id).populate('branch');
 
             let branch = null;
@@ -408,7 +408,6 @@ export class AuthController {
                 return;
             }
 
-            const User = require('../models/user.model').default;
             const user = await User.findById(req.user.id);
             res.json(
                 successResponse(

@@ -13,6 +13,8 @@ import {
     FiEdit,
     FiTrash,
     FiEye,
+    FiHome,
+    FiMapPin,
 } from 'react-icons/fi';
 import type { AuditLogResponse } from '../../types/audit-log.types';
 import { Badge } from '../atoms/Badge';
@@ -37,6 +39,10 @@ const getResourceIcon = (resource: string) => {
             return <FiFileText className="h-4 w-4" />;
         case 'SYSTEM':
             return <FiSettings className="h-4 w-4" />;
+        case 'BRANCH':
+            return <FiMapPin className="h-4 w-4" />;
+        case 'PHARMACY':
+            return <FiHome className="h-4 w-4" />;
         default:
             return <FiFileText className="h-4 w-4" />;
     }
@@ -156,6 +162,9 @@ export const AuditLogTable: React.FC<AuditLogTableProps> = ({
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 User
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Pharmacy/Branch
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Description

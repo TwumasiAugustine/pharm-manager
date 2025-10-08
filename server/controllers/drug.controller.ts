@@ -74,11 +74,7 @@ export class DrugController {
             const { id } = req.params;
             const user = req.user!;
 
-            const drug = await drugService.getDrugById(
-                id,
-                user.role,
-                user.branchId,
-            );
+            const drug = await drugService.getDrugById(id, user);
 
             res.status(200).json(
                 successResponse({ drug: drug }, 'Drug retrieved successfully'),
@@ -102,16 +98,11 @@ export class DrugController {
             const user = req.user!;
 
             // Get original drug data for audit log
-            const originalDrug: any = await drugService.getDrugById(
-                id,
-                user.role,
-                user.branchId,
-            );
+            const originalDrug: any = await drugService.getDrugById(id, user);
             const drug: any = await drugService.updateDrug(
                 id,
                 updateData,
-                user.role,
-                user.branchId,
+                user,
             );
 
             // Log audit event for drug update
@@ -159,12 +150,8 @@ export class DrugController {
             const user = req.user!;
 
             // Get drug data before deletion for audit log
-            const drugToDelete: any = await drugService.getDrugById(
-                id,
-                user.role,
-                user.branchId,
-            );
-            await drugService.deleteDrug(id, user.role, user.branchId);
+            const drugToDelete: any = await drugService.getDrugById(id, user);
+            await drugService.deleteDrug(id, user);
 
             // Log audit event for drug deletion
             setImmediate(async () => {
@@ -245,10 +232,7 @@ export class DrugController {
     ): Promise<void> {
         try {
             const user = req.user!;
-            const categories = await drugService.getCategories(
-                user.role,
-                user.branchId,
-            );
+            const categories = await drugService.getCategories(user);
 
             res.status(200).json(
                 successResponse(
@@ -272,11 +256,7 @@ export class DrugController {
         try {
             const days = req.query.days ? Number(req.query.days) : 30; // Default to 30 days
             const user = req.user!;
-            const drugs = await drugService.getExpiringDrugs(
-                days,
-                user.role,
-                user.branchId,
-            );
+            const drugs = await drugService.getExpiringDrugs(days, user);
 
             res.status(200).json(
                 successResponse(

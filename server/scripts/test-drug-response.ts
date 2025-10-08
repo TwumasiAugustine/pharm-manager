@@ -42,9 +42,16 @@ async function testDrugResponseFormat(): Promise<void> {
         console.log(`   Raw branch field: ${existingDrug.branch}`);
 
         // Test getDrugById (this uses mapDrugToResponse internally)
+        const mockUser = {
+            id: 'test-user-id',
+            role: UserRole.SUPER_ADMIN,
+            pharmacyId: 'test-pharmacy-id',
+            branchId: null,
+        };
+
         const drugFromService = await drugService.getDrugById(
             (existingDrug._id as any).toString(),
-            UserRole.SUPER_ADMIN,
+            mockUser as any,
         );
 
         console.log('\n📋 Service response format:');

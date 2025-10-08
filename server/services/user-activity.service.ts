@@ -10,7 +10,10 @@ import {
 } from '../types/user-activity.types';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 import { ITokenPayload } from '../types/auth.types';
-import { getPharmacyScopingFilter } from '../utils/data-scoping';
+import {
+    getPharmacyScopingFilter,
+    getBranchScopingFilter,
+} from '../utils/data-scoping';
 import { UserRole } from '../types/user.types';
 
 export class UserActivityService {
@@ -61,11 +64,11 @@ export class UserActivityService {
         // Build query with proper data scoping
         const query: any = {};
 
-        // Apply pharmacy-based data scoping
-        // Super admin sees all activities, others see only their pharmacy's activities
+        // Apply branch-level data scoping for Cashiers/Pharmacists
+        // Super admin sees all activities, others see only their pharmacy/branch activities
         if (user.role !== UserRole.SUPER_ADMIN) {
-            const scopingFilter = getPharmacyScopingFilter(user);
-            // Join with users to filter by pharmacy
+            const scopingFilter = getBranchScopingFilter(user);
+            // Join with users to filter by pharmacy and branch
             query['userId'] = {
                 $in: await User.find(scopingFilter).distinct('_id'),
             };
@@ -137,7 +140,7 @@ export class UserActivityService {
 
         // Apply data scoping
         if (user.role !== UserRole.SUPER_ADMIN) {
-            const scopingFilter = getPharmacyScopingFilter(user);
+            const scopingFilter = getBranchScopingFilter(user);
             query['userId'] = {
                 $in: await User.find(scopingFilter).distinct('_id'),
             };
@@ -343,7 +346,7 @@ export class UserActivityService {
 
         // Apply data scoping
         if (user.role !== UserRole.SUPER_ADMIN) {
-            const scopingFilter = getPharmacyScopingFilter(user);
+            const scopingFilter = getBranchScopingFilter(user);
             query['userId'] = {
                 $in: await User.find(scopingFilter).distinct('_id'),
             };
@@ -402,7 +405,7 @@ export class UserActivityService {
 
         // Apply data scoping
         if (user.role !== UserRole.SUPER_ADMIN) {
-            const scopingFilter = getPharmacyScopingFilter(user);
+            const scopingFilter = getBranchScopingFilter(user);
             query['userId'] = {
                 $in: await User.find(scopingFilter).distinct('_id'),
             };
@@ -691,33 +694,39 @@ export class UserActivityService {
 
         // Apply data scoping
         if (user.role !== UserRole.SUPER_ADMIN) {
-            const scopingFilter = getPharmacyScopingFilter(user);
+            const scopingFilter = getBranchScopingFilter(user);
             query['userId'] = {
                 $in: await User.find(scopingFilter).distinct('_id'),
             };
         }
 
         const [
-            todayActivities,
-            weeklyActivities,
-            monthlyActivities,
-            topUsers,
+            todayActivity,
+            weeklyActivity,
+            monthlyActivity,
+            topActiveUsers,
             recentActivities,
+            totalSessions,
+            activeSessions,
+            totalUsers,
         ] = await Promise.all([
             this.getActivitiesInPeriod(query, 1),
             this.getActivitiesInPeriod(query, 7),
             this.getActivitiesInPeriod(query, 30),
             this.getTopActiveUsers(query, 5),
             this.getRecentActivities(query, 10),
+            this.getTotalSessions(query),
+            this.getActiveSessionsCount(query),
+            this.getTotalUsers(query),
         ]);
 
         return {
-            summary: {
-                today: todayActivities,
-                thisWeek: weeklyActivities,
-                thisMonth: monthlyActivities,
-            },
-            topUsers,
+            totalSessions,
+            activeSessions,
+            totalUsers,
+            todayActivity,
+            weeklyActivity,
+            topActiveUsers,
             recentActivities,
         };
     }
@@ -787,5 +796,103 @@ export class UserActivityService {
             resource: activity.activity.resource,
             timestamp: activity.timestamp,
         }));
+    }
+
+    /**
+     * Update session status (active/inactive)
+     */
+    async updateSessionStatus(
+        sessionId: string,
+        isActive: boolean,
+    ): Promise<void> {
+        try {
+            await UserActivity.updateMany(
+                { sessionId },
+                {
+                    $set: {
+                        'session.isActive': isActive,
+                        ...(isActive ? {} : { 'session.endTime': new Date() }),
+                    },
+                },
+            );
+        } catch (error) {
+            throw new BadRequestError(
+                `Failed to update session status: ${error}`,
+            );
+        }
+    }
+
+    private async getTotalSessions(baseQuery: any): Promise<number> {
+        const result = await UserActivity.aggregate([
+            { $match: baseQuery },
+            {
+                $group: {
+                    _id: '$sessionId',
+                },
+            },
+            {
+                $count: 'totalSessions',
+            },
+        ]);
+
+        return result.length > 0 ? result[0].totalSessions : 0;
+    }
+
+    private async getActiveSessionsCount(baseQuery: any): Promise<number> {
+        const result = await UserActivity.aggregate([
+            { $match: baseQuery },
+            {
+                $group: {
+                    _id: '$sessionId',
+                    lastActivity: { $max: '$timestamp' },
+                },
+            },
+            {
+                $match: {
+                    lastActivity: {
+                        $gte: new Date(Date.now() - 30 * 60 * 1000), // Active in last 30 minutes
+                    },
+                },
+            },
+            {
+                $count: 'activeSessions',
+            },
+        ]);
+
+        return result.length > 0 ? result[0].activeSessions : 0;
+    }
+
+    private async getTotalUsers(baseQuery: any): Promise<number> {
+        const result = await UserActivity.aggregate([
+            { $match: baseQuery },
+            {
+                $group: {
+                    _id: '$userId',
+                },
+            },
+            {
+                $count: 'totalUsers',
+            },
+        ]);
+
+        return result.length > 0 ? result[0].totalUsers : 0;
+    }
+
+    /**
+     * Alias for cleanupOldActivities (for backward compatibility)
+     */
+    async cleanupOldActivity(daysToKeep: number): Promise<number> {
+        // Create a mock user with SUPER_ADMIN role for internal cleanup
+        const systemUser = {
+            id: 'system',
+            role: UserRole.SUPER_ADMIN,
+            pharmacyId: 'system',
+            branchId: 'system',
+            name: 'System',
+            email: 'system@internal',
+            isFirstSetup: false,
+        } as ITokenPayload;
+
+        return this.cleanupOldActivities(daysToKeep, systemUser);
     }
 }

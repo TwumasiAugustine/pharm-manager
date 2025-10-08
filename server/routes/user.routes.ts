@@ -16,7 +16,7 @@ import {
 import { UserRole } from '../types/user.types';
 import { requirePermission } from '../services/permission.service';
 import { USER_PERMISSIONS } from '../constants/permissions';
-
+import { ensureBranchesExist } from '../middlewares/ensure-branches.middleware';
 import { assignPermissions } from '../controllers/user.controller';
 
 const router = Router();
@@ -46,7 +46,7 @@ router.post(
     csrfProtection,
     requirePermission(USER_PERMISSIONS.CREATE_USER),
     // Prevent creating users until at least one branch exists
-    require('../middlewares/ensure-branches.middleware').ensureBranchesExist,
+    ensureBranchesExist,
     validate(createUserSchema),
     (req, res, next) => controller.createUser(req, res, next),
 );

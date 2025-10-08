@@ -18,6 +18,8 @@ export class AuditLogService {
     async createAuditLog(data: CreateAuditLogRequest): Promise<IAuditLog> {
         const auditLog = new AuditLog({
             userId: data.userId,
+            pharmacyId: data.pharmacyId,
+            branchId: data.branchId,
             action: data.action,
             resource: data.resource,
             resourceId: data.resourceId,
@@ -38,6 +40,8 @@ export class AuditLogService {
     ): Promise<AuditLogsListResponse> {
         const {
             userId,
+            pharmacyId,
+            branchId,
             action,
             resource,
             startDate,
@@ -51,13 +55,17 @@ export class AuditLogService {
         const query: any = {};
 
         if (userId) query.userId = userId;
+        if (pharmacyId) query.pharmacyId = pharmacyId;
+        if (branchId) query.branchId = branchId;
         if (action) query.action = action;
         if (resource) query.resource = resource;
         if (userRole) query['details.userRole'] = userRole;
 
-        // Apply pharmacy-based data scoping
-        const scopingFilter = getPharmacyScopingFilter(user);
-        Object.assign(query, scopingFilter);
+        // Apply pharmacy-based data scoping for non-super-admin users
+        if (user.role !== UserRole.SUPER_ADMIN) {
+            const scopingFilter = getPharmacyScopingFilter(user);
+            Object.assign(query, scopingFilter);
+        }
 
         // Date range filter
         if (startDate || endDate) {
@@ -75,6 +83,8 @@ export class AuditLogService {
         const [logs, total] = await Promise.all([
             AuditLog.find(query)
                 .populate('userId', 'name email role')
+                .populate('pharmacyId', 'name')
+                .populate('branchId', 'name')
                 .sort({ timestamp: -1 })
                 .skip(skip)
                 .limit(limit)
@@ -87,6 +97,10 @@ export class AuditLogService {
             id: log._id.toString(),
             userId: log.userId._id.toString(),
             userName: log.userId.name,
+            pharmacyId: log.pharmacyId?._id?.toString(),
+            pharmacyName: log.pharmacyId?.name || log.details?.pharmacyName,
+            branchId: log.branchId?._id?.toString(),
+            branchName: log.branchId?.name || log.details?.branchName,
             action: log.action,
             resource: log.resource,
             resourceId: log.resourceId,
@@ -120,8 +134,11 @@ export class AuditLogService {
         );
         const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-        // Apply pharmacy-based data scoping
-        const scopingFilter = getPharmacyScopingFilter(user);
+        // Apply pharmacy-based data scoping for non-super-admin users
+        const scopingFilter =
+            user.role !== UserRole.SUPER_ADMIN
+                ? getPharmacyScopingFilter(user)
+                : {};
 
         const [
             totalLogs,

@@ -263,4 +263,57 @@ export class UserActivityController {
             next(error);
         }
     };
+
+    /**
+     * Get active user sessions
+     * @route GET /api/user-activities/active-sessions
+     * @access Private (Admin only)
+     */
+    getActiveSessions = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> => {
+        try {
+            const sessions = await this.userActivityService.getActiveSessions(
+                req.user!,
+            );
+
+            res.status(200).json(
+                successResponse(
+                    sessions,
+                    'Active sessions retrieved successfully',
+                ),
+            );
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    /**
+     * Get user activity summary for dashboard
+     * @route GET /api/user-activities/summary
+     * @access Private
+     */
+    getUserActivitySummary = async (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> => {
+        try {
+            const summary =
+                await this.userActivityService.getUserActivitySummary(
+                    req.user!,
+                );
+
+            res.status(200).json(
+                successResponse(
+                    summary,
+                    'User activity summary retrieved successfully',
+                ),
+            );
+        } catch (error) {
+            next(error);
+        }
+    };
 }

@@ -10,11 +10,9 @@ interface NavItem {
     icon: React.ComponentType<{ className?: string }>;
     label: string;
     match: (pathname: string) => boolean;
-    adminOnly?: boolean;
-    cashierOnly?: boolean;
-    pharmacistOnly?: boolean;
-    superAdminOnly?: boolean;
+    allowedRoles: UserRole[];
 }
+
 import {
     FaSignOutAlt,
     FaUser,
@@ -36,28 +34,76 @@ import {
 } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 
-// Sidebar navigation items
+// Sidebar navigation items with clear role-based access control
 const navItems: NavItem[] = [
+    // Super Admin Only
     {
         to: '/super-admin',
         icon: FaCrown,
-        label: 'Super Admin',
+        label: 'Super Admin Dashboard',
         match: (pathname: string) => pathname === '/super-admin',
-        superAdminOnly: true,
+        allowedRoles: [UserRole.SUPER_ADMIN],
     },
+    {
+        to: '/audit-logs',
+        icon: FaHistory,
+        label: 'Audit Logs',
+        match: (pathname: string) => pathname === '/audit-logs',
+        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+    },
+    {
+        to: '/user-activity',
+        icon: FaUserSecret,
+        label: 'User Activity',
+        match: (pathname: string) => pathname === '/user-activity',
+        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+    },
+    {
+        to: '/cron-management',
+        icon: FaCogs,
+        label: 'Task Management',
+        match: (pathname: string) => pathname === '/cron-management',
+        allowedRoles: [UserRole.SUPER_ADMIN],
+    },
+
+    // Admin Only
+    {
+        to: '/users',
+        icon: FaUsers,
+        label: 'User Management',
+        match: (pathname: string) =>
+            pathname === '/users' || /^\/users\/[^/]+$/.test(pathname),
+        allowedRoles: [UserRole.ADMIN],
+    },
+    {
+        to: '/branches',
+        icon: FaCogs,
+        label: 'Branch Management',
+        match: (pathname: string) => pathname === '/branches',
+        allowedRoles: [UserRole.ADMIN],
+    },
+    {
+        to: '/pharmacy-setup',
+        icon: FaCog,
+        label: 'Pharmacy Settings',
+        match: (pathname: string) => pathname === '/pharmacy-setup',
+        allowedRoles: [UserRole.ADMIN],
+    },
+
+    // Operational Users (Admin, Pharmacist, Cashier)
     {
         to: '/dashboard',
         icon: FaTachometerAlt,
         label: 'Dashboard',
         match: (pathname: string) => pathname === '/dashboard',
-        adminOnly: true,
+        allowedRoles: [UserRole.ADMIN, UserRole.PHARMACIST, UserRole.CASHIER],
     },
     {
         to: '/drugs',
         icon: FaPills,
         label: 'Drug Inventory',
         match: (pathname: string) => pathname === '/drugs',
-        adminOnly: false,
+        allowedRoles: [UserRole.ADMIN, UserRole.PHARMACIST, UserRole.CASHIER],
     },
     {
         to: '/sales',
@@ -67,15 +113,7 @@ const navItems: NavItem[] = [
             pathname === '/sales' ||
             pathname === '/sales/new' ||
             /^\/sales\/[^/]+$/.test(pathname),
-        adminOnly: false,
-    },
-    // Cashier-only: Finalize Sale (Short Code)
-    {
-        to: '/sales/new',
-        icon: FaShoppingCart,
-        label: 'Finalize Sale (Short Code)',
-        match: (pathname: string) => pathname === '/sales/new',
-        cashierOnly: true,
+        allowedRoles: [UserRole.ADMIN, UserRole.PHARMACIST, UserRole.CASHIER],
     },
     {
         to: '/customers',
@@ -83,64 +121,23 @@ const navItems: NavItem[] = [
         label: 'Customers',
         match: (pathname: string) =>
             pathname === '/customers' || /^\/customers\/[^/]+$/.test(pathname),
-        adminOnly: false,
+        allowedRoles: [UserRole.ADMIN, UserRole.PHARMACIST, UserRole.CASHIER],
     },
-    {
-        to: '/users',
-        icon: FaUsers,
-        label: 'Users',
-        match: (pathname: string) =>
-            pathname === '/users' || /^\/users\/[^/]+$/.test(pathname),
-        adminOnly: true,
-    },
+
+    // Pharmacist and Admin
     {
         to: '/expiry',
         icon: FaExclamationTriangle,
         label: 'Expiry Tracker',
         match: (pathname: string) => pathname === '/expiry',
-        pharmacistOnly: true,
-    },
-    {
-        to: '/branches',
-        icon: FaCogs,
-        label: 'Branch Management',
-        match: (pathname: string) => pathname === '/branches',
-        adminOnly: true,
+        allowedRoles: [UserRole.ADMIN, UserRole.PHARMACIST],
     },
     {
         to: '/reports',
         icon: FaChartBar,
         label: 'Reports',
         match: (pathname: string) => pathname === '/reports',
-        pharmacistOnly: true,
-    },
-    {
-        to: '/audit-logs',
-        icon: FaHistory,
-        label: 'Audit Logs',
-        match: (pathname: string) => pathname === '/audit-logs',
-        superAdminOnly: true,
-    },
-    {
-        to: '/user-activity',
-        icon: FaUserSecret,
-        label: 'Activity Tracker',
-        match: (pathname: string) => pathname === '/user-activity',
-        adminOnly: true,
-    },
-    {
-        to: '/cron-management',
-        icon: FaCogs,
-        label: 'Task Management',
-        match: (pathname: string) => pathname === '/cron-management',
-        superAdminOnly: true,
-    },
-    {
-        to: '/pharmacy-setup',
-        icon: FaCog,
-        label: 'Pharmacy Settings',
-        match: (pathname: string) => pathname === '/pharmacy-setup',
-        adminOnly: true,
+        allowedRoles: [UserRole.ADMIN, UserRole.PHARMACIST],
     },
 ];
 
@@ -258,41 +255,12 @@ function Sidebar({
                     }`}
                 >
                     {navItems.map((item) => {
-                        // Handle role-based access control
                         const userRole = user?.role;
 
-                        // Enforce special visibility rules:
-                        // - Super Admin should only see the Super Admin link
-                        // - Admin should see all management links except Super Admin
-                        if (userRole === UserRole.SUPER_ADMIN) {
-                            // If the logged in user is Super Admin, only allow
-                            // items explicitly marked as superAdminOnly
-                            if (!item.superAdminOnly) return null;
-                        }
-
-                        if (userRole === UserRole.ADMIN) {
-                            // Admin should never see Super Admin link
-                            if (item.superAdminOnly) return null;
-                        }
-
-                        // Super Admin and Admin exceptions are handled above.
-                        // Now apply the existing per-item restrictions for other roles.
-
-                        // Admin-only items (visible to Admins only)
-                        if (item.adminOnly && userRole !== UserRole.ADMIN) {
-                            return null;
-                        }
-
-                        // Cashier-only items
-                        if (item.cashierOnly && userRole !== UserRole.CASHIER) {
-                            return null;
-                        }
-
-                        // Pharmacist-only items (also visible to Admin)
+                        // Simple role-based access control: check if user's role is in allowed roles
                         if (
-                            item.pharmacistOnly &&
-                            userRole !== UserRole.PHARMACIST &&
-                            userRole !== UserRole.ADMIN
+                            !userRole ||
+                            !item.allowedRoles.includes(userRole)
                         ) {
                             return null;
                         }

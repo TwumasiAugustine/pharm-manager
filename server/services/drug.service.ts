@@ -88,21 +88,15 @@ export class DrugService {
     /**
      * Get a drug by ID
      * @param id The drug ID
-     * @param userRole The role of the user requesting the drug
-     * @param userBranchId The branch ID of the user requesting the drug
+     * @param user The authenticated user (for data scoping)
      * @returns The drug
      */
-    async getDrugById(
-        id: string,
-        userRole?: UserRole,
-        userBranchId?: string,
-    ): Promise<any> {
+    async getDrugById(id: string, user: ITokenPayload): Promise<any> {
         let query: any = { _id: id };
 
-        // If not admin, filter by branch
-        if (userRole && userRole !== UserRole.ADMIN && userBranchId) {
-            query.branch = userBranchId;
-        }
+        // Apply data scoping based on user role and pharmacy/branch assignment
+        const scopingFilter = getBranchScopingFilter(user);
+        Object.assign(query, scopingFilter);
 
         const drug = await Drug.findOne(query);
 
@@ -117,23 +111,21 @@ export class DrugService {
      * Update a drug
      * @param id The drug ID
      * @param updateData The data to update
-     * @param userRole The role of the user updating the drug
-     * @param userBranchId The branch ID of the user updating the drug
+     * @param user The authenticated user (for data scoping)
      * @returns The updated drug
      */
     async updateDrug(
         id: string,
         updateData: IUpdateDrugRequest,
-        userRole: UserRole,
-        userBranchId?: string,
+        user: ITokenPayload,
     ): Promise<any> {
         // Only admin can update drugs
-        if (userRole !== UserRole.ADMIN) {
+        if (user.role !== UserRole.ADMIN) {
             throw new ForbiddenError('Only admin can update drugs');
         }
 
         // Get the existing drug first to verify access (this now returns mapped response)
-        const existingDrug = await this.getDrugById(id, userRole, userBranchId);
+        const existingDrug = await this.getDrugById(id, user);
 
         // Convert the mapped response back to get the raw branch for batch number check
         const rawDrug = await Drug.findById(id);
@@ -190,21 +182,16 @@ export class DrugService {
     /**
      * Delete a drug
      * @param id The drug ID
-     * @param userRole The role of the user deleting the drug
-     * @param userBranchId The branch ID of the user deleting the drug
+     * @param user The authenticated user (for data scoping)
      */
-    async deleteDrug(
-        id: string,
-        userRole: UserRole,
-        userBranchId?: string,
-    ): Promise<void> {
+    async deleteDrug(id: string, user: ITokenPayload): Promise<void> {
         // Only admin can delete drugs
-        if (userRole !== UserRole.ADMIN) {
+        if (user.role !== UserRole.ADMIN) {
             throw new ForbiddenError('Only admin can delete drugs');
         }
 
         // Verify drug exists and user has access
-        await this.getDrugById(id, userRole, userBranchId);
+        await this.getDrugById(id, user);
 
         const result = await Drug.findByIdAndDelete(id);
 
@@ -302,41 +289,32 @@ export class DrugService {
 
     /**
      * Get list of unique drug categories
-     * @param userRole The role of the user requesting categories
-     * @param userBranchId The branch ID of the user requesting categories
+     * @param user The authenticated user (for data scoping)
      * @returns Array of category names
      */
-    async getCategories(
-        userRole?: UserRole,
-        userBranchId?: string,
-    ): Promise<string[]> {
-        // Build filter for branch-based access
-        const filter: any = {};
-        if (userRole && userRole !== UserRole.ADMIN && userBranchId) {
-            filter.branch = userBranchId;
-        }
+    async getCategories(user: ITokenPayload): Promise<string[]> {
+        // Apply data scoping based on user role and pharmacy/branch assignment
+        const scopingFilter = getBranchScopingFilter(user);
 
-        const categories = await Drug.distinct('category', filter);
+        const categories = await Drug.distinct('category', scopingFilter);
         return categories;
     }
 
     /**
      * Check if drugs are about to expire
      * @param days Number of days to check
-     * @param userRole The role of the user requesting expiring drugs
-     * @param userBranchId The branch ID of the user requesting expiring drugs
+     * @param user The authenticated user (for data scoping)
      * @returns List of drugs expiring in the specified days
      */
     async getExpiringDrugs(
         days: number,
-        userRole?: UserRole,
-        userBranchId?: string,
+        user: ITokenPayload,
     ): Promise<IDrug[]> {
         const today = new Date();
         const futureDate = new Date();
         futureDate.setDate(today.getDate() + days);
 
-        // Build query with branch filtering
+        // Build query with data scoping
         const query: any = {
             expiryDate: {
                 $gte: today,
@@ -344,10 +322,9 @@ export class DrugService {
             },
         };
 
-        // Add branch filter for non-admin users
-        if (userRole && userRole !== UserRole.ADMIN && userBranchId) {
-            query.branch = userBranchId;
-        }
+        // Apply data scoping based on user role and pharmacy/branch assignment
+        const scopingFilter = getBranchScopingFilter(user);
+        Object.assign(query, scopingFilter);
 
         const expiringDrugs = await Drug.find(query);
         return expiringDrugs;

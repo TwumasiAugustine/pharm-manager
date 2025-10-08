@@ -3,8 +3,18 @@ import { IUser } from '../types/auth.types';
 
 export interface IAuditLog extends Document {
     userId: Types.ObjectId | IUser;
+    pharmacyId?: Types.ObjectId;
+    branchId?: Types.ObjectId;
     action: 'LOGIN' | 'LOGOUT' | 'CREATE' | 'UPDATE' | 'DELETE' | 'VIEW';
-    resource: 'USER' | 'DRUG' | 'SALE' | 'CUSTOMER' | 'REPORT' | 'SYSTEM';
+    resource:
+        | 'USER'
+        | 'DRUG'
+        | 'SALE'
+        | 'CUSTOMER'
+        | 'REPORT'
+        | 'SYSTEM'
+        | 'BRANCH'
+        | 'PHARMACY';
     resourceId?: string;
     details: {
         description: string;
@@ -13,6 +23,8 @@ export interface IAuditLog extends Document {
         userRole?: string;
         ipAddress?: string;
         userAgent?: string;
+        pharmacyName?: string;
+        branchName?: string;
     };
     timestamp: Date;
     createdAt: Date;
@@ -26,6 +38,14 @@ const auditLogSchema = new Schema<IAuditLog>(
             ref: 'User',
             required: true,
         },
+        pharmacyId: {
+            type: Schema.Types.ObjectId,
+            ref: 'PharmacyInfo',
+        },
+        branchId: {
+            type: Schema.Types.ObjectId,
+            ref: 'Branch',
+        },
         action: {
             type: String,
             enum: ['LOGIN', 'LOGOUT', 'CREATE', 'UPDATE', 'DELETE', 'VIEW'],
@@ -33,7 +53,16 @@ const auditLogSchema = new Schema<IAuditLog>(
         },
         resource: {
             type: String,
-            enum: ['USER', 'DRUG', 'SALE', 'CUSTOMER', 'REPORT', 'SYSTEM'],
+            enum: [
+                'USER',
+                'DRUG',
+                'SALE',
+                'CUSTOMER',
+                'REPORT',
+                'SYSTEM',
+                'BRANCH',
+                'PHARMACY',
+            ],
             required: true,
         },
         resourceId: {
@@ -59,6 +88,12 @@ const auditLogSchema = new Schema<IAuditLog>(
             userAgent: {
                 type: String,
             },
+            pharmacyName: {
+                type: String,
+            },
+            branchName: {
+                type: String,
+            },
         },
         timestamp: {
             type: Date,
@@ -72,9 +107,13 @@ const auditLogSchema = new Schema<IAuditLog>(
 
 // Indexes for better query performance
 auditLogSchema.index({ userId: 1 });
+auditLogSchema.index({ pharmacyId: 1 });
+auditLogSchema.index({ branchId: 1 });
 auditLogSchema.index({ action: 1 });
 auditLogSchema.index({ resource: 1 });
 auditLogSchema.index({ timestamp: -1 });
 auditLogSchema.index({ 'details.userRole': 1 });
+auditLogSchema.index({ pharmacyId: 1, timestamp: -1 });
+auditLogSchema.index({ branchId: 1, timestamp: -1 });
 
 export const AuditLog = model<IAuditLog>('AuditLog', auditLogSchema);

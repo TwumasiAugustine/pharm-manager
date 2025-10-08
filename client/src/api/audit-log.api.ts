@@ -4,6 +4,7 @@ import type {
     AuditLogsListResponse,
     AuditLogStatsResponse,
     AuditLogResponse,
+    PlatformAuditStatsResponse,
 } from '../types/audit-log.types';
 
 /**
@@ -19,6 +20,8 @@ export const auditLogApi = {
         const params = new URLSearchParams();
 
         if (filters.userId) params.append('userId', filters.userId);
+        if (filters.pharmacyId) params.append('pharmacyId', filters.pharmacyId);
+        if (filters.branchId) params.append('branchId', filters.branchId);
         if (filters.action) params.append('action', filters.action);
         if (filters.resource) params.append('resource', filters.resource);
         if (filters.startDate) params.append('startDate', filters.startDate);
@@ -55,6 +58,26 @@ export const auditLogApi = {
     ): Promise<{ deletedCount: number }> => {
         const response = await api.delete(
             `/audit-logs/cleanup?days=${daysToKeep}`,
+        );
+        return response.data.data;
+    },
+
+    /**
+     * Get platform-wide audit log statistics (Super Admin only)
+     */
+    getPlatformStats: async (): Promise<PlatformAuditStatsResponse> => {
+        const response = await api.get('/audit-logs/platform-stats');
+        return response.data.data;
+    },
+
+    /**
+     * Get recent security alerts (Super Admin only)
+     */
+    getSecurityAlerts: async (
+        hours: number = 24,
+    ): Promise<AuditLogResponse[]> => {
+        const response = await api.get(
+            `/audit-logs/security-alerts?hours=${hours}`,
         );
         return response.data.data;
     },

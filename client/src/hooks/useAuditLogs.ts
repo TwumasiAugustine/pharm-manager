@@ -5,6 +5,7 @@ import type {
     AuditLogsListResponse,
     AuditLogStatsResponse,
     AuditLogResponse,
+    PlatformAuditStatsResponse,
 } from '../types/audit-log.types';
 import { useSafeNotify } from '../utils/useSafeNotify';
 
@@ -19,6 +20,10 @@ export const AUDIT_LOG_QUERY_KEYS = {
     details: () => [...AUDIT_LOG_QUERY_KEYS.all, 'detail'] as const,
     detail: (id: string) => [...AUDIT_LOG_QUERY_KEYS.details(), id] as const,
     stats: () => [...AUDIT_LOG_QUERY_KEYS.all, 'stats'] as const,
+    platformStats: () =>
+        [...AUDIT_LOG_QUERY_KEYS.all, 'platformStats'] as const,
+    securityAlerts: (hours: number) =>
+        [...AUDIT_LOG_QUERY_KEYS.all, 'securityAlerts', hours] as const,
 };
 
 /**
@@ -87,4 +92,26 @@ export const useRefreshAuditLogs = () => {
     return () => {
         queryClient.invalidateQueries({ queryKey: AUDIT_LOG_QUERY_KEYS.all });
     };
+};
+
+/**
+ * Hook to get platform-wide audit log statistics (Super Admin only)
+ */
+export const usePlatformAuditStats = () => {
+    return useQuery<PlatformAuditStatsResponse, Error>({
+        queryKey: AUDIT_LOG_QUERY_KEYS.platformStats(),
+        queryFn: auditLogApi.getPlatformStats,
+        staleTime: 1000 * 60 * 10, // 10 minutes
+    });
+};
+
+/**
+ * Hook to get recent security alerts (Super Admin only)
+ */
+export const useSecurityAlerts = (hours: number = 24) => {
+    return useQuery<AuditLogResponse[], Error>({
+        queryKey: AUDIT_LOG_QUERY_KEYS.securityAlerts(hours),
+        queryFn: () => auditLogApi.getSecurityAlerts(hours),
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
 };

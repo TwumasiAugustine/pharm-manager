@@ -29,16 +29,23 @@ const UnauthorizedPage = () => {
                         </p>
                         <p className="mt-2 text-center text-sm text-gray-600">
                             Current role:{' '}
-                            <span className="font-medium">{user?.role}</span>
+                            <span className="font-medium uppercase">{user?.role}</span>
                         </p>
                     </div>
 
                     <div className="mt-8">
-                        <Link to="/dashboard">
+                        {user?.role === 'super_admin' ?
+                        <Link to="/super-admin">
                             <Button variant="primary" className="w-full">
                                 Return to Dashboard
                             </Button>
                         </Link>
+                        :  <Link to="/dashboard">
+                            <Button variant="primary" className="w-full">
+                                Return to Dashboard
+                            </Button>
+                        </Link>
+                        }
                     </div>
                 </div>
             </div>

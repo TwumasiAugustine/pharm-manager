@@ -56,6 +56,24 @@ router.get(
 );
 
 /**
+ * @route   GET /api/user-activities/active-sessions
+ * @desc    Get all active user sessions (Admin level access)
+ * @access  Private (Admin level for user oversight)
+ */
+router.get(
+    '/active-sessions',
+    requirePermission(USER_PERMISSIONS.VIEW_USER_ACTIVITY),
+    userActivityController.getActiveSessions,
+);
+
+/**
+ * @route   GET /api/user-activities/summary
+ * @desc    Get user activity summary for dashboard
+ * @access  Private
+ */
+router.get('/summary', userActivityController.getUserActivitySummary);
+
+/**
  * @route   DELETE /api/user-activities/cleanup
  * @desc    Clean up old activity records (Admin level access)
  * @access  Private (Admin level for system maintenance)

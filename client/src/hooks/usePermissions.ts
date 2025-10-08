@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNotify } from './useNotify';
 import * as permissionApi from '../api/permission.api';
-
+import { UserRole } from '../types/user.types';
 // Hook for getting all permissions
 export const useAllPermissions = () => {
     return useQuery({
@@ -191,16 +191,16 @@ export const usePermissions = () => {
             const currentRole = userPermissions.user.role;
 
             // Role hierarchy checks based on new system
-            if (currentRole === 'super_admin') {
+            if (currentRole === UserRole.SUPER_ADMIN) {
                 // Super admin can only manage admins
-                return targetUserRole === 'admin';
+                return targetUserRole === UserRole.ADMIN;
             }
 
-            if (currentRole === 'admin') {
+            if (currentRole === UserRole.ADMIN) {
                 // Admin can manage pharmacists and cashiers
                 return (
-                    targetUserRole === 'pharmacist' ||
-                    targetUserRole === 'cashier'
+                    targetUserRole === UserRole.PHARMACIST ||
+                    targetUserRole === UserRole.CASHIER
                 );
             }
 
@@ -217,14 +217,14 @@ export const usePermissions = () => {
             const currentRole = userPermissions.user.role;
 
             // Role hierarchy for user creation
-            if (currentRole === 'super_admin') {
-                return targetUserRole === 'admin';
+            if (currentRole === UserRole.SUPER_ADMIN) {
+                return targetUserRole === UserRole.ADMIN;
             }
 
-            if (currentRole === 'admin') {
+            if (currentRole === UserRole.ADMIN) {
                 return (
-                    targetUserRole === 'pharmacist' ||
-                    targetUserRole === 'cashier'
+                    targetUserRole === UserRole.PHARMACIST ||
+                    targetUserRole === UserRole.CASHIER
                 );
             }
 
@@ -239,12 +239,12 @@ export const usePermissions = () => {
         const currentRole = userPermissions.user.role;
 
         switch (currentRole) {
-            case 'super_admin':
+            case UserRole.SUPER_ADMIN:
                 return 'system';
-            case 'admin':
+            case UserRole.ADMIN:
                 return 'pharmacy';
-            case 'pharmacist':
-            case 'cashier':
+            case UserRole.PHARMACIST:
+            case UserRole.CASHIER:
             default:
                 return 'branch';
         }
@@ -256,7 +256,7 @@ export const usePermissions = () => {
         const currentRole = userPermissions.user.role;
 
         // Super admin cannot access operational features (sales, inventory, etc.)
-        return currentRole !== 'super_admin';
+        return currentRole !== UserRole.SUPER_ADMIN;
     }, [userPermissions, isLoading]);
 
     const canAccessSystemFeatures = useCallback((): boolean => {
@@ -265,7 +265,7 @@ export const usePermissions = () => {
         const currentRole = userPermissions.user.role;
 
         // Only super admin can access system-level features
-        return currentRole === 'super_admin';
+        return currentRole === UserRole.SUPER_ADMIN;
     }, [userPermissions, isLoading]);
 
     const isManager = useCallback((): boolean => {

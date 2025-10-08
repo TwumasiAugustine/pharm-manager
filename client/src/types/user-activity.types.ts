@@ -156,3 +156,28 @@ export interface UserSessionResponse {
     message: string;
     data: UserSessionInfo;
 }
+
+export interface ActiveSessionsResponse {
+    success: boolean;
+    message: string;
+    data: UserSessionInfo[];
+}
+
+export interface UserActivitySummaryResponse {
+    success: boolean;
+    message: string;
+    data: {
+        totalSessions: number;
+        activeSessions: number;
+        totalUsers: number;
+        todayActivity: number;
+        weeklyActivity: number;
+        topActiveUsers: Array<{
+            userId: string;
+            userName: string;
+            activityCount: number;
+            lastActivity: string;
+        }>;
+        recentActivities: UserActivity[];
+    };
+}

@@ -23,6 +23,8 @@ export class AuditLogController {
         try {
             const filters: AuditLogFilters = {
                 userId: req.query.userId as string,
+                pharmacyId: req.query.pharmacyId as string,
+                branchId: req.query.branchId as string,
                 action: req.query.action as any,
                 resource: req.query.resource as any,
                 startDate: req.query.startDate as string,

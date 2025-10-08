@@ -4,6 +4,8 @@ import type {
     UserActivityResponse,
     UserActivityStatsResponse,
     UserSessionResponse,
+    ActiveSessionsResponse,
+    UserActivitySummaryResponse,
 } from '../types/user-activity.types';
 
 /**
@@ -81,6 +83,22 @@ export const userActivityApi = {
         const response = await api.get(
             `/user-activities/sessions/${sessionId}`,
         );
+        return response.data;
+    },
+
+    /**
+     * Get all active user sessions (Admin only)
+     */
+    getActiveSessions: async (): Promise<ActiveSessionsResponse> => {
+        const response = await api.get('/user-activities/active-sessions');
+        return response.data;
+    },
+
+    /**
+     * Get user activity summary for dashboard
+     */
+    getUserActivitySummary: async (): Promise<UserActivitySummaryResponse> => {
+        const response = await api.get('/user-activities/summary');
         return response.data;
     },
 

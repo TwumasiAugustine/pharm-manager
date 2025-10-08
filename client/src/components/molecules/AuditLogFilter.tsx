@@ -125,6 +125,8 @@ export const AuditLogFilter: React.FC<AuditLogFilterProps> = ({
                         <option value="CUSTOMER">Customer</option>
                         <option value="REPORT">Report</option>
                         <option value="SYSTEM">System</option>
+                        <option value="BRANCH">Branch</option>
+                        <option value="PHARMACY">Pharmacy</option>
                     </select>
                 </div>
 
@@ -151,7 +153,54 @@ export const AuditLogFilter: React.FC<AuditLogFilterProps> = ({
                         <option value="ADMIN">Admin</option>
                         <option value="PHARMACIST">Pharmacist</option>
                         <option value="CASHIER">Cashier</option>
+                        <option value="SUPER_ADMIN">Super Admin</option>
                     </select>
+                </div>
+
+                {/* Pharmacy Filter */}
+                <div>
+                    <label
+                        htmlFor="pharmacy-filter"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                        Pharmacy
+                    </label>
+                    <input
+                        id="pharmacy-filter"
+                        type="text"
+                        value={filters.pharmacyId || ''}
+                        onChange={(e) =>
+                            handleFilterChange(
+                                'pharmacyId',
+                                e.target.value || undefined,
+                            )
+                        }
+                        placeholder="Pharmacy ID"
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+
+                {/* Branch Filter */}
+                <div>
+                    <label
+                        htmlFor="branch-filter"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                        Branch
+                    </label>
+                    <input
+                        id="branch-filter"
+                        type="text"
+                        value={filters.branchId || ''}
+                        onChange={(e) =>
+                            handleFilterChange(
+                                'branchId',
+                                e.target.value || undefined,
+                            )
+                        }
+                        placeholder="Branch ID"
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                 </div>
 
                 {/* Limit Filter */}

@@ -59,6 +59,31 @@ export const useUserSession = (
 };
 
 /**
+ * Hook to fetch all active user sessions (Admin only)
+ */
+export const useActiveSessions = () => {
+    return useQuery({
+        queryKey: [USER_ACTIVITY_QUERY_KEY, 'active-sessions'],
+        queryFn: () => userActivityApi.getActiveSessions(),
+        staleTime: 1000 * 30, // 30 seconds
+        refetchInterval: 1000 * 60, // Refetch every minute for real-time updates
+        select: (data) => data.data,
+    });
+};
+
+/**
+ * Hook to fetch user activity summary for dashboard
+ */
+export const useUserActivitySummary = () => {
+    return useQuery({
+        queryKey: [USER_ACTIVITY_QUERY_KEY, 'summary'],
+        queryFn: () => userActivityApi.getUserActivitySummary(),
+        staleTime: 1000 * 60 * 2, // 2 minutes
+        select: (data) => data.data,
+    });
+};
+
+/**
  * Hook to clean up old activity records (Admin only)
  */
 export const useCleanupOldActivities = () => {

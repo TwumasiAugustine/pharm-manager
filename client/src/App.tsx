@@ -17,7 +17,6 @@ import NavigationLoader from './components/molecules/NavigationLoader';
 // Eagerly import critical entry pages to avoid blocking Suspense
 import Homepage from './pages/Homepage';
 import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
 
 // Lazy load the rest of the pages
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -138,13 +137,10 @@ function App() {
                                         element={<LoginPage />}
                                     />
                                     <Route
-                                        path="/register"
-                                        element={<RegisterPage />}
-                                    />
-                                    <Route
                                         path="/unauthorized"
                                         element={<UnauthorizedPage />}
                                     />
+                                    {/* Routes available to all authenticated users */}
                                     <Route element={<ProtectedRoute />}>
                                         <Route
                                             path="/drugs"
@@ -183,33 +179,18 @@ function App() {
                                             element={<ReportsPage />}
                                         />
                                     </Route>
+
+                                    {/* Super Admin and Admin Routes */}
                                     <Route
                                         element={
                                             <ProtectedRoute
-                                                allowedRoles={[UserRole.ADMIN]}
+                                                allowedRoles={[
+                                                    UserRole.SUPER_ADMIN,
+                                                    UserRole.ADMIN,
+                                                ]}
                                             />
                                         }
                                     >
-                                        <Route
-                                            path="/dashboard"
-                                            element={<DashboardPage />}
-                                        />
-                                    </Route>
-                                    <Route
-                                        element={
-                                            <ProtectedRoute
-                                                allowedRoles={[UserRole.ADMIN]}
-                                            />
-                                        }
-                                    >
-                                        <Route
-                                            path="/branches"
-                                            element={<BranchManagementPage />}
-                                        />
-                                        <Route
-                                            path="/pharmacy-setup"
-                                            element={<PharmacySetupPage />}
-                                        />
                                         <Route
                                             path="/audit-logs"
                                             element={<AuditLogsPage />}
@@ -218,15 +199,9 @@ function App() {
                                             path="/user-activity"
                                             element={<UserActivityPage />}
                                         />
-                                        <Route
-                                            path="/cron-management"
-                                            element={<CronManagementPage />}
-                                        />
-                                        <Route
-                                            path="/users"
-                                            element={<UserManagementPage />}
-                                        />
                                     </Route>
+
+                                    {/* Super Admin Only Routes */}
                                     <Route
                                         element={
                                             <ProtectedRoute
@@ -239,6 +214,53 @@ function App() {
                                         <Route
                                             path="/super-admin"
                                             element={<SuperAdminDashboard />}
+                                        />
+                                        <Route
+                                            path="/cron-management"
+                                            element={<CronManagementPage />}
+                                        />
+                                    </Route>
+
+                                    {/* Admin Only Routes */}
+                                    <Route
+                                        element={
+                                            <ProtectedRoute
+                                                allowedRoles={[UserRole.ADMIN]}
+                                            />
+                                        }
+                                    >
+                                        <Route
+                                            path="/dashboard"
+                                            element={<DashboardPage />}
+                                        />
+                                        <Route
+                                            path="/branches"
+                                            element={<BranchManagementPage />}
+                                        />
+                                        <Route
+                                            path="/pharmacy-setup"
+                                            element={<PharmacySetupPage />}
+                                        />
+                                        <Route
+                                            path="/users"
+                                            element={<UserManagementPage />}
+                                        />
+                                    </Route>
+
+                                    {/* Operational Staff Routes (Pharmacist & Cashier) */}
+                                    <Route
+                                        element={
+                                            <ProtectedRoute
+                                                allowedRoles={[
+                                                    UserRole.PHARMACIST,
+                                                    UserRole.CASHIER,
+                                                ]}
+                                            />
+                                        }
+                                    >
+                                        <Route
+                                            path="/operational"
+                                            element={<DashboardPage />}
                                         />
                                     </Route>
                                     <Route
