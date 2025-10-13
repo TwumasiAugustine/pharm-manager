@@ -131,7 +131,10 @@ function App() {
 
                             <Suspense fallback={<PageLoadingScreen />}>
                                 <Routes>
-                                    <Route path="/" element={<Homepage />} />
+                                    <Route
+                                        path="/"
+                                        element={<Homepage />}
+                                    />
                                     <Route
                                         path="/login"
                                         element={<LoginPage />}
@@ -177,6 +180,22 @@ function App() {
                                         <Route
                                             path="/reports"
                                             element={<ReportsPage />}
+                                        />
+                                    </Route>
+                                    {/* Operational Staff Routes (Pharmacist & Cashier) */}
+                                    <Route
+                                        element={
+                                            <ProtectedRoute
+                                                allowedRoles={[
+                                                    UserRole.PHARMACIST,
+                                                    UserRole.CASHIER,
+                                                ]}
+                                            />
+                                        }
+                                    >
+                                        <Route
+                                            path="/operational"
+                                            element={<DashboardPage />}
                                         />
                                     </Route>
                                     {/* Super Admin Only Routes */}
@@ -230,23 +249,8 @@ function App() {
                                             path="/users"
                                             element={<UserManagementPage />}
                                         />
-                                    </Route>{' '}
-                                    {/* Operational Staff Routes (Pharmacist & Cashier) */}
-                                    <Route
-                                        element={
-                                            <ProtectedRoute
-                                                allowedRoles={[
-                                                    UserRole.PHARMACIST,
-                                                    UserRole.CASHIER,
-                                                ]}
-                                            />
-                                        }
-                                    >
-                                        <Route
-                                            path="/operational"
-                                            element={<DashboardPage />}
-                                        />
                                     </Route>
+                                    {/* Root path - redirect based on authentication */}
                                     <Route
                                         path="*"
                                         element={<NotFoundPage />}

@@ -388,8 +388,7 @@ const PharmacySetupPage: React.FC = () => {
 
                         {/* Expired Sale Monitoring */}
                         {requireShortCode &&
-                            (user?.role === UserRole.ADMIN ||
-                                user?.role === UserRole.SUPER_ADMIN) && (
+                            (user?.role === UserRole.ADMIN ) && (
                                 <ExpiredSaleStatsCard />
                             )}
 

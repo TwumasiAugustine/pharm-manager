@@ -16,17 +16,12 @@ import userActivityRoutes from './user-activity.routes';
 import cronRoutes from './cron.routes';
 import expiredSaleCleanupRoutes from './expired-sale-cleanup.routes';
 import permissionRoutes from './permission.routes';
+import healthRoutes from './health.routes';
 
 const router = Router();
 
-// Health check route
-router.get('/health', (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: 'Server is running',
-        timestamp: new Date().toISOString(),
-    });
-});
+// Health routes
+router.use('/health', healthRoutes);
 
 // CSRF token endpoint for frontend to fetch and set CSRF cookie
 

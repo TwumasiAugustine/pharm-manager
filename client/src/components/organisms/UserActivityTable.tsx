@@ -1,4 +1,5 @@
-import React from 'react';
+import React
+from 'react';
 import { Table } from '../molecules/Table';
 import type { TableColumn } from '../molecules/Table';
 import { Pagination } from '../molecules/Pagination';

@@ -9,9 +9,11 @@ import {
     FiInstagram,
     FiArrowRight,
 } from 'react-icons/fi';
+import { useSystemHealth } from '../../hooks/useHealth';
 
 export const Footer: React.FC = () => {
     const currentYear = new Date().getFullYear();
+    const { data: systemHealth, isLoading: healthLoading } = useSystemHealth();
 
     const quickLinks = [
         { name: 'Features', href: '#features' },
@@ -243,8 +245,55 @@ export const Footer: React.FC = () => {
                             <span>Serving pharmacies globally</span>
                             <span>•</span>
                             <span className="flex items-center gap-1">
-                                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                                All systems operational
+                                {healthLoading ? (
+                                    <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                                ) : (
+                                    <div
+                                        className={`w-2 h-2 rounded-full ${
+                                            systemHealth?.status ===
+                                            'operational'
+                                                ? 'bg-green-400 animate-pulse'
+                                                : systemHealth?.status ===
+                                                  'degraded'
+                                                ? 'bg-yellow-400 animate-pulse'
+                                                : systemHealth?.status ===
+                                                  'maintenance'
+                                                ? 'bg-blue-400 animate-pulse'
+                                                : 'bg-red-400 animate-pulse'
+                                        }`}
+                                        title={`System Status: ${
+                                            systemHealth?.status || 'Unknown'
+                                        } | Response Time: ${
+                                            systemHealth?.responseTime?.toFixed(
+                                                0,
+                                            ) || 'N/A'
+                                        }ms | Last Check: ${
+                                            systemHealth?.lastChecked
+                                                ? new Date(
+                                                      systemHealth.lastChecked,
+                                                  ).toLocaleTimeString()
+                                                : 'N/A'
+                                        }`}
+                                    ></div>
+                                )}
+                                <span>
+                                    {
+                                        healthLoading
+                                            ? 'Checking system status...'
+                                            : systemHealth?.status ===
+                                              'operational'
+                                            ? 'All systems operational'
+                                            : systemHealth?.status ===
+                                              'degraded'
+                                            ? 'Some services degraded'
+                                            : systemHealth?.status ===
+                                              'maintenance'
+                                            ? 'Under maintenance'
+                                            : systemHealth?.status === 'outage'
+                                            ? 'Service outage detected'
+                                            : 'All systems operational' // Default to operational for fallback data
+                                    }
+                                </span>
                             </span>
                         </div>
                     </div>

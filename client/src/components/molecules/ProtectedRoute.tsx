@@ -58,6 +58,30 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
         return <Navigate to="/super-admin" replace />;
     }
 
+    // Handle root path redirects based on user role
+    if (location.pathname === '/') {
+        switch (user?.role) {
+            case UserRole.SUPER_ADMIN:
+                return <Navigate to="/super-admin" replace />;
+            case UserRole.ADMIN:
+                return <Navigate to="/dashboard" replace />;
+            case UserRole.PHARMACIST:
+            case UserRole.CASHIER:
+                return <Navigate to="/operational" replace />;
+            default:
+                return <Navigate to="/unauthorized" replace />;
+        }
+    }
+
+    // Redirect cashiers and pharmacists to operational dashboard if they try to access admin dashboard
+    if (
+        (user?.role === UserRole.CASHIER ||
+            user?.role === UserRole.PHARMACIST) &&
+        location.pathname === '/dashboard'
+    ) {
+        return <Navigate to="/operational" replace />;
+    }
+
     // If pharmacy is not configured
     if (!isPharmacyConfigured) {
         // Only ADMINs should be forced into the local pharmacy setup flow.

@@ -397,7 +397,9 @@ class CronJobService {
                 });
 
                 const cleanedUpCount =
-                    await ExpiredSaleCleanupService.cleanupExpiredSales();
+                    await ExpiredSaleCleanupService.cleanupExpiredSales(
+                        'automatic',
+                    );
 
                 // Emit job completed
                 const duration = Date.now() - startTime;

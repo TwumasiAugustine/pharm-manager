@@ -6,14 +6,20 @@
 import { Sale } from '../models/sale.model';
 import PharmacyInfo from '../models/pharmacy-info.model';
 import { Drug } from '../models/drug.model';
+import { ExpiredSaleCleanupHistory } from '../models/expired-sale-cleanup-history.model';
 import { Types } from 'mongoose';
 
 export class ExpiredSaleCleanupService {
     /**
      * Find and cleanup expired unfinalised sales
+     * @param operationType - Whether this is automatic or manual cleanup
+     * @param triggeredBy - User ID for manual cleanups
      * @returns Number of sales cleaned up
      */
-    static async cleanupExpiredSales(): Promise<number> {
+    static async cleanupExpiredSales(
+        operationType: 'automatic' | 'manual' = 'automatic',
+        triggeredBy?: string,
+    ): Promise<number> {
         try {
             console.log('🧹 Starting expired sale cleanup...');
 
@@ -67,6 +73,26 @@ export class ExpiredSaleCleanupService {
                     );
                     // Continue with other sales even if one fails
                 }
+            }
+
+            // Record cleanup history if any sales were cleaned up
+            if (cleanedUpCount > 0) {
+                const totalValue = expiredSales.reduce(
+                    (sum, sale) => sum + (sale.totalAmount || 0),
+                    0,
+                );
+
+                await ExpiredSaleCleanupHistory.create({
+                    cleanedUpCount,
+                    totalValue,
+                    operationType,
+                    triggeredBy,
+                    cleanupDate: new Date(),
+                });
+
+                console.log(
+                    `📊 Cleanup history recorded: ${cleanedUpCount} sales, ${totalValue} total value`,
+                );
             }
 
             console.log(
@@ -143,16 +169,28 @@ export class ExpiredSaleCleanupService {
 
     /**
      * Get expired sale statistics without cleaning up
-     * @returns Object with expired sale counts and details
+     * @returns Object with expired sale counts and details including cleanup history
      */
     static async getExpiredSaleStats(): Promise<{
-        count: number;
+        expiredSalesCount: number;
         totalValue: number;
-        oldestExpired?: Date;
+        totalExpiredSales: number;
+        totalSalesAffected: number;
+        oldestExpired?: string;
+        totalCleaned: number;
+        lastCleanupTime?: string;
     }> {
         const pharmacyInfo = await PharmacyInfo.findOne();
         if (!pharmacyInfo?.requireSaleShortCode) {
-            return { count: 0, totalValue: 0 };
+            // Get cleanup history even if feature is disabled
+            const cleanupStats = await this.getCleanupHistoryStats();
+            return {
+                expiredSalesCount: 0,
+                totalValue: 0,
+                totalExpiredSales: 0,
+                totalSalesAffected: 0,
+                ...cleanupStats,
+            };
         }
 
         const expiryMinutes = pharmacyInfo.shortCodeExpiryMinutes || 15;
@@ -164,14 +202,69 @@ export class ExpiredSaleCleanupService {
             createdAt: { $lt: expiryTime },
         }).sort({ createdAt: 1 });
 
-        const count = expiredSales.length;
+        const expiredSalesCount = expiredSales.length;
         const totalValue = expiredSales.reduce(
             (sum, sale) => sum + (sale.totalAmount || 0),
             0,
         );
         const oldestExpired =
-            expiredSales.length > 0 ? expiredSales[0].createdAt : undefined;
+            expiredSales.length > 0
+                ? expiredSales[0].createdAt.toISOString()
+                : undefined;
 
-        return { count, totalValue, oldestExpired };
+        // Get cleanup history statistics
+        const cleanupStats = await this.getCleanupHistoryStats();
+
+        return {
+            expiredSalesCount,
+            totalValue,
+            totalExpiredSales: expiredSalesCount, // Same as current expired count
+            totalSalesAffected: cleanupStats.totalCleaned + expiredSalesCount,
+            oldestExpired,
+            ...cleanupStats,
+        };
+    }
+
+    /**
+     * Get cleanup history statistics
+     * @returns Object with cleanup history data
+     */
+    private static async getCleanupHistoryStats(): Promise<{
+        totalCleaned: number;
+        lastCleanupTime?: string;
+    }> {
+        try {
+            // Get total cleaned count
+            const totalCleanedResult =
+                await ExpiredSaleCleanupHistory.aggregate([
+                    {
+                        $group: {
+                            _id: null,
+                            totalCleaned: { $sum: '$cleanedUpCount' },
+                        },
+                    },
+                ]);
+
+            const totalCleaned = totalCleanedResult[0]?.totalCleaned || 0;
+
+            // Get last cleanup time
+            const lastCleanup = await ExpiredSaleCleanupHistory.findOne(
+                {},
+                { cleanupDate: 1 },
+                { sort: { cleanupDate: -1 } },
+            );
+
+            const lastCleanupTime = lastCleanup?.cleanupDate.toISOString();
+
+            return {
+                totalCleaned,
+                lastCleanupTime,
+            };
+        } catch (error) {
+            console.error('Error fetching cleanup history stats:', error);
+            return {
+                totalCleaned: 0,
+            };
+        }
     }
 }

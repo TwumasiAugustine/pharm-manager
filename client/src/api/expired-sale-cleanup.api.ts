@@ -1,29 +1,21 @@
 import api from './api';
-
-export interface ExpiredSaleStats {
-    expiredSalesCount: number;
-    totalValue: number;
-    totalExpiredSales: number;
-    oldestExpired: string | null;
-    totalSalesAffected: number;
-}
-
-export interface ExpiredSaleCleanupResult {
-    success: boolean;
-    message: string;
-    cleanedUpCount: number;
-}
+import type {
+    ExpiredSaleStats,
+    ExpiredSaleCleanupResult,
+} from '../types/expired-sale-cleanup.types';
 
 export const expiredSaleCleanupApi = {
     // Get statistics about expired sales
     getExpiredSaleStats: async (): Promise<ExpiredSaleStats> => {
         const response = await api.get('/expired-sales/expired-stats');
-        return response.data;
+        // Extract data from the server's response wrapper
+        return response.data.data || response.data;
     },
 
     // Manually trigger cleanup of expired sales (admin only)
     triggerCleanup: async (): Promise<ExpiredSaleCleanupResult> => {
         const response = await api.post('/expired-sales/cleanup-expired');
-        return response.data;
+        // Extract data from the server's response wrapper
+        return response.data.data || response.data;
     },
 };

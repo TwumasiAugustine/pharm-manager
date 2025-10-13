@@ -13,8 +13,14 @@ export class ExpiredSaleCleanupController {
      */
     async cleanupExpiredSales(req: Request, res: Response, next: NextFunction) {
         try {
+            // Get user ID from request (assuming auth middleware provides this)
+            const userId = (req as any).user?.id;
+
             const cleanedUpCount =
-                await ExpiredSaleCleanupService.cleanupExpiredSales();
+                await ExpiredSaleCleanupService.cleanupExpiredSales(
+                    'manual',
+                    userId,
+                );
 
             res.status(200).json(
                 successResponse(

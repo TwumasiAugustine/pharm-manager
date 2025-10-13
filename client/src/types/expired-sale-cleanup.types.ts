@@ -4,6 +4,8 @@ export interface ExpiredSaleStats {
     totalExpiredSales: number;
     oldestExpired: string | null;
     totalSalesAffected: number;
+    totalCleaned: number;
+    lastCleanupTime?: string;
 }
 
 export interface ExpiredSaleCleanupResult {
