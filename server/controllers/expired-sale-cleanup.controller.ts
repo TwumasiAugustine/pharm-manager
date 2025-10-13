@@ -13,13 +13,15 @@ export class ExpiredSaleCleanupController {
      */
     async cleanupExpiredSales(req: Request, res: Response, next: NextFunction) {
         try {
-            // Get user ID from request (assuming auth middleware provides this)
-            const userId = (req as any).user?.id;
+            // Get user context from request (auth middleware provides this)
+            const user = (req as any).user;
+            const userId = user?.id;
 
             const cleanedUpCount =
                 await ExpiredSaleCleanupService.cleanupExpiredSales(
                     'manual',
                     userId,
+                    user, // Pass user context for data scoping
                 );
 
             res.status(200).json(
@@ -38,7 +40,11 @@ export class ExpiredSaleCleanupController {
      */
     async getExpiredSaleStats(req: Request, res: Response, next: NextFunction) {
         try {
-            const stats = await ExpiredSaleCleanupService.getExpiredSaleStats();
+            // Get user context from request for data scoping
+            const user = (req as any).user;
+
+            const stats =
+                await ExpiredSaleCleanupService.getExpiredSaleStats(user);
 
             res.status(200).json(
                 successResponse(

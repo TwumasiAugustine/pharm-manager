@@ -22,9 +22,25 @@ export class UserActivityService {
      */
     async createUserActivity(
         data: CreateUserActivityRequest,
+        user?: ITokenPayload,
     ): Promise<UserActivityResponse> {
         try {
-            const activity = new UserActivity(data);
+            // Prepare activity data with optional scoping fields
+            const activityData: any = {
+                ...data,
+            };
+
+            // Add scoping fields if user context is available
+            if (user) {
+                if (user.pharmacyId) {
+                    activityData.pharmacyId = user.pharmacyId;
+                }
+                if (user.branchId) {
+                    activityData.branch = user.branchId;
+                }
+            }
+
+            const activity = await UserActivity.create(activityData);
             const savedActivity = await activity.save();
 
             // Populate user details and return formatted response
@@ -36,7 +52,9 @@ export class UserActivityService {
 
             return this.formatActivityResponse(populatedActivity as any);
         } catch (error) {
-            throw new BadRequestError('Failed to create user activity record');
+            throw new Error(
+                `Failed to create user activity record: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            );
         }
     }
 

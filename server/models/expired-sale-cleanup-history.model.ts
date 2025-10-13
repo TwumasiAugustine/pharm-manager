@@ -12,7 +12,8 @@ export interface IExpiredSaleCleanupHistory extends Document {
     totalValue: number;
     operationType: 'automatic' | 'manual';
     triggeredBy?: string; // User ID for manual cleanups
-    branchId?: string;
+    pharmacyId?: string; // Pharmacy ID for data scoping
+    branch?: string; // Branch ID for data scoping (renamed from branchId for consistency)
     createdAt: Date;
     updatedAt: Date;
 }
@@ -44,8 +45,14 @@ const expiredSaleCleanupHistorySchema = new Schema<IExpiredSaleCleanupHistory>(
             type: String,
             required: false,
         },
-        branchId: {
-            type: String,
+        pharmacyId: {
+            type: Schema.Types.ObjectId,
+            ref: 'PharmacyInfo',
+            required: false,
+        },
+        branch: {
+            type: Schema.Types.ObjectId,
+            ref: 'Branch',
             required: false,
         },
     },
@@ -58,7 +65,8 @@ const expiredSaleCleanupHistorySchema = new Schema<IExpiredSaleCleanupHistory>(
 // Index for performance
 expiredSaleCleanupHistorySchema.index({ cleanupDate: -1 });
 expiredSaleCleanupHistorySchema.index({ operationType: 1 });
-expiredSaleCleanupHistorySchema.index({ branchId: 1 });
+expiredSaleCleanupHistorySchema.index({ pharmacyId: 1 });
+expiredSaleCleanupHistorySchema.index({ branch: 1 });
 
 export const ExpiredSaleCleanupHistory = model<IExpiredSaleCleanupHistory>(
     'ExpiredSaleCleanupHistory',

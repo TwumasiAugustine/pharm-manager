@@ -4,6 +4,8 @@ import { IUser } from '../types/auth.types';
 export interface IUserActivity extends Document {
     userId: Types.ObjectId | IUser;
     sessionId: string;
+    pharmacyId?: Types.ObjectId; // For data scoping
+    branch?: Types.ObjectId; // For data scoping
     activity: {
         type:
             | 'LOGIN'
@@ -13,7 +15,11 @@ export interface IUserActivity extends Document {
             | 'DELETE'
             | 'VIEW'
             | 'DOWNLOAD'
-            | 'SEARCH';
+            | 'SEARCH'
+            | 'GENERATE'
+            | 'EXPORT'
+            | 'CHECK'
+            | 'ALERT';
         resource:
             | 'USER'
             | 'DRUG'
@@ -21,7 +27,9 @@ export interface IUserActivity extends Document {
             | 'CUSTOMER'
             | 'REPORT'
             | 'SYSTEM'
-            | 'DASHBOARD';
+            | 'DASHBOARD'
+            | 'BRANCH'
+            | 'EXPIRY';
         resourceId?: string;
         resourceName?: string;
         action: string; // Detailed action description
@@ -57,6 +65,16 @@ const userActivitySchema = new Schema<IUserActivity>(
             type: String,
             required: true,
         },
+        pharmacyId: {
+            type: Schema.Types.ObjectId,
+            ref: 'PharmacyInfo',
+            required: false,
+        },
+        branch: {
+            type: Schema.Types.ObjectId,
+            ref: 'Branch',
+            required: false,
+        },
         activity: {
             type: {
                 type: String,
@@ -69,6 +87,10 @@ const userActivitySchema = new Schema<IUserActivity>(
                     'VIEW',
                     'DOWNLOAD',
                     'SEARCH',
+                    'GENERATE',
+                    'EXPORT',
+                    'CHECK',
+                    'ALERT',
                 ],
                 required: true,
             },
@@ -82,6 +104,8 @@ const userActivitySchema = new Schema<IUserActivity>(
                     'REPORT',
                     'SYSTEM',
                     'DASHBOARD',
+                    'BRANCH',
+                    'EXPIRY',
                 ],
                 required: true,
             },
