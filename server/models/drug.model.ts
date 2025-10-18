@@ -11,7 +11,7 @@ export interface IDrug extends Document {
     drugsInCarton: number;
     unitsPerCarton: number;
     packsPerCarton: number;
-    quantity: number;
+    quantity: number; // This will now be managed in DrugBranch junction table
     pricePerUnit: number;
     pricePerPack: number;
     pricePerCarton: number;
@@ -19,10 +19,11 @@ export interface IDrug extends Document {
     batchNumber: string;
     requiresPrescription: boolean;
     supplier?: string;
-    location?: string;
+    location?: string; // Default location, can be overridden in DrugBranch
     costPrice: number;
     pharmacyId: mongoose.Types.ObjectId;
-    branch: IBranch | mongoose.Types.ObjectId;
+    branch?: IBranch | mongoose.Types.ObjectId; // Optional for backward compatibility
+    branches?: IBranch[]; // Virtual field for associated branches
     createdAt: Date;
     updatedAt: Date;
 }
@@ -123,7 +124,7 @@ const drugSchema = new Schema<IDrug>(
         branch: {
             type: Schema.Types.ObjectId,
             ref: 'Branch',
-            required: true,
+            required: false, // Made optional for many-to-many relationship
         },
     },
     {
@@ -184,5 +185,16 @@ drugSchema.index({ batchNumber: 1 });
 drugSchema.index({ expiryDate: 1 });
 drugSchema.index({ pharmacyId: 1 });
 drugSchema.index({ pharmacyId: 1, expiryDate: 1 }); // Compound index for pharmacy filtering with expiry
+
+// Virtual field to populate associated branches
+drugSchema.virtual('branches', {
+    ref: 'DrugBranch',
+    localField: '_id',
+    foreignField: 'drugId',
+    populate: {
+        path: 'branchId',
+        model: 'Branch',
+    },
+});
 
 export const Drug = mongoose.model<IDrug>('Drug', drugSchema);

@@ -24,17 +24,57 @@ export const useDrugs = (
     const [page, setPage] = React.useState<number>(params.page || 1);
     const [limit, setLimit] = React.useState<number>(params.limit || 10);
 
-    const queryParams = React.useMemo(
-        () => ({
-            ...params,
+    const queryParams = React.useMemo(() => {
+        const result: DrugSearchParams = {
             page,
             limit,
             search: searchQuery || params.search,
-        }),
-        [params, page, limit, searchQuery],
-    );
+        };
 
-    const queryKey = ['drugs', queryParams];
+        // Only include branchId if it's not empty
+        if (params.branchId && params.branchId.trim() !== '') {
+            result.branchId = params.branchId;
+        }
+
+        // Include other search parameters
+        if (params.category) result.category = params.category;
+        if (params.requiresPrescription !== undefined)
+            result.requiresPrescription = params.requiresPrescription;
+        if (params.sortBy) result.sortBy = params.sortBy;
+        if (params.sortOrder) result.sortOrder = params.sortOrder;
+        if (params.expiryBefore) result.expiryBefore = params.expiryBefore;
+        if (params.expiryAfter) result.expiryAfter = params.expiryAfter;
+
+        return result;
+    }, [
+        params.branchId,
+        params.search,
+        params.category,
+        params.requiresPrescription,
+        params.sortBy,
+        params.sortOrder,
+        params.expiryBefore,
+        params.expiryAfter,
+        page,
+        limit,
+        searchQuery,
+    ]);
+
+    const queryKey = [
+        'drugs',
+        {
+            branchId: queryParams.branchId,
+            search: queryParams.search,
+            category: queryParams.category,
+            requiresPrescription: queryParams.requiresPrescription,
+            sortBy: queryParams.sortBy,
+            sortOrder: queryParams.sortOrder,
+            expiryBefore: queryParams.expiryBefore,
+            expiryAfter: queryParams.expiryAfter,
+            page: queryParams.page,
+            limit: queryParams.limit,
+        },
+    ];
 
     const query = useQuery({
         queryKey,
@@ -57,7 +97,7 @@ export const useDrugs = (
         }
         return {
             drugs: Array.isArray(raw.drugs)
-                ? raw.drugs.map((drug: Drug) => ({
+                ? raw.drugs.map((drug: Record<string, unknown>) => ({
                       id: drug.id || drug._id || '',
                       _id: drug._id || '',
                       name: drug.name || '',
@@ -83,6 +123,76 @@ export const useDrugs = (
                       location: drug.location || '',
                       createdAt: drug.createdAt || '',
                       updatedAt: drug.updatedAt || '',
+                      branchId: (drug.branchId as string) || '',
+                      branch:
+                          drug.branch && typeof drug.branch === 'object'
+                              ? {
+                                    id:
+                                        ((
+                                            drug.branch as Record<
+                                                string,
+                                                unknown
+                                            >
+                                        ).id as string) ||
+                                        ((
+                                            drug.branch as Record<
+                                                string,
+                                                unknown
+                                            >
+                                        )._id as string) ||
+                                        '',
+                                    name:
+                                        ((
+                                            drug.branch as Record<
+                                                string,
+                                                unknown
+                                            >
+                                        ).name as string) || '',
+                                    _id:
+                                        ((
+                                            drug.branch as Record<
+                                                string,
+                                                unknown
+                                            >
+                                        )._id as string) || '',
+                                }
+                              : undefined,
+                      branches: Array.isArray(drug.branches)
+                          ? drug.branches.map(
+                                (branch: Record<string, unknown>) => ({
+                                    id:
+                                        (((
+                                            branch.branchId as Record<
+                                                string,
+                                                unknown
+                                            >
+                                        )?.id ||
+                                            (
+                                                branch.branchId as Record<
+                                                    string,
+                                                    unknown
+                                                >
+                                            )?._id ||
+                                            branch.id ||
+                                            branch._id) as string) || '',
+                                    name:
+                                        (((
+                                            branch.branchId as Record<
+                                                string,
+                                                unknown
+                                            >
+                                        )?.name || branch.name) as string) ||
+                                        '',
+                                    _id:
+                                        (((
+                                            branch.branchId as Record<
+                                                string,
+                                                unknown
+                                            >
+                                        )?._id || branch._id) as string) || '',
+                                }),
+                            )
+                          : undefined,
                   }))
                 : [],
             totalCount: raw.totalCount ?? 0,
@@ -151,6 +261,32 @@ export const useDrug = (id: string) => {
                 location: raw.location || '',
                 createdAt: raw.createdAt || '',
                 updatedAt: raw.updatedAt || '',
+                branchId: raw.branchId || '',
+                branch:
+                    raw.branch && typeof raw.branch === 'object'
+                        ? {
+                              id: raw.branch.id || raw.branch._id || '',
+                              name: raw.branch.name || '',
+                              _id: raw.branch._id || '',
+                          }
+                        : undefined,
+                branches: Array.isArray(raw.branches)
+                    ? raw.branches.map((branch: Record<string, unknown>) => ({
+                          id:
+                              (((branch.branchId as Record<string, unknown>)
+                                  ?.id ||
+                                  (branch.branchId as Record<string, unknown>)
+                                      ?._id ||
+                                  branch.id ||
+                                  branch._id) as string) || '',
+                          name:
+                              (((branch.branchId as Record<string, unknown>)
+                                  ?.name || branch.name) as string) || '',
+                          _id:
+                              (((branch.branchId as Record<string, unknown>)
+                                  ?._id || branch._id) as string) || '',
+                      }))
+                    : undefined,
             };
         },
         enabled: !!id,
@@ -243,6 +379,32 @@ export const useUpdateDrug = (id: string) => {
                 location: raw.location || '',
                 createdAt: raw.createdAt || '',
                 updatedAt: raw.updatedAt || '',
+                branchId: raw.branchId || '',
+                branch:
+                    raw.branch && typeof raw.branch === 'object'
+                        ? {
+                              id: raw.branch.id || raw.branch._id || '',
+                              name: raw.branch.name || '',
+                              _id: raw.branch._id || '',
+                          }
+                        : undefined,
+                branches: Array.isArray(raw.branches)
+                    ? raw.branches.map((branch: Record<string, unknown>) => ({
+                          id:
+                              (((branch.branchId as Record<string, unknown>)
+                                  ?.id ||
+                                  (branch.branchId as Record<string, unknown>)
+                                      ?._id ||
+                                  branch.id ||
+                                  branch._id) as string) || '',
+                          name:
+                              (((branch.branchId as Record<string, unknown>)
+                                  ?.name || branch.name) as string) || '',
+                          _id:
+                              (((branch.branchId as Record<string, unknown>)
+                                  ?._id || branch._id) as string) || '',
+                      }))
+                    : undefined,
             };
         },
         onSuccess: (updatedDrug) => {

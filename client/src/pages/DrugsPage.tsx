@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { DrugList } from '../components/organisms/DrugList';
-import { BranchSelect } from '../components/molecules/BranchSelect';
 import { DrugForm } from '../components/organisms/DrugForm';
 import { useCreateDrug } from '../hooks/useDrugs';
 import PermissionGuard from '../components/atoms/PermissionGuard';
@@ -110,15 +109,6 @@ const DrugsPage: React.FC = () => {
                                 levels
                             </p>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <BranchSelect
-                                value={filters.branchId}
-                                onChange={(branchId) =>
-                                    setFilter('branchId', branchId)
-                                }
-                            />
-                        </div>
-
                         <div className="flex items-center gap-3 flex-wrap justify-end sm:justify-start">
                             {/* Desktop view - show all buttons */}
                             <div className="hidden md:flex items-center gap-3">

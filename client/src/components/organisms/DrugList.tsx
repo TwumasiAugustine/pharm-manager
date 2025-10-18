@@ -5,6 +5,7 @@ import { Table } from '../molecules/Table';
 import type { TableColumn, TableAction } from '../molecules/Table';
 import { Pagination } from '../molecules/Pagination';
 import { SearchBar } from '../molecules/SearchBar';
+import { BranchSelect } from '../molecules/BranchSelect';
 import { Badge } from '../atoms/Badge';
 import type { Drug } from '../../types/drug.types';
 import { useAuthStore } from '../../store/auth.store';
@@ -35,6 +36,9 @@ export const DrugList: React.FC<DrugListProps> = ({
 }) => {
     const [isSearching, setIsSearching] = useState(false);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [selectedBranchId, setSelectedBranchId] = useState<string>(
+        branchId || '',
+    );
     const navigate = useNavigate();
 
     const { user } = useAuthStore();
@@ -51,8 +55,8 @@ export const DrugList: React.FC<DrugListProps> = ({
     // Use search query from URL filters or internal search
     const currentSearchQuery = urlFilters?.search || searchQuery;
 
-    // Only super admin can manage (edit/delete) drugs
-    const canManageDrugs = user?.role === UserRole.SUPER_ADMIN;
+    // Only admin can manage (edit/delete) drugs
+    const canManageDrugs = user?.role === UserRole.ADMIN;
 
     const {
         data: drugs,
@@ -64,19 +68,28 @@ export const DrugList: React.FC<DrugListProps> = ({
     } = useDrugs(
         urlFilters
             ? {
-                  branchId: urlFilters.branchId,
+                  branchId:
+                      urlFilters.branchId || selectedBranchId || undefined,
                   search: urlFilters.search,
                   category: urlFilters.category,
                   requiresPrescription: urlFilters.requiresPrescription,
                   page: urlFilters.page,
                   limit: urlFilters.limit,
               }
-            : branchId
-            ? { branchId }
-            : {},
+            : {
+                  branchId: selectedBranchId || branchId || undefined,
+                  search: currentSearchQuery,
+              },
     );
 
     const deleteDrug = useDeleteDrug();
+
+    const handleBranchChange = (branchId: string) => {
+        setSelectedBranchId(branchId);
+        if (urlFilters && onFiltersChange) {
+            onFiltersChange('branchId', branchId);
+        }
+    };
 
     const handleSearch = (query: string) => {
         if (urlFilters && onFiltersChange) {
@@ -130,12 +143,32 @@ export const DrugList: React.FC<DrugListProps> = ({
 
     return (
         <div className="space-y-6">
-            <SearchBar
-                onSearch={handleSearch}
-                initialValue={currentSearchQuery}
-                onFocus={handleSearchFocus}
-                onBlur={handleSearchBlur}
-            />
+            {/* Search and Filters */}
+            <div className="space-y-4">
+                <SearchBar
+                    onSearch={handleSearch}
+                    initialValue={currentSearchQuery}
+                    onFocus={handleSearchFocus}
+                    onBlur={handleSearchBlur}
+                />
+
+                {/* Branch Filter */}
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                    <label className="text-sm font-medium text-gray-700 min-w-fit">
+                        Filter by Branch:
+                    </label>
+                    <div className="w-full sm:w-64">
+                        <BranchSelect
+                            value={selectedBranchId}
+                            onChange={handleBranchChange}
+                            required={false}
+                            mode="filter"
+                            allowEmpty={true}
+                            placeholder="All Branches"
+                        />
+                    </div>
+                </div>
+            </div>
 
             {/* Error State */}
             {isError && !isSearching && (
@@ -239,7 +272,6 @@ export const DrugList: React.FC<DrugListProps> = ({
                             data={drugs.drugs || []}
                             columns={
                                 [
-                                    { header: 'ID', accessor: 'id' },
                                     { header: 'Name', accessor: 'name' },
                                     { header: 'Brand', accessor: 'brand' },
                                     {
@@ -247,11 +279,68 @@ export const DrugList: React.FC<DrugListProps> = ({
                                         accessor: 'category',
                                     },
                                     {
-                                        header: 'Dosage Form',
-                                        accessor: 'dosageForm',
+                                        header: 'Branch',
+                                        accessor: 'branch',
+                                        cell: (_value: unknown, drug: Drug) => {
+                                            // Handle multiple branches or single branch
+                                            if (
+                                                drug.branches &&
+                                                drug.branches.length > 0
+                                            ) {
+                                                if (
+                                                    drug.branches.length === 1
+                                                ) {
+                                                    return drug.branches[0]
+                                                        .name;
+                                                }
+                                                return (
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {drug.branches
+                                                            .slice(0, 2)
+                                                            .map(
+                                                                (
+                                                                    branch,
+                                                                    index,
+                                                                ) => (
+                                                                    <span
+                                                                        key={
+                                                                            branch.id ||
+                                                                            index
+                                                                        }
+                                                                        className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
+                                                                    >
+                                                                        {
+                                                                            branch.name
+                                                                        }
+                                                                    </span>
+                                                                ),
+                                                            )}
+                                                        {drug.branches.length >
+                                                            2 && (
+                                                            <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
+                                                                +
+                                                                {drug.branches
+                                                                    .length -
+                                                                    2}{' '}
+                                                                more
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            }
+                                            // Fallback to single branch or default
+                                            if (drug.branch?.name) {
+                                                return drug.branch.name;
+                                            }
+                                            return (
+                                                <span className="text-gray-400 text-sm">
+                                                    Unknown
+                                                </span>
+                                            );
+                                        },
                                     },
                                     {
-                                        header: 'Able To Sell',
+                                        header: 'Status',
                                         accessor: 'ableToSell',
                                         cell: (value: boolean) => (
                                             <Badge
@@ -267,53 +356,43 @@ export const DrugList: React.FC<DrugListProps> = ({
                                         ),
                                     },
                                     {
-                                        header: 'Drugs In Carton',
-                                        accessor: 'drugsInCarton',
-                                    },
-                                    {
-                                        header: 'Units Per Carton',
-                                        accessor: 'unitsPerCarton',
-                                    },
-                                    {
-                                        header: 'Packs Per Carton',
-                                        accessor: 'packsPerCarton',
-                                    },
-                                    {
                                         header: 'Quantity',
                                         accessor: 'quantity',
                                     },
                                     {
-                                        header: 'Price Per Unit',
+                                        header: 'Unit Price',
                                         accessor: 'pricePerUnit',
+                                        cell: (value: number) =>
+                                            `GH₵${value.toLocaleString()}`,
                                     },
                                     {
-                                        header: 'Price Per Pack',
-                                        accessor: 'pricePerPack',
-                                    },
-                                    {
-                                        header: 'Price Per Carton',
-                                        accessor: 'pricePerCarton',
-                                    },
-                                    {
-                                        header: 'Cost Price',
-                                        accessor: 'costPrice',
-                                    },
-                                    {
-                                        header: 'Expiry Date',
+                                        header: 'Expiry',
                                         accessor: 'expiryDate',
-                                        cell: (value: string) =>
-                                            value
-                                                ? new Date(
-                                                      value,
-                                                  ).toLocaleDateString()
-                                                : '',
+                                        cell: (value: string) => {
+                                            const date = new Date(value);
+                                            const now = new Date();
+                                            const isExpired = date < now;
+                                            const isExpiringSoon =
+                                                date.getTime() - now.getTime() <
+                                                30 * 24 * 60 * 60 * 1000; // 30 days
+
+                                            return (
+                                                <span
+                                                    className={`text-sm ${
+                                                        isExpired
+                                                            ? 'text-red-600 font-semibold'
+                                                            : isExpiringSoon
+                                                            ? 'text-yellow-600 font-medium'
+                                                            : 'text-gray-700'
+                                                    }`}
+                                                >
+                                                    {date.toLocaleDateString()}
+                                                </span>
+                                            );
+                                        },
                                     },
                                     {
-                                        header: 'Batch Number',
-                                        accessor: 'batchNumber',
-                                    },
-                                    {
-                                        header: 'Requires Prescription',
+                                        header: 'Prescription',
                                         accessor: 'requiresPrescription',
                                         cell: (value: boolean) => (
                                             <Badge
@@ -330,26 +409,6 @@ export const DrugList: React.FC<DrugListProps> = ({
                                             </Badge>
                                         ),
                                     },
-                                    {
-                                        header: 'Created At',
-                                        accessor: 'createdAt',
-                                        cell: (value: string) =>
-                                            value
-                                                ? new Date(
-                                                      value,
-                                                  ).toLocaleDateString()
-                                                : '',
-                                    },
-                                    {
-                                        header: 'Updated At',
-                                        accessor: 'updatedAt',
-                                        cell: (value: string) =>
-                                            value
-                                                ? new Date(
-                                                      value,
-                                                  ).toLocaleDateString()
-                                                : '',
-                                    },
                                 ] as TableColumn<Drug>[]
                             }
                             actions={
@@ -362,23 +421,45 @@ export const DrugList: React.FC<DrugListProps> = ({
                                                       `/drugs/edit/${drug.id}`,
                                                   );
                                               },
+                                              className:
+                                                  'inline-flex items-center px-3 py-1.5 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-md hover:bg-amber-100 hover:text-amber-800 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors duration-200',
                                           },
                                           {
                                               label: 'Delete',
                                               onClick: (drug: Drug) => {
                                                   if (
                                                       window.confirm(
-                                                          `Are you sure you want to delete ${drug.name}?`,
+                                                          `Are you sure you want to delete "${drug.name}" by ${drug.brand}?\n\nThis action cannot be undone.`,
                                                       )
                                                   ) {
                                                       deleteDrug.mutate(
                                                           drug.id,
+                                                          {
+                                                              onSuccess: () => {
+                                                                  console.log(
+                                                                      'Drug deleted successfully',
+                                                                  );
+                                                              },
+                                                              onError: (
+                                                                  error,
+                                                              ) => {
+                                                                  console.error(
+                                                                      'Failed to delete drug:',
+                                                                      error,
+                                                                  );
+                                                                  alert(
+                                                                      'Failed to delete drug. Please try again.',
+                                                                  );
+                                                              },
+                                                          },
                                                       );
                                                   }
                                               },
+                                              className:
+                                                  'inline-flex items-center px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors duration-200',
                                           },
                                       ] as TableAction<Drug>[])
-                                    : []
+                                    : [] // Non-admin users get no actions
                             }
                         />
 

@@ -16,10 +16,11 @@ import {
     FiClock,
     FiCheck
 } from 'react-icons/fi';
+import {UserRole} from '../types/auth.types'
 
 
 export const Homepage: React.FC = () => {
-    const { isAuthenticated } = useAuthStore();
+    const { isAuthenticated, user } = useAuthStore();
     const navigate = useNavigate();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
@@ -108,9 +109,10 @@ export const Homepage: React.FC = () => {
     // Handle CTA actions
     const handleGetStarted = () => {
         if (isAuthenticated) {
-            navigate('/dashboard');
+            const destination = user?.role === UserRole.SUPER_ADMIN ? '/super-admin' : '/dashboard';
+            navigate(destination);
         } else {
-            navigate('/register');
+            navigate('/login');
         }
     };
 
@@ -165,16 +167,18 @@ export const Homepage: React.FC = () => {
                                             fill="currentColor"
                                             viewBox="0 0 24 24"
                                         >
-                                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+                                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" />
                                         </svg>
                                     </div>
                                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
                                 </div>
                                 <div>
                                     <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-indigo-700 group-hover:to-purple-700 transition-all duration-300">
-                                        PharmManager
+                                        PharmCare
                                     </h1>
-                                    <p className="text-xs text-gray-500 -mt-1 hidden sm:block">Healthcare Technology</p>
+                                    <p className="text-xs text-gray-500 -mt-1 hidden sm:block">
+                                        Healthcare Technology
+                                    </p>
                                 </div>
                             </Link>
                         </div>
@@ -185,7 +189,7 @@ export const Homepage: React.FC = () => {
                                 { id: 'features', label: 'Features' },
                                 { id: 'statistics', label: 'Solutions' },
                                 { id: 'testimonials', label: 'Reviews' },
-                                { id: 'contact', label: 'Contact' }
+                                { id: 'contact', label: 'Contact' },
                             ].map((item) => (
                                 <button
                                     key={item.id}
@@ -197,9 +201,13 @@ export const Homepage: React.FC = () => {
                                     }`}
                                 >
                                     {item.label}
-                                    <span className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full ${
-                                        activeSection === item.id ? 'w-full' : ''
-                                    }`}></span>
+                                    <span
+                                        className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full ${
+                                            activeSection === item.id
+                                                ? 'w-full'
+                                                : ''
+                                        }`}
+                                    ></span>
                                 </button>
                             ))}
                         </div>
@@ -214,9 +222,13 @@ export const Homepage: React.FC = () => {
                             </button>
                             <button
                                 onClick={handleGetStarted}
-                                className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 sm:px-6 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 text-sm sm:text-base"
+                                className="hidden sm:flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 sm:px-6 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 text-sm sm:text-base"
                             >
-                                <span>{isAuthenticated ? 'Dashboard' : 'Get Started'}</span>
+                                <span>
+                                    {isAuthenticated
+                                        ? 'Dashboard'
+                                        : 'Get Started'}
+                                </span>
                                 <FiChevronRight className="w-4 h-4" />
                             </button>
                         </div>
@@ -229,15 +241,25 @@ export const Homepage: React.FC = () => {
                                 aria-label="Toggle mobile menu"
                             >
                                 <div className="w-6 h-6 relative">
-                                    <span className={`absolute top-2 left-0 w-6 h-0.5 bg-current transition-all duration-300 ${
-                                        isMobileMenuOpen ? 'rotate-45 translate-y-1' : ''
-                                    }`}></span>
-                                    <span className={`absolute top-3.5 left-0 w-6 h-0.5 bg-current transition-all duration-300 ${
-                                        isMobileMenuOpen ? 'opacity-0' : ''
-                                    }`}></span>
-                                    <span className={`absolute top-5 left-0 w-6 h-0.5 bg-current transition-all duration-300 ${
-                                        isMobileMenuOpen ? '-rotate-45 -translate-y-1' : ''
-                                    }`}></span>
+                                    <span
+                                        className={`absolute top-2 left-0 w-6 h-0.5 bg-current transition-all duration-300 ${
+                                            isMobileMenuOpen
+                                                ? 'rotate-45 translate-y-1'
+                                                : ''
+                                        }`}
+                                    ></span>
+                                    <span
+                                        className={`absolute top-3.5 left-0 w-6 h-0.5 bg-current transition-all duration-300 ${
+                                            isMobileMenuOpen ? 'opacity-0' : ''
+                                        }`}
+                                    ></span>
+                                    <span
+                                        className={`absolute top-5 left-0 w-6 h-0.5 bg-current transition-all duration-300 ${
+                                            isMobileMenuOpen
+                                                ? '-rotate-45 -translate-y-1'
+                                                : ''
+                                        }`}
+                                    ></span>
                                 </div>
                             </button>
                         </div>
@@ -256,10 +278,22 @@ export const Homepage: React.FC = () => {
                         <div className="px-4 py-6 space-y-1">
                             {/* Navigation Links */}
                             {[
-                                { id: 'features', label: 'Features', icon: '✨' },
-                                { id: 'statistics', label: 'Solutions', icon: '🚀' },
-                                { id: 'testimonials', label: 'Reviews', icon: '⭐' },
-                                { id: 'contact', label: 'Contact', icon: '📞' }
+                                {
+                                    id: 'features',
+                                    label: 'Features',
+                                    icon: '✨',
+                                },
+                                {
+                                    id: 'statistics',
+                                    label: 'Solutions',
+                                    icon: '🚀',
+                                },
+                                {
+                                    id: 'testimonials',
+                                    label: 'Reviews',
+                                    icon: '⭐',
+                                },
+                                { id: 'contact', label: 'Contact', icon: '📞' },
                             ].map((item, index) => (
                                 <button
                                     key={item.id}
@@ -271,7 +305,9 @@ export const Homepage: React.FC = () => {
                                     }`}
                                     style={{
                                         animationDelay: `${index * 50}ms`,
-                                        animation: isMobileMenuOpen ? 'slideInLeft 0.3s ease-out forwards' : ''
+                                        animation: isMobileMenuOpen
+                                            ? 'slideInLeft 0.3s ease-out forwards'
+                                            : '',
                                     }}
                                 >
                                     <span className="text-lg">{item.icon}</span>
@@ -289,13 +325,21 @@ export const Homepage: React.FC = () => {
                                     onClick={handleSignIn}
                                     className="w-full flex items-center justify-center space-x-2 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium rounded-xl transition-all duration-300 hover:bg-blue-50/50"
                                 >
-                                    <span>{isAuthenticated ? '📊 Dashboard' : '🔐 Sign In'}</span>
+                                    <span>
+                                        {isAuthenticated
+                                            ? '📊 Dashboard'
+                                            : '🔐 Sign In'}
+                                    </span>
                                 </button>
                                 <button
                                     onClick={handleGetStarted}
                                     className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0"
                                 >
-                                    <span>{isAuthenticated ? 'Go to Dashboard' : 'Get Started Free'}</span>
+                                    <span>
+                                        {isAuthenticated
+                                            ? 'Go to Dashboard'
+                                            : 'Get Started Free'}
+                                    </span>
                                     <FiChevronRight className="w-4 h-4" />
                                 </button>
                             </div>
@@ -331,8 +375,14 @@ export const Homepage: React.FC = () => {
                     {/* Animated Background Elements */}
                     <div className="absolute inset-0 opacity-20">
                         <div className="absolute top-10 left-10 w-20 h-20 bg-white/10 rounded-full blur-xl animate-float"></div>
-                        <div className="absolute top-32 right-20 w-32 h-32 bg-purple-300/10 rounded-full blur-2xl animate-float" style={{ animationDelay: '2s' }}></div>
-                        <div className="absolute bottom-20 left-1/4 w-24 h-24 bg-blue-300/10 rounded-full blur-xl animate-float" style={{ animationDelay: '4s' }}></div>
+                        <div
+                            className="absolute top-32 right-20 w-32 h-32 bg-purple-300/10 rounded-full blur-2xl animate-float"
+                            style={{ animationDelay: '2s' }}
+                        ></div>
+                        <div
+                            className="absolute bottom-20 left-1/4 w-24 h-24 bg-blue-300/10 rounded-full blur-xl animate-float"
+                            style={{ animationDelay: '4s' }}
+                        ></div>
                         <div
                             className="absolute inset-0 opacity-30"
                             style={{
@@ -354,8 +404,12 @@ export const Homepage: React.FC = () => {
                                 </span>
                             </h2>
                             <p className="text-lg sm:text-xl lg:text-2xl opacity-90 max-w-3xl mx-auto leading-relaxed">
-                                Join <span className="font-semibold text-yellow-300">5,000+</span> pharmacies worldwide that trust
-                                PharmManager to streamline operations and boost profitability.
+                                Join{' '}
+                                <span className="font-semibold text-yellow-300">
+                                    5,000+
+                                </span>{' '}
+                                pharmacies worldwide that trust PharmManager to
+                                streamline operations and boost profitability.
                             </p>
                         </div>
 
@@ -383,7 +437,9 @@ export const Homepage: React.FC = () => {
                             >
                                 <span className="flex items-center justify-center space-x-2">
                                     <span>
-                                        {isAuthenticated ? 'Go to Dashboard' : 'Start Free Trial'}
+                                        {isAuthenticated
+                                            ? 'Go to Dashboard'
+                                            : 'Start Free Trial'}
                                     </span>
                                     <FiChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                                 </span>
@@ -415,19 +471,25 @@ export const Homepage: React.FC = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm opacity-90">
                             {[
                                 { icon: FiCheck, text: '30-day free trial' },
-                                { icon: FiCheck, text: 'No credit card required' },
-                                { icon: FiCheck, text: 'Setup in 5 minutes' }
+                                {
+                                    icon: FiCheck,
+                                    text: 'No credit card required',
+                                },
+                                { icon: FiCheck, text: 'Setup in 5 minutes' },
                             ].map((benefit, index) => (
                                 <div
                                     key={index}
                                     className="flex items-center space-x-2 justify-center sm:justify-start p-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10"
                                     style={{
                                         animationDelay: `${index * 100}ms`,
-                                        animation: 'slideInUp 0.6s ease-out forwards'
+                                        animation:
+                                            'slideInUp 0.6s ease-out forwards',
                                     }}
                                 >
                                     <benefit.icon className="w-4 h-4 text-green-300 flex-shrink-0" />
-                                    <span className="font-medium">{benefit.text}</span>
+                                    <span className="font-medium">
+                                        {benefit.text}
+                                    </span>
                                 </div>
                             ))}
                         </div>

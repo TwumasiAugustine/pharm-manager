@@ -29,6 +29,16 @@ export interface Drug {
     createdAt: string;
     updatedAt: string;
     branchId?: string;
+    branch?: {
+        id: string;
+        name: string;
+        _id?: string;
+    };
+    branches?: Array<{
+        id: string;
+        name: string;
+        _id?: string;
+    }>;
 }
 
 /**
@@ -52,7 +62,8 @@ export interface CreateDrugRequest {
     supplier?: string;
     location?: string;
     costPrice: number;
-    branchId?: string;
+    branchId?: string; // Backward compatibility
+    selectedBranches?: string[]; // New many-to-many approach
 }
 
 /**

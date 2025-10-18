@@ -68,20 +68,30 @@ export const drugSchema = z.object({
     requiresPrescription: z.boolean().default(false),
     supplier: z
         .string()
-        .min(2, 'Supplier must be at least 2 characters')
-        .max(100, 'Supplier must be less than 100 characters')
-        .optional(),
+        .transform((val) => val || undefined) // Convert empty string to undefined
+        .optional()
+        .refine((val) => !val || val.length >= 2, {
+            message: 'Supplier must be at least 2 characters when provided',
+        }),
     location: z
         .string()
-        .min(2, 'Location must be at least 2 characters')
-        .max(100, 'Location must be less than 100 characters')
-        .optional(),
+        .transform((val) => val || undefined) // Convert empty string to undefined
+        .optional()
+        .refine((val) => !val || val.length >= 2, {
+            message: 'Location must be at least 2 characters when provided',
+        }),
     branchId: z
         .string()
         .transform((val) => val || undefined) // Convert empty string to undefined
         .optional()
         .refine((val) => !val || val.length >= 2, {
             message: 'Branch Id must be at least 2 characters when provided',
+        }),
+    selectedBranches: z
+        .array(z.string())
+        .optional()
+        .refine((val) => !val || val.length > 0, {
+            message: 'At least one branch must be selected when provided',
         }),
 });
 

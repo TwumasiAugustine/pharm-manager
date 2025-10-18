@@ -13,6 +13,7 @@ import { DrugCategoryField } from './DrugCategoryField';
 import { DrugAdvancedFields } from './DrugAdvancedFields';
 import { DrugMetaFields } from './DrugMetaFields';
 import { BranchSelect } from '../molecules/BranchSelect';
+import { MultiBranchSelect } from '../molecules/MultiBranchSelect';
 import { DrugPricingFields } from './DrugPricingFields';
 import { FormSection } from './DrugFormSection';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -39,7 +40,8 @@ export const DrugForm = ({
 }: DrugFormProps): React.ReactElement => {
     // Get current user for admin check
     const { user } = useAuthStore();
-    const isAdmin = user?.role === UserRole.ADMIN;
+    const isAdmin =
+        user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
 
     // Get drug categories for dropdown
     const { data: categories, isLoading: loadingCategories } =
@@ -54,6 +56,12 @@ export const DrugForm = ({
     const [selectedCategory, setSelectedCategory] = useState(
         initialData?.category || '',
     );
+
+    // State for branch selection
+    const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
+    const [useLegacySingleBranch, setUseLegacySingleBranch] = useState(
+        !isAdmin,
+    ); // Non-admin users default to single branch mode
 
     const debouncedCategorySearch = useDebounce(categorySearchTerm, 300);
 
@@ -105,13 +113,14 @@ export const DrugForm = ({
     const {
         register,
         handleSubmit,
-        formState: { errors },
+        formState: { errors, isValid, isDirty },
         reset,
         setValue,
         watch,
     } = useForm<DrugFormValues>({
         resolver: zodResolver(drugSchema) as any, // Type assertion to avoid SubmitHandler type error
         defaultValues,
+        mode: 'onChange', // Enable real-time validation
     });
 
     // Reset form with initial data when it's loaded
@@ -160,6 +169,40 @@ export const DrugForm = ({
             setCategorySearchTerm(ensuredInitialData.category);
         }
     }, [ensuredInitialData]);
+
+    // Initialize branch selection with existing data if editing
+    useEffect(() => {
+        if (ensuredInitialData) {
+            // If drug has branches array, use it for multi-branch selection
+            if (
+                ensuredInitialData.branches &&
+                ensuredInitialData.branches.length > 0
+            ) {
+                const branchIds = ensuredInitialData.branches.map(
+                    (branch) => branch.id,
+                );
+                setSelectedBranches(branchIds);
+                // For admin users, switch to multi-branch mode if multiple branches exist
+                if (isAdmin && ensuredInitialData.branches.length > 1) {
+                    setUseLegacySingleBranch(false);
+                }
+            }
+            // If drug has a single branch, ensure the branchId is set properly
+            else if (ensuredInitialData.branchId) {
+                setValue('branchId', ensuredInitialData.branchId, {
+                    shouldValidate: true,
+                    shouldDirty: false,
+                });
+            }
+            // If drug has branch object but no branchId, use the branch object
+            else if (ensuredInitialData.branch?.id) {
+                setValue('branchId', ensuredInitialData.branch.id, {
+                    shouldValidate: true,
+                    shouldDirty: false,
+                });
+            }
+        }
+    }, [ensuredInitialData, isAdmin, setValue]);
 
     // Filter categories based on search term
     const filteredCategories = React.useMemo(() => {
@@ -212,36 +255,118 @@ export const DrugForm = ({
 
     // Handle form submission
     const onFormSubmit: SubmitHandler<DrugFormValues> = (data) => {
+        console.log('🚀 Form submission started:', {
+            data,
+            initialData: !!initialData,
+            isAdmin,
+            useLegacySingleBranch,
+            selectedBranches,
+            formErrors: errors,
+        });
+
+        // Check for any form validation errors
+        if (Object.keys(errors).length > 0) {
+            console.error('❌ Form has validation errors:', errors);
+            return;
+        }
+
         // Make sure category has a valid value
         if (!data.category && selectedCategory) {
             // If selected category exists but didn't get into form data
             data.category = selectedCategory;
         }
 
-        // Branch ID is already included in data from react-hook-form
+        // Prepare submission data with branch selection
         const submissionData = {
             ...data,
-            branchId: data.branchId || undefined, // Use undefined instead of empty string
         };
 
+        // Handle branch selection based on mode
+        if (useLegacySingleBranch && data.branchId) {
+            // Legacy single branch mode: send branchId
+            submissionData.branchId = data.branchId;
+        } else if (!useLegacySingleBranch && selectedBranches.length > 0) {
+            // Multi-branch mode: send selectedBranches
+            submissionData.selectedBranches = selectedBranches;
+            // Remove branchId to avoid conflicts
+            delete (submissionData as any).branchId;
+        } else if (data.branchId) {
+            // Fallback: if branchId is set but not in legacy mode, use it
+            submissionData.branchId = data.branchId;
+        } else if (initialData) {
+            // When editing and no new branch selection, preserve existing branch data
+            if (initialData.branchId) {
+                submissionData.branchId = initialData.branchId;
+            } else if (initialData.branch?.id) {
+                submissionData.branchId = initialData.branch.id;
+            }
+        }
+
+        console.log('Submitting data:', submissionData);
         onSubmit(submissionData);
 
         if (!initialData) {
             reset(); // Reset form after submission only for new drugs
             setSelectedCategory('');
             setCategorySearchTerm('');
+            setSelectedBranches([]);
         }
     };
 
     // Debug the button disabled condition
     const currentBranchId = watch('branchId');
-    // Admin users can submit without selecting a branch (will add to all branches)
-    const isButtonDisabled = isSubmitting || (!isAdmin && !currentBranchId);
+    // For editing: allow submission regardless of branch selection since the drug already exists
+    // For creating new drugs: enforce branch selection rules for non-admin users
+    const isButtonDisabled =
+        isSubmitting ||
+        (!initialData &&
+            !isAdmin &&
+            useLegacySingleBranch &&
+            !currentBranchId) ||
+        (!initialData &&
+            !isAdmin &&
+            !useLegacySingleBranch &&
+            selectedBranches.length === 0);
+
+    // Debug logging
+    console.log('Button state:', {
+        isSubmitting,
+        initialData: !!initialData,
+        isAdmin,
+        useLegacySingleBranch,
+        currentBranchId,
+        selectedBranches,
+        isButtonDisabled,
+        isValid,
+        isDirty,
+        hasErrors: Object.keys(errors).length > 0,
+        errors,
+    });
 
     return (
-        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
+        <form
+            onSubmit={(e) => {
+                console.log('📝 Form onSubmit event triggered');
+                e.preventDefault(); // Prevent default submission
+
+                // Manually trigger form validation and submission
+                handleSubmit(
+                    (data) => {
+                        console.log(
+                            '✅ Form validation passed, calling onFormSubmit',
+                        );
+                        onFormSubmit(data);
+                    },
+                    (errors) => {
+                        console.error('❌ Form validation failed:', errors);
+                    },
+                )(e);
+            }}
+            className="space-y-6 sm:space-y-8"
+        >
+            {/* Basic Information and Category - Responsive Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6 border border-gray-100">
                     <FormSection title="Basic Information">
                         <DrugBasicFields
                             register={register}
@@ -252,7 +377,7 @@ export const DrugForm = ({
                         />
                     </FormSection>
                 </div>
-                <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6 border border-gray-100">
                     <FormSection title="Category">
                         <DrugCategoryField
                             register={register}
@@ -270,22 +395,74 @@ export const DrugForm = ({
                         />
                     </FormSection>
                 </div>
-                <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
-                    <FormSection title="Branch Assignment">
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Branch{' '}
-                                    {!isAdmin && (
-                                        <span className="text-red-500">*</span>
-                                    )}
-                                    {isAdmin && (
-                                        <span className="text-xs text-gray-500 ml-1">
-                                            (Optional - leave as "All Branches"
-                                            to add to all)
-                                        </span>
-                                    )}
-                                </label>
+            </div>
+
+            {/* Branch Assignment - Full Width */}
+            <div className="col-span-1 bg-white rounded-lg shadow p-4 sm:p-6 border border-gray-100">
+                <FormSection title="Branch Assignment">
+                    <div className="space-y-4">
+                        {/* Branch Selection Mode Toggle for Admin */}
+                        {isAdmin && (
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-blue-50 rounded-md">
+                                <span className="text-sm font-medium text-blue-800">
+                                    Selection Mode:
+                                </span>
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setUseLegacySingleBranch(false)
+                                        }
+                                        className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                                            !useLegacySingleBranch
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-white text-blue-600 border border-blue-600'
+                                        }`}
+                                    >
+                                        Multi-Branch (Recommended)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setUseLegacySingleBranch(true)
+                                        }
+                                        className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                                            useLegacySingleBranch
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-white text-blue-600 border border-blue-600'
+                                        }`}
+                                    >
+                                        Single Branch (Legacy)
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Branch Selection */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                {useLegacySingleBranch || !isAdmin
+                                    ? 'Branch'
+                                    : 'Branches'}{' '}
+                                {!isAdmin && (
+                                    <span className="text-red-500">*</span>
+                                )}
+                                {isAdmin && !useLegacySingleBranch && (
+                                    <span className="text-xs text-gray-500 ml-1 block sm:inline">
+                                        (Select specific branches or leave empty
+                                        for all)
+                                    </span>
+                                )}
+                                {isAdmin && useLegacySingleBranch && (
+                                    <span className="text-xs text-gray-500 ml-1 block sm:inline">
+                                        (Select one branch or leave empty for
+                                        all)
+                                    </span>
+                                )}
+                            </label>
+
+                            {!isAdmin || useLegacySingleBranch ? (
+                                // Single branch selection (for non-admin or legacy mode)
                                 <BranchSelect
                                     value={watch('branchId')}
                                     onChange={(id) =>
@@ -298,26 +475,64 @@ export const DrugForm = ({
                                     mode="form"
                                     placeholder="Select a branch for this drug"
                                 />
-                                {errors.branchId && (
-                                    <p className="mt-1 text-sm text-red-600">
-                                        {errors.branchId.message ||
-                                            'Branch is required'}
+                            ) : (
+                                // Multi-branch selection (for admin)
+                                <MultiBranchSelect
+                                    value={selectedBranches}
+                                    onChange={setSelectedBranches}
+                                    placeholder="Select branches or leave empty for all branches"
+                                    allowSelectAll={true}
+                                />
+                            )}
+
+                            {errors.branchId && useLegacySingleBranch && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {errors.branchId.message ||
+                                        'Branch is required'}
+                                </p>
+                            )}
+
+                            {/* Helper text */}
+                            <div className="mt-2 space-y-1">
+                                {isAdmin && !useLegacySingleBranch && (
+                                    <p className="text-sm text-blue-600 flex items-start gap-1">
+                                        <span className="text-base">💡</span>
+                                        <span>
+                                            Select specific branches to make
+                                            this drug available only in those
+                                            locations. Leave empty to make it
+                                            available in all branches.
+                                        </span>
                                     </p>
                                 )}
-                                {isAdmin && (
-                                    <p className="mt-1 text-sm text-blue-600">
-                                        💡 Select a specific branch or leave as
-                                        "All Branches" to make this drug
-                                        available across all branches
+                                {isAdmin && useLegacySingleBranch && (
+                                    <p className="text-sm text-blue-600 flex items-start gap-1">
+                                        <span className="text-base">💡</span>
+                                        <span>
+                                            Legacy mode: Select one branch or
+                                            leave empty to create separate drug
+                                            instances in all branches.
+                                        </span>
+                                    </p>
+                                )}
+                                {!isAdmin && (
+                                    <p className="text-sm text-gray-600 flex items-start gap-1">
+                                        <span className="text-base">ℹ️</span>
+                                        <span>
+                                            You can only create drugs in your
+                                            assigned branch.
+                                        </span>
                                     </p>
                                 )}
                             </div>
                         </div>
-                    </FormSection>
-                </div>
+                    </div>
+                </FormSection>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
+
+            {/* Advanced Details and Pricing - Responsive Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6 border border-gray-100">
                     <FormSection title="Advanced Details">
                         <DrugAdvancedFields
                             register={register}
@@ -326,13 +541,13 @@ export const DrugForm = ({
                         />
                     </FormSection>
                 </div>
-                <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
+                <div className="bg-white rounded-lg shadow p-4 sm:p-6 border border-gray-100">
                     <FormSection title="Pricing">
                         {/* Instructions toggle button */}
-                        <div className="mb-6 flex items-center">
+                        <div className="mb-4 sm:mb-6 flex items-start sm:items-center">
                             <button
                                 type="button"
-                                className="flex items-center text-blue-600 hover:text-blue-800 focus:outline-none mr-2"
+                                className="flex items-center text-blue-600 hover:text-blue-800 focus:outline-none text-sm"
                                 onClick={() => setShowInstructions((v) => !v)}
                                 aria-label="Show instructions"
                             >
@@ -409,24 +624,39 @@ export const DrugForm = ({
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6 mb-4 border border-gray-100">
-                <FormSection title="Meta">
+            {/* Meta Information - Full Width */}
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6 border border-gray-100">
+                <FormSection title="Meta Information">
                     <DrugMetaFields register={register} errors={errors} />
                 </FormSection>
             </div>
-            {/* Submit Button */}
-            <div className="flex justify-end mt-8">
+
+            {/* Submit Button - Responsive */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:justify-end mt-6 sm:mt-8">
                 <button
                     type="submit"
                     disabled={isButtonDisabled}
-                    className={`inline-flex items-center px-8 py-3 border border-transparent text-base font-semibold rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-md transition-colors duration-200 ease-in-out ${
+                    onClick={(e) => {
+                        console.log('🖱️ Submit button clicked!', {
+                            isButtonDisabled,
+                            type: e.currentTarget.type,
+                            disabled: e.currentTarget.disabled,
+                        });
+                        if (isButtonDisabled) {
+                            e.preventDefault();
+                            console.log(
+                                '❌ Button is disabled, preventing submission',
+                            );
+                        }
+                    }}
+                    className={`w-full sm:w-auto inline-flex justify-center items-center px-6 sm:px-8 py-2.5 sm:py-3 border border-transparent text-sm sm:text-base font-semibold rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-md transition-colors duration-200 ease-in-out ${
                         isButtonDisabled ? 'opacity-75 cursor-not-allowed' : ''
                     }`}
                 >
                     {isSubmitting ? (
                         <span className="flex items-center space-x-2">
                             <svg
-                                className="animate-spin h-5 w-5 text-white"
+                                className="animate-spin h-4 w-4 sm:h-5 sm:w-5 text-white"
                                 xmlns="http://www.w3.org/2000/svg"
                                 fill="none"
                                 viewBox="0 0 24 24"
@@ -449,7 +679,7 @@ export const DrugForm = ({
                         </span>
                     ) : (
                         <span className="flex items-center space-x-2">
-                            <FaSave className="h-5 w-5" />
+                            <FaSave className="h-4 w-4 sm:h-5 sm:w-5" />
                             <span>
                                 {initialData ? 'Update Drug' : 'Add Drug'}
                             </span>

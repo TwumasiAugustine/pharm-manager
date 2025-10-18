@@ -24,7 +24,9 @@ export class DrugController {
         next: NextFunction,
     ): Promise<void> {
         try {
-            const drugData: ICreateDrugRequest = req.body;
+            const drugData: ICreateDrugRequest & {
+                selectedBranches?: string[];
+            } = req.body;
             const user = req.user!;
 
             const drug: any = await drugService.createDrug(

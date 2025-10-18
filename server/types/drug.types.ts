@@ -43,8 +43,10 @@ export interface ICreateDrugRequest {
     location?: string;
     /** Cost price per unit */
     costPrice: number;
-    /** Branch ID for the drug (optional for super admin - will use default branch) */
+    /** Branch ID for the drug (backward compatibility - use selectedBranches instead) */
     branchId?: string;
+    /** Array of branch IDs to associate the drug with (new many-to-many approach) */
+    selectedBranches?: string[];
 }
 
 /**
@@ -127,6 +129,7 @@ export interface IDrugSearchParams {
     sortOrder?: 'asc' | 'desc';
     expiryBefore?: Date | string;
     expiryAfter?: Date | string;
+    branchId?: string; // Add branch filtering support
 }
 
 /**

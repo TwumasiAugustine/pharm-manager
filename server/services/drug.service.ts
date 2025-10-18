@@ -1,4 +1,5 @@
 import { Drug, IDrug } from '../models/drug.model';
+import { DrugBranch, IDrugBranch } from '../models/drug-branch.model';
 import Branch from '../models/branch.model';
 import PharmacyInfo from '../models/pharmacy-info.model';
 import {
@@ -22,20 +23,21 @@ import mongoose, { Types } from 'mongoose';
  */
 export class DrugService {
     /**
-     * Create a new drug
+     * Create a new drug with many-to-many branch associations
      * @param drugData The drug data to create
      * @param userRole The role of the user creating the drug
      * @param userBranchId The branch ID of the user creating the drug
-     * @returns The created drug
+     * @param pharmacyId The pharmacy ID
+     * @returns The created drug with branch associations
      */
     async createDrug(
-        drugData: ICreateDrugRequest,
+        drugData: ICreateDrugRequest & { selectedBranches?: string[] },
         userRole: UserRole,
         userBranchId?: string,
         pharmacyId?: string,
     ): Promise<any> {
-        // Only admin can create drugs
-        if (userRole !== UserRole.ADMIN) {
+        // Only admin or super admin can create drugs
+        if (userRole !== UserRole.ADMIN && userRole !== UserRole.SUPER_ADMIN) {
             throw new ForbiddenError('Only admin can create drugs');
         }
 
@@ -46,26 +48,6 @@ export class DrugService {
             );
         }
 
-        // For admin, if no branchId is provided, create drug in all branches
-        if (!drugData.branchId) {
-            return this.createDrugInAllBranches(drugData, userRole, pharmacyId);
-        }
-
-        // Use provided branchId for specific branch
-        const effectiveBranchId = drugData.branchId;
-
-        // Check if drug with same batch number already exists in the same branch
-        const existingDrug = await Drug.findOne({
-            batchNumber: drugData.batchNumber,
-            branch: effectiveBranchId,
-        });
-
-        if (existingDrug) {
-            throw new BadRequestError(
-                `Drug with batch number ${drugData.batchNumber} already exists in this branch`,
-            );
-        }
-
         // Validate costPrice
         if (typeof drugData.costPrice !== 'number' || drugData.costPrice <= 0) {
             throw new BadRequestError(
@@ -73,16 +55,115 @@ export class DrugService {
             );
         }
 
-        // Create drug with branch and pharmacy assignment
+        // Determine which branches to associate the drug with
+        let branchesToAssociate: string[] = [];
+
+        if (drugData.selectedBranches && drugData.selectedBranches.length > 0) {
+            // Use explicitly selected branches
+            branchesToAssociate = drugData.selectedBranches;
+        } else if (drugData.branchId) {
+            // Backward compatibility: use single branch
+            branchesToAssociate = [drugData.branchId];
+        } else {
+            // Default: associate with all branches (admin privilege)
+            const allBranches = await Branch.find().select('_id');
+            branchesToAssociate = allBranches.map((b) =>
+                (b._id as mongoose.Types.ObjectId).toString(),
+            );
+        }
+
+        if (branchesToAssociate.length === 0) {
+            throw new BadRequestError('At least one branch must be selected');
+        }
+
+        // Check if drug with same batch number already exists in any of the selected branches
+        const existingDrugBranches = await DrugBranch.aggregate([
+            {
+                $lookup: {
+                    from: 'drugs',
+                    localField: 'drugId',
+                    foreignField: '_id',
+                    as: 'drug',
+                },
+            },
+            {
+                $unwind: '$drug',
+            },
+            {
+                $match: {
+                    'drug.batchNumber': drugData.batchNumber,
+                    branchId: {
+                        $in: branchesToAssociate.map(
+                            (id) => new mongoose.Types.ObjectId(id),
+                        ),
+                    },
+                },
+            },
+        ]);
+
+        if (existingDrugBranches.length > 0) {
+            throw new BadRequestError(
+                `Drug with batch number ${drugData.batchNumber} already exists in one or more selected branches`,
+            );
+        }
+
+        // Create the main drug record (without branch association)
         const drugCreateData = {
-            ...drugData,
-            branch: effectiveBranchId,
+            name: drugData.name,
+            brand: drugData.brand,
+            category: drugData.category,
+            dosageForm: drugData.dosageForm,
+            ableToSell: drugData.ableToSell,
+            drugsInCarton: drugData.drugsInCarton,
+            unitsPerCarton: drugData.unitsPerCarton,
+            packsPerCarton: drugData.packsPerCarton,
+            quantity: drugData.quantity || 0, // This will be managed per branch
+            pricePerUnit: drugData.pricePerUnit,
+            pricePerPack: drugData.pricePerPack,
+            pricePerCarton: drugData.pricePerCarton,
+            expiryDate: drugData.expiryDate,
+            batchNumber: drugData.batchNumber,
+            requiresPrescription: drugData.requiresPrescription,
+            supplier: drugData.supplier,
+            location: drugData.location,
+            costPrice: drugData.costPrice,
             pharmacyId: pharmacyId,
         };
 
-        // Create and return the new drug
         const drug = await Drug.create(drugCreateData);
-        return this.mapDrugToResponse(drug);
+
+        // Create drug-branch associations
+        const drugBranchAssociations = branchesToAssociate.map((branchId) => ({
+            drugId: drug._id,
+            branchId: new mongoose.Types.ObjectId(branchId),
+            pharmacyId: new mongoose.Types.ObjectId(pharmacyId),
+            quantity: drugData.quantity || 0,
+            location: drugData.location,
+        }));
+
+        await DrugBranch.insertMany(drugBranchAssociations);
+
+        // Return the drug with branch information using the first branch for backward compatibility
+        const createdDrug = await Drug.findById(drug._id);
+        if (!createdDrug) {
+            throw new BadRequestError('Failed to retrieve created drug');
+        }
+
+        // Get the first branch association for backward compatibility
+        const firstBranchAssociation = await DrugBranch.findOne({
+            drugId: drug._id,
+        }).populate('branchId', 'name _id');
+
+        // Set the branch field for backward compatibility
+        if (firstBranchAssociation && firstBranchAssociation.branchId) {
+            // Update the drug document to include the branch reference
+            createdDrug.branch = (firstBranchAssociation.branchId as any)._id;
+
+            // For response mapping, temporarily set the populated branch
+            (createdDrug as any).branch = firstBranchAssociation.branchId;
+        }
+
+        return this.mapDrugToResponse(createdDrug);
     }
 
     /**
@@ -104,6 +185,16 @@ export class DrugService {
             throw new NotFoundError(`Drug with ID ${id} not found`);
         }
 
+        // Get branch association from DrugBranch junction table
+        const branchAssociation = await DrugBranch.findOne({
+            drugId: id,
+        }).populate('branchId', 'name _id');
+
+        // Set branch data for backward compatibility
+        if (branchAssociation && branchAssociation.branchId) {
+            (drug as any).branch = branchAssociation.branchId;
+        }
+
         return this.mapDrugToResponse(drug);
     }
 
@@ -119,8 +210,11 @@ export class DrugService {
         updateData: IUpdateDrugRequest,
         user: ITokenPayload,
     ): Promise<any> {
-        // Only admin can update drugs
-        if (user.role !== UserRole.ADMIN) {
+        // Only admin or super admin can update drugs
+        if (
+            user.role !== UserRole.ADMIN &&
+            user.role !== UserRole.SUPER_ADMIN
+        ) {
             throw new ForbiddenError('Only admin can update drugs');
         }
 
@@ -176,7 +270,40 @@ export class DrugService {
             runValidators: true,
         });
 
-        return this.mapDrugToResponse(updatedDrug!);
+        if (!updatedDrug) {
+            throw new NotFoundError(
+                `Drug with ID ${id} not found after update`,
+            );
+        }
+
+        // Handle branch associations
+        if (updateData.branchId) {
+            // Remove existing associations for this drug
+            await DrugBranch.deleteMany({ drugId: id });
+
+            // Create new association
+            await DrugBranch.create({
+                drugId: id,
+                branchId: updateData.branchId,
+                pharmacyId: user.pharmacyId,
+                quantity: updatedDrug.quantity || 0,
+                location: updatedDrug.location,
+            });
+
+            // Set the branch field for backward compatibility
+            updatedDrug.branch = updateData.branchId as any;
+        } else {
+            // If no branchId in update, try to get existing branch association
+            const existingAssociation = await DrugBranch.findOne({
+                drugId: id,
+            }).populate('branchId', 'name _id');
+
+            if (existingAssociation && existingAssociation.branchId) {
+                updatedDrug.branch = existingAssociation.branchId as any;
+            }
+        }
+
+        return this.mapDrugToResponse(updatedDrug);
     }
 
     /**
@@ -220,6 +347,7 @@ export class DrugService {
             sortOrder = 'asc',
             expiryBefore,
             expiryAfter,
+            branchId,
         } = params;
 
         // Build query with proper data scoping
@@ -269,17 +397,76 @@ export class DrugService {
         const sort: any = {};
         sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
-        // Execute query with pagination
-        const drugs = await Drug.find(query).sort(sort).skip(skip).limit(limit);
+        // Filter drugs by branch if branchId is specified
+        let filteredDrugs;
+        let totalCount;
 
-        // Get total count for pagination metadata
-        const totalCount = await Drug.countDocuments(query);
+        if (branchId) {
+            // Get drugs that have associations with the specified branch
+            const branchAssociations = await DrugBranch.find({
+                branchId: branchId,
+            }).select('drugId');
+
+            const associatedDrugIds = branchAssociations.map(
+                (assoc) => assoc.drugId,
+            );
+
+            // Add branch filter to the query
+            query._id = { $in: associatedDrugIds };
+
+            // Execute query with branch filtering and pagination
+            filteredDrugs = await Drug.find(query)
+                .sort(sort)
+                .skip(skip)
+                .limit(limit);
+
+            // Get total count for branch-filtered drugs
+            totalCount = await Drug.countDocuments(query);
+        } else {
+            // Execute query without branch filtering
+            filteredDrugs = await Drug.find(query)
+                .sort(sort)
+                .skip(skip)
+                .limit(limit);
+
+            // Get total count for pagination metadata
+            totalCount = await Drug.countDocuments(query);
+        }
+
+        // Get branch associations for filtered drugs
+        const drugIds = filteredDrugs.map((drug) => drug._id as Types.ObjectId);
+        const branchAssociations = await DrugBranch.find({
+            drugId: { $in: drugIds },
+        }).populate('branchId', 'name _id');
+
+        // Create a map of drugId to branch data for quick lookup
+        const branchMap = new Map();
+        branchAssociations.forEach((association) => {
+            if (association.branchId) {
+                branchMap.set(
+                    (association.drugId as Types.ObjectId).toString(),
+                    association.branchId,
+                );
+            }
+        });
+
+        // Add branch data to drugs
+        const drugsWithBranches = filteredDrugs.map((drug) => {
+            const drugId = (drug._id as Types.ObjectId).toString();
+            const branchData = branchMap.get(drugId);
+            if (branchData) {
+                (drug as any).branch = branchData;
+            }
+            return drug;
+        });
 
         // Calculate total pages
         const totalPages = Math.ceil(totalCount / limit);
 
         return {
-            drugs: drugs.map((drug) => this.mapDrugToResponse(drug)),
+            drugs: drugsWithBranches.map((drug) =>
+                this.mapDrugToResponse(drug),
+            ),
             totalCount,
             page,
             limit,
@@ -326,8 +513,11 @@ export class DrugService {
         const scopingFilter = getBranchScopingFilter(user);
         Object.assign(query, scopingFilter);
 
-        const expiringDrugs = await Drug.find(query);
-        return expiringDrugs;
+        const expiringDrugs = await Drug.find(query).populate(
+            'branch',
+            'name _id',
+        );
+        return expiringDrugs.map((drug) => this.mapDrugToResponse(drug));
     }
 
     /**
@@ -337,6 +527,26 @@ export class DrugService {
      * Map Drug document to response object with all relevant fields
      */
     private mapDrugToResponse(drug: IDrug): any {
+        // Handle populated vs unpopulated branch
+        const branchInfo = drug.branch as any; // Allow any type for populated fields
+        let branchData = null;
+        let branchId = null;
+
+        if (branchInfo) {
+            if (typeof branchInfo === 'object' && 'name' in branchInfo) {
+                // Branch is populated
+                branchData = {
+                    id: branchInfo._id,
+                    name: branchInfo.name,
+                    _id: branchInfo._id,
+                };
+                branchId = branchInfo._id;
+            } else {
+                // Branch is just an ObjectId
+                branchId = branchInfo;
+            }
+        }
+
         return {
             id: drug._id,
             name: drug.name,
@@ -357,8 +567,8 @@ export class DrugService {
             requiresPrescription: drug.requiresPrescription,
             supplier: drug.supplier,
             location: drug.location,
-            branch: drug.branch, // Include branch field for frontend compatibility
-            branchId: drug.branch, // Also include as branchId for frontend convenience
+            branch: branchData, // Populated branch object or null
+            branchId: branchId, // Branch ObjectId for compatibility
             createdAt: drug.createdAt,
             updatedAt: drug.updatedAt,
         };
@@ -370,61 +580,4 @@ export class DrugService {
      * @param userRole The role of the user creating the drug
      * @returns Array of created drugs
      */
-    private async createDrugInAllBranches(
-        drugData: ICreateDrugRequest,
-        userRole: UserRole,
-        pharmacyId: string,
-    ): Promise<any[]> {
-        // Get all available branches
-        const branches = await Branch.find().sort({ name: 1 });
-
-        if (!branches || branches.length === 0) {
-            throw new BadRequestError(
-                'No branches available to create drugs in',
-            );
-        }
-
-        const createdDrugs: any[] = [];
-
-        // Create the drug in each branch
-        for (const branch of branches) {
-            // Check if drug with same batch number already exists in this branch
-            const existingDrug = await Drug.findOne({
-                batchNumber: drugData.batchNumber,
-                branch: branch._id || branch.id,
-            });
-
-            if (existingDrug) {
-                // Skip this branch if drug already exists, but continue with others
-                continue;
-            }
-
-            // Create drug data for this branch
-            const drugCreateData = {
-                ...drugData,
-                branch: branch._id || branch.id,
-                pharmacyId: pharmacyId,
-            };
-
-            try {
-                const drug = await Drug.create(drugCreateData);
-                createdDrugs.push(this.mapDrugToResponse(drug));
-            } catch (error) {
-                // Log error but continue with other branches
-                console.error(
-                    `Failed to create drug in branch ${branch.name}:`,
-                    error,
-                );
-            }
-        }
-
-        if (createdDrugs.length === 0) {
-            throw new BadRequestError(
-                'Drug could not be created in any branch. It may already exist in all branches.',
-            );
-        }
-
-        // Return the first created drug (for compatibility with existing frontend)
-        return createdDrugs[0];
-    }
 }

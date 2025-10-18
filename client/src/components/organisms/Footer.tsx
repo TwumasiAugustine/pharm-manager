@@ -236,14 +236,14 @@ export const Footer: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div className="text-gray-400 text-sm">
-                            © {currentYear} PharmManager. All rights reserved.
+                            © {currentYear} PharmCare. All rights reserved.
                         </div>
 
-                        <div className="flex items-center gap-6 text-sm text-gray-400">
-                            <span>Made with ❤️ in Ghana</span>
-                            <span>•</span>
-                            <span>Serving pharmacies globally</span>
-                            <span>•</span>
+                        <div className="flex md:flex-wrap items-center gap-6 text-sm text-gray-400">
+                                <span>Made with ❤️ in Ghana</span>
+
+                                <span>Serving pharmacies globally</span>
+                                <span className='md:sr-only'>•</span>
                             <span className="flex items-center gap-1">
                                 {healthLoading ? (
                                     <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
