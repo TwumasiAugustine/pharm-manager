@@ -6,7 +6,7 @@
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "node dist/server.js",
         "dev": "nodemon --exec ts-node server.ts",
-        "build": "echo \"Building TypeScript...\" && tsc --project . && echo \"Build completed successfully\"",
+        "build": "tsc --project .",
         "build:check": "tsc --noEmit",
         "clean": "rimraf dist",
         "prebuild": "npm run clean || true",

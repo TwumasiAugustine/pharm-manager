@@ -32,7 +32,7 @@ services:
       - key: COOKIE_DOMAIN
         value: "medicare-0971.onrender.com" # adjust to your domain (not a secret)
       - key: REACT_APP_SOCKET_URL
-        value: "hhttps://pharm-manager-api.onrender.com"
+        value: "https://pharm-manager-api.onrender.com"
 
 
 
