@@ -2,16 +2,12 @@ services:
   - type: web
     name: pharm-manager-server
     env: node
-    # Explicit working directory management
+    rootDir: server
+    # Build in the server directory
     buildCommand: |
       echo "=== BUILD DEBUG INFO ==="
-      echo "Root directory: $(pwd)"
-      echo "Root contents:"
-      ls -la
-      echo "=== CHANGING TO SERVER DIRECTORY ==="
-      cd server
-      echo "Server directory: $(pwd)"
-      echo "Server contents:"
+      echo "Current directory: $(pwd)"
+      echo "Directory contents:"
       ls -la
       echo "=== INSTALLING DEPENDENCIES ==="
       npm ci --include=dev
@@ -25,7 +21,7 @@ services:
       echo "File exists test:"
       test -f dist/server.js && echo "✓ FOUND" || echo "✗ NOT FOUND"
       echo "=== BUILD COMPLETE ==="
-    startCommand: cd server && node dist/server.js
+    startCommand: node dist/server.js
     envVars:
       - key: NODE_ENV
         value: production
